@@ -35,7 +35,7 @@ export function RegisterForm({ onSuccess }) {
           id="name"
           autoComplete="name"
           placeholder="Jane Doe"
-          className="h-[46px] rounded-xl border-[#6b7280] px-[17px] py-[11px] text-sm dark:border-[#6b7280]"
+          className="h-12 rounded-2xl border border-border/80 bg-background px-4 py-3 text-sm shadow-sm transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
           {...register('name')}
         />
         {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
@@ -53,7 +53,7 @@ export function RegisterForm({ onSuccess }) {
           type="email"
           autoComplete="email"
           placeholder="name@company.com"
-          className="h-[46px] rounded-xl border-[#6b7280] px-[17px] py-[11px] text-sm dark:border-[#6b7280]"
+          className="h-12 rounded-2xl border border-border/80 bg-background px-4 py-3 text-sm shadow-sm transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
           {...register('email')}
         />
         {errors.email && (
@@ -74,13 +74,13 @@ export function RegisterForm({ onSuccess }) {
             type={showPassword ? 'text' : 'password'}
             autoComplete="new-password"
             placeholder="••••••••"
-            className="h-[46px] rounded-xl border-[#6b7280] px-[17px] py-[11px] pr-11 text-sm dark:border-[#6b7280]"
+            className="h-12 rounded-2xl border border-border/80 bg-background px-4 py-3 pr-12 text-sm shadow-sm transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
             {...register('password')}
           />
           <button
             type="button"
             onClick={() => setShowPassword((value) => !value)}
-            className="absolute inset-y-0 right-[16px] flex items-center text-muted-foreground hover:text-foreground"
+            className="absolute inset-y-0 right-4 flex items-center text-muted-foreground hover:text-foreground"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
             {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -104,13 +104,13 @@ export function RegisterForm({ onSuccess }) {
             type={showConfirmPassword ? 'text' : 'password'}
             autoComplete="new-password"
             placeholder="••••••••"
-            className="h-[46px] rounded-xl border-[#6b7280] px-[17px] py-[11px] pr-11 text-sm dark:border-[#6b7280]"
+            className="h-12 rounded-2xl border border-border/80 bg-background px-4 py-3 pr-12 text-sm shadow-sm transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
             {...register('confirmPassword')}
           />
           <button
             type="button"
             onClick={() => setShowConfirmPassword((value) => !value)}
-            className="absolute inset-y-0 right-[16px] flex items-center text-muted-foreground hover:text-foreground"
+            className="absolute inset-y-0 right-4 flex items-center text-muted-foreground hover:text-foreground"
             aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
           >
             {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -124,14 +124,14 @@ export function RegisterForm({ onSuccess }) {
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="h-[50px] w-full rounded-xl bg-primary text-base font-semibold"
+        className="h-12 w-full rounded-2xl bg-primary text-base font-semibold shadow-sm"
       >
         {isSubmitting ? 'Creating account…' : 'Create account'}
       </Button>
 
-      <div className="relative flex items-center py-4">
-        <div className="w-full border-t border-[#c4c7c7]" />
-        <span className="absolute left-1/2 -translate-x-1/2 bg-background px-2 text-xs font-semibold tracking-[0.6px] text-muted-foreground uppercase">
+      <div className="relative flex items-center py-3">
+        <div className="w-full border-t border-dashed border-[#c4c7c7]" />
+        <span className="absolute left-1/2 -translate-x-1/2 bg-background px-2 text-[11px] font-semibold tracking-[0.6px] text-muted-foreground uppercase">
           Or continue with
         </span>
       </div>
@@ -139,7 +139,7 @@ export function RegisterForm({ onSuccess }) {
       <Button
         type="button"
         variant="outline"
-        className="h-[50px] w-full gap-2 rounded-xl border-[#c4c7c7] text-base font-semibold"
+        className="h-12 w-full gap-2 rounded-2xl border border-[#c4c7c7] text-base font-semibold shadow-sm"
       >
         <GoogleIcon />
         Continue with Google
