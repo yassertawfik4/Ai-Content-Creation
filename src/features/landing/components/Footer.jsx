@@ -1,52 +1,63 @@
-import { Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { TwitterIcon, LinkedinIcon } from './BrandIcons'
 
 const footerLinks = [
   {
-    title: 'Product',
-    links: ['Features', 'Pricing', 'Integrations', 'Changelog'],
+    title: 'PLATFORM',
+    links: ['Agents', 'Workflows', 'Integrations'],
   },
   {
-    title: 'Company',
-    links: ['About', 'Blog', 'Careers', 'Contact'],
+    title: 'COMPANY',
+    links: ['About Us', 'Careers', 'Blog'],
   },
   {
-    title: 'Legal',
-    links: ['Privacy', 'Terms', 'Security', 'Cookies'],
+    title: 'LEGAL',
+    links: ['Privacy Policy', 'Terms of Service'],
   },
 ]
 
 export function Footer() {
   return (
-    <footer className="border-t border-[#f5f4f0] bg-white">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="grid gap-12 lg:grid-cols-4">
-          <div className="lg:col-span-1">
+    <footer className="bg-[#fef7ff]">
+      <div className="mx-auto max-w-[1280px] border-t border-[#cbc4d2]/50 px-6 py-20 lg:px-8">
+        <div className="grid gap-12 lg:grid-cols-[1.4fr_repeat(3,1fr)]">
+          <div className="max-w-[320px]">
             <Link to="/" className="flex items-center gap-2">
-              <div className="flex size-9 items-center justify-center rounded-lg bg-[#ff6719] shadow-sm">
-                <Sparkles className="size-5 text-white" />
-              </div>
-              <span className="text-lg font-bold tracking-tight text-foreground">
-                Content <span className="text-[#ff6719]">King</span>
+              <span className="flex size-8 items-center justify-center rounded-lg bg-[#381e72] text-base font-bold text-white">
+                J
+              </span>
+              <span className="text-2xl font-bold tracking-tight text-[#1d1b20]">
+                Jasper <span className="text-[#4f378a]">AI</span>
               </span>
             </Link>
-            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-              AI-powered content creation platform. Create professional content
-              in seconds.
+            <p className="mt-6 text-sm leading-relaxed text-[#494551]">
+              Orchestrating marketing with machine precision and creative
+              excellence.
             </p>
+            <div className="mt-6 flex gap-4">
+              {[TwitterIcon, LinkedinIcon].map((Icon, i) => (
+                <a
+                  key={i}
+                  href="#"
+                  className="flex size-10 items-center justify-center rounded-full bg-[#e8def9] text-[#4f378a] transition-colors hover:bg-[#4f378a] hover:text-white"
+                >
+                  <Icon className="size-4" />
+                </a>
+              ))}
+            </div>
           </div>
 
           {footerLinks.map((group) => (
             <div key={group.title}>
-              <h3 className="text-sm font-semibold text-foreground">
+              <h3 className="text-xs font-semibold tracking-wider text-[#686177]">
                 {group.title}
               </h3>
-              <ul className="mt-4 flex flex-col gap-3">
+              <ul className="mt-6 flex flex-col gap-4">
                 {group.links.map((link) => (
                   <li key={link}>
                     <a
                       href="#"
-                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      className="text-sm text-[#494551] transition-colors hover:text-[#381e72]"
                     >
                       {link}
                     </a>
@@ -57,9 +68,9 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="mt-16 border-t border-[#f5f4f0] pt-8 text-center">
-          <p className="text-sm text-muted-foreground/60">
-            &copy; {new Date().getFullYear()} Content King. All rights reserved.
+        <div className="mt-16 border-t border-[#cbc4d2]/50 pt-8">
+          <p className="text-sm text-[#686177]">
+            &copy; {new Date().getFullYear()} Jasper AI. All rights reserved.
           </p>
         </div>
       </div>
