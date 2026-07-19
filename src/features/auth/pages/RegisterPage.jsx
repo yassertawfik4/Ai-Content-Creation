@@ -1,44 +1,62 @@
-import { useNavigate } from 'react-router-dom'
-import { Sparkles } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import brandMark from '@/assets/auth/brand-mark.svg'
 import { RegisterForm } from '../components/RegisterForm'
-import { AuthModeToggle } from '../components/AuthModeToggle'
-import { AuthIllustrationPanel } from '../components/AuthIllustrationPanel'
+import { RegisterShowcasePanel } from '../components/RegisterShowcasePanel'
 
 export function RegisterPage() {
   const navigate = useNavigate()
 
   return (
-    <div className="flex min-h-svh w-full bg-background">
-      <div className="relative flex w-full shrink-0 flex-col items-center justify-center p-12 lg:w-[760px]">
-        <div className="flex w-full max-w-[480px] flex-col items-start gap-8">
-          <div className="flex w-full flex-col gap-4">
-            <div className="flex w-full items-center gap-2">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary">
-                <Sparkles className="size-[22px] text-primary-foreground" />
-              </div>
-              <h1 className="text-2xl font-black tracking-[-1.2px] text-foreground">
-                AI Content Workspace
+    <main className="flex min-h-svh w-full bg-[#fef7ff] text-[#1d1b20]">
+      <section className="flex w-full shrink-0 flex-col justify-center px-6 py-12 sm:px-8 xl:w-[812px] xl:py-16">
+        <div className="mx-auto flex w-full max-w-[448px] flex-col gap-10">
+          <header className="flex flex-col gap-1">
+            <div className="flex items-center">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#4f378a] shadow-lg shadow-black/10">
+                <img src={brandMark} alt="" className="size-[19px]" />
+              </span>
+              <span className="pl-2 text-[22px] font-medium leading-7">AetherFlow AI</span>
+            </div>
+
+            <div className="pt-7">
+              <h1 className="font-display text-[42px] leading-[1.25] tracking-[-1.05px]">
+                Create Your Account
               </h1>
             </div>
-            <p className="text-base text-muted-foreground">
-              Create blogs, social media posts, marketing copy, emails, and
-              AI-generated content in one intelligent workspace.
+            <p className="text-sm leading-5 text-[#494551]">
+              Start building your autonomous marketing workforce today.
             </p>
-          </div>
-
-          <AuthModeToggle />
+          </header>
 
           <RegisterForm onSuccess={() => navigate('/login')} />
-        </div>
 
-        <div className="absolute bottom-4 left-0 right-0 flex flex-col items-center px-12 opacity-60">
-          <p className="text-center text-sm text-muted-foreground">
-            © 2024 AI Content Workspace. All rights reserved.
+          <p className="text-center text-sm leading-5 text-[#494551]">
+            Already have an account?{' '}
+            <Link
+              to="/login"
+              className="font-semibold text-[#4f378a] underline-offset-4 hover:underline"
+            >
+              Log in
+            </Link>
+          </p>
+
+          <p className="text-center text-[11px] leading-[17.88px] text-[#494551]/60">
+            By signing up, you agree to AetherFlow AI&apos;s{' '}
+            <a href="#terms" className="underline underline-offset-2">
+              Terms of Service
+            </a>{' '}
+            and{' '}
+            <a href="#privacy" className="underline underline-offset-2">
+              Privacy Policy
+            </a>
+            . Precision
+            <br />
+            Marketing Workforce © 2024.
           </p>
         </div>
-      </div>
+      </section>
 
-      <AuthIllustrationPanel />
-    </div>
+      <RegisterShowcasePanel />
+    </main>
   )
 }
