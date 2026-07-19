@@ -1,16 +1,20 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Eye, EyeOff } from 'lucide-react'
+import arrowRight from '@/assets/auth/arrow-right.svg'
+import eyeIcon from '@/assets/auth/eye.svg'
+import facebookIcon from '@/assets/auth/facebook.svg'
+import googleIcon from '@/assets/auth/google.svg'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { registerSchema } from '../schema/authSchema'
-import { GoogleIcon } from './GoogleIcon'
+
+const inputClassName =
+  'h-[50px] rounded-md border-[#cbc4d2] bg-white px-4 text-base text-[#1d1b20] shadow-none placeholder:text-[#6b7280] focus-visible:border-[#4f378a] focus-visible:ring-2 focus-visible:ring-[#4f378a]/15'
 
 export function RegisterForm({ onSuccess }) {
   const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const {
     register,
     handleSubmit,
@@ -23,48 +27,62 @@ export function RegisterForm({ onSuccess }) {
   }
 
   return (
-    <form className="flex w-full flex-col gap-4" onSubmit={handleSubmit(onSubmit)} noValidate>
-      <div className="flex flex-col gap-2.5 pt-1.5">
+    <form
+      className="flex w-full flex-col gap-6"
+      onSubmit={handleSubmit(onSubmit)}
+      noValidate
+    >
+      <div className="flex flex-col gap-2">
         <Label
           htmlFor="name"
-          className="text-xs font-semibold tracking-[0.6px] text-muted-foreground uppercase"
+          className="text-sm font-medium tracking-[1.4px] text-[#494551]"
         >
-          Full name
+          Full Name
         </Label>
         <Input
           id="name"
           autoComplete="name"
-          placeholder="Jane Doe"
-          className="h-[46px] rounded-xl border-[#6b7280] px-[17px] py-[11px] text-sm dark:border-[#6b7280]"
+          placeholder="Alex Rivera"
+          className={inputClassName}
+          aria-invalid={Boolean(errors.name)}
+          aria-describedby={errors.name ? 'name-error' : undefined}
           {...register('name')}
         />
-        {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+        {errors.name ? (
+          <p id="name-error" className="text-xs text-destructive">
+            {errors.name.message}
+          </p>
+        ) : null}
       </div>
 
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-2">
         <Label
           htmlFor="email"
-          className="text-xs font-semibold tracking-[0.6px] text-muted-foreground uppercase"
+          className="text-sm font-medium tracking-[1.4px] text-[#494551]"
         >
-          Email address
+          Work Email
         </Label>
         <Input
           id="email"
           type="email"
           autoComplete="email"
-          placeholder="name@company.com"
-          className="h-[46px] rounded-xl border-[#6b7280] px-[17px] py-[11px] text-sm dark:border-[#6b7280]"
+          placeholder="alex@company.com"
+          className={inputClassName}
+          aria-invalid={Boolean(errors.email)}
+          aria-describedby={errors.email ? 'email-error' : undefined}
           {...register('email')}
         />
-        {errors.email && (
-          <p className="text-sm text-destructive">{errors.email.message}</p>
-        )}
+        {errors.email ? (
+          <p id="email-error" className="text-xs text-destructive">
+            {errors.email.message}
+          </p>
+        ) : null}
       </div>
 
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-2">
         <Label
           htmlFor="password"
-          className="text-xs font-semibold tracking-[0.6px] text-muted-foreground uppercase"
+          className="text-sm font-medium tracking-[1.4px] text-[#494551]"
         >
           Password
         </Label>
@@ -74,76 +92,68 @@ export function RegisterForm({ onSuccess }) {
             type={showPassword ? 'text' : 'password'}
             autoComplete="new-password"
             placeholder="••••••••"
-            className="h-[46px] rounded-xl border-[#6b7280] px-[17px] py-[11px] pr-11 text-sm dark:border-[#6b7280]"
+            className={`${inputClassName} pr-12`}
+            aria-invalid={Boolean(errors.password)}
+            aria-describedby={errors.password ? 'password-error' : 'password-help'}
             {...register('password')}
           />
           <button
             type="button"
             onClick={() => setShowPassword((value) => !value)}
-            className="absolute inset-y-0 right-[16px] flex items-center text-muted-foreground hover:text-foreground"
+            className="absolute inset-y-0 right-3 flex w-7 items-center justify-center rounded text-[#494551] transition-opacity hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4f378a]"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
-            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            <img src={eyeIcon} alt="" className="h-[15px] w-[22px]" />
           </button>
         </div>
-        {errors.password && (
-          <p className="text-sm text-destructive">{errors.password.message}</p>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <Label
-          htmlFor="confirmPassword"
-          className="text-xs font-semibold tracking-[0.6px] text-muted-foreground uppercase"
-        >
-          Confirm password
-        </Label>
-        <div className="relative">
-          <Input
-            id="confirmPassword"
-            type={showConfirmPassword ? 'text' : 'password'}
-            autoComplete="new-password"
-            placeholder="••••••••"
-            className="h-[46px] rounded-xl border-[#6b7280] px-[17px] py-[11px] pr-11 text-sm dark:border-[#6b7280]"
-            {...register('confirmPassword')}
-          />
-          <button
-            type="button"
-            onClick={() => setShowConfirmPassword((value) => !value)}
-            className="absolute inset-y-0 right-[16px] flex items-center text-muted-foreground hover:text-foreground"
-            aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-          >
-            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-          </button>
-        </div>
-        {errors.confirmPassword && (
-          <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
+        {errors.password ? (
+          <p id="password-error" className="text-xs text-destructive">
+            {errors.password.message}
+          </p>
+        ) : (
+          <p id="password-help" className="text-xs leading-4 text-[#494551]">
+            Minimum 8 characters with one special symbol.
+          </p>
         )}
       </div>
 
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="h-[50px] w-full rounded-xl bg-primary text-base font-semibold"
+        className="h-14 w-full gap-2 rounded-md bg-[#4f378a] text-sm font-semibold tracking-[1.4px] text-white shadow-lg shadow-black/10 hover:bg-[#432f75]"
       >
-        {isSubmitting ? 'Creating account…' : 'Create account'}
+        {isSubmitting ? 'Creating your team…' : 'Create Your Team'}
+        {isSubmitting ? null : (
+          <img src={arrowRight} alt="" className="size-4" />
+        )}
       </Button>
 
-      <div className="relative flex items-center py-4">
-        <div className="w-full border-t border-[#c4c7c7]" />
-        <span className="absolute left-1/2 -translate-x-1/2 bg-background px-2 text-xs font-semibold tracking-[0.6px] text-muted-foreground uppercase">
-          Or continue with
+      <div className="flex items-center py-4" aria-hidden="true">
+        <span className="h-px flex-1 bg-[#cbc4d2]" />
+        <span className="px-4 text-xs font-medium leading-4 text-[#494551]">
+          OR CONTINUE WITH
         </span>
+        <span className="h-px flex-1 bg-[#cbc4d2]" />
       </div>
 
-      <Button
-        type="button"
-        variant="outline"
-        className="h-[50px] w-full gap-2 rounded-xl border-[#c4c7c7] text-base font-semibold"
-      >
-        <GoogleIcon />
-        Continue with Google
-      </Button>
+      <div className="grid grid-cols-2 gap-4">
+        <Button
+          type="button"
+          variant="outline"
+          className="h-12 gap-2 rounded-md border-[#cbc4d2] bg-white text-sm font-semibold tracking-[1.4px] text-[#1d1b20] hover:bg-[#f8f3fa]"
+        >
+          <img src={googleIcon} alt="" className="size-5" />
+          Google
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-12 gap-2 rounded-md border-[#cbc4d2] bg-white text-sm font-semibold tracking-[1.4px] text-[#1d1b20] hover:bg-[#f8f3fa]"
+        >
+          <img src={facebookIcon} alt="" className="size-5" />
+          Facebook
+        </Button>
+      </div>
     </form>
   )
 }
