@@ -1,12 +1,13 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { LoginPage, RegisterPage } from "@/features/auth";
+import { LandingPage } from "@/features/landing";
 
 function App() {
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
-      <Route path="/" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 }
