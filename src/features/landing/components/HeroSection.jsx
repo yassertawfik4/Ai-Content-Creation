@@ -86,21 +86,21 @@ export function HeroSection() {
   return (
     <section
       id="platform"
-      className="relative overflow-hidden bg-[#fef7ff] pt-[72px]"
+      className="relative min-h-[760px] overflow-hidden bg-[#fef7ff] pt-[72px]"
     >
-      {/* Animated background: orbiting agents, aurora & particles */}
+      {/* Full-bleed campaign artwork with a contrast-preserving reading veil. */}
       <HeroBackground />
 
       <motion.div
         variants={container}
         initial="hidden"
         animate="show"
-        className="relative mx-auto flex max-w-[1024px] flex-col items-center px-6 py-24 text-center lg:py-28"
+        className="relative z-10 mx-auto flex max-w-[1024px] flex-col items-center px-6 py-24 text-center lg:py-28"
       >
         {/* Badge */}
         <motion.div
           variants={item}
-          className="mb-10 inline-flex items-center gap-3 rounded-full border border-[#cbc4d2]/50 px-4 py-2"
+          className="mb-10 inline-flex items-center gap-3 rounded-full border border-white/70 bg-white/45 px-4 py-2 shadow-[0_12px_40px_rgba(56,30,114,0.06)] backdrop-blur-md"
         >
           <span className="rounded-full bg-[#381e72] px-3 py-1 text-xs font-medium tracking-wide text-white">
             New
@@ -141,7 +141,7 @@ export function HeroSection() {
           </a>
           <a
             href="/register"
-            className="rounded-md border border-[#7a7582]/30 bg-[#fef7ff]/50 px-12 py-4 text-sm font-semibold text-[#1d1b20] backdrop-blur-sm transition-all hover:border-[#4f378a]/40 hover:bg-white"
+            className="rounded-md border border-[#7a7582]/30 bg-white/60 px-12 py-4 text-sm font-semibold text-[#1d1b20] shadow-sm backdrop-blur-md transition-all hover:border-[#4f378a]/40 hover:bg-white"
           >
             Start Free Trial
           </a>

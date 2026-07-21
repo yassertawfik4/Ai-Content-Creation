@@ -1,177 +1,79 @@
-import { motion } from 'framer-motion'
-import { Search, PenTool, CalendarClock } from 'lucide-react'
-
-// Soft drifting aurora blobs give depth in the brand purples.
-const blobs = [
-  {
-    className: 'left-[-6%] top-[8%] size-[420px] bg-[#4f378a]/20',
-    animate: { x: [0, 60, 0], y: [0, 40, 0], scale: [1, 1.15, 1] },
-    duration: 20,
-  },
-  {
-    className: 'right-[-4%] top-[28%] size-[480px] bg-[#c0a7ff]/25',
-    animate: { x: [0, -50, 0], y: [0, 60, 0], scale: [1.1, 1, 1.1] },
-    duration: 24,
-  },
-  {
-    className: 'bottom-[-8%] left-[32%] size-[400px] bg-[#eeb8c8]/20',
-    animate: { x: [0, 40, 0], y: [0, -30, 0], scale: [1, 1.2, 1] },
-    duration: 22,
-  },
-]
-
-// Concentric dashed orbits. The two outer rings carry the three agents of the
-// team (Researcher / Creator / Orchestrator); the inner ring stays decorative
-// so it never drifts over the body copy.
-const orbits = [
-  {
-    size: 520,
-    dir: 1,
-    duration: 42,
-    agents: [],
-  },
-  {
-    size: 780,
-    dir: -1,
-    duration: 60,
-    agents: [
-      { icon: Search, color: '#4f378a', angle: 20 },
-      { icon: PenTool, color: '#7a5cff', angle: 200 },
-    ],
-  },
-  {
-    size: 1020,
-    dir: 1,
-    duration: 78,
-    agents: [{ icon: CalendarClock, color: '#c0648a', angle: 145 }],
-  },
-]
-
-// Twinkling particles drifting upward.
-const particles = [
-  { left: '10%', top: '24%', size: 5, dur: 7, delay: 0 },
-  { left: '18%', top: '62%', size: 7, dur: 9, delay: 1.2 },
-  { left: '26%', top: '38%', size: 4, dur: 6, delay: 0.5 },
-  { left: '34%', top: '78%', size: 6, dur: 8, delay: 2 },
-  { left: '44%', top: '16%', size: 5, dur: 7.5, delay: 0.8 },
-  { left: '56%', top: '70%', size: 4, dur: 6.5, delay: 1.6 },
-  { left: '64%', top: '30%', size: 7, dur: 9.5, delay: 0.3 },
-  { left: '72%', top: '58%', size: 5, dur: 7, delay: 2.4 },
-  { left: '80%', top: '20%', size: 6, dur: 8.5, delay: 1 },
-  { left: '88%', top: '48%', size: 4, dur: 6, delay: 1.9 },
-  { left: '48%', top: '86%', size: 5, dur: 8, delay: 0.6 },
-  { left: '14%', top: '44%', size: 4, dur: 7, delay: 2.7 },
-  { left: '92%', top: '68%', size: 6, dur: 9, delay: 0.9 },
-  { left: '38%', top: '54%', size: 4, dur: 6.5, delay: 1.4 },
-]
-
-function AgentNode({ agent, orbitSize, counterDir, duration }) {
-  const Icon = agent.icon
-  const r = orbitSize / 2
-  const rad = (agent.angle * Math.PI) / 180
-  const x = r + r * Math.cos(rad)
-  const y = r + r * Math.sin(rad)
-  return (
-    <div
-      className="absolute"
-      style={{ left: x, top: y, transform: 'translate(-50%, -50%)' }}
-    >
-      {/* Counter-rotate so the chip stays upright while it orbits */}
-      <motion.span
-        className="flex size-11 items-center justify-center rounded-2xl border bg-white/85 shadow-lg backdrop-blur-sm"
-        style={{
-          color: agent.color,
-          borderColor: `${agent.color}55`,
-          boxShadow: `0 8px 26px -8px ${agent.color}88`,
-        }}
-        animate={{
-          rotate: 360 * counterDir,
-          y: [0, -5, 0],
-        }}
-        transition={{
-          rotate: { duration, repeat: Infinity, ease: 'linear' },
-          y: { duration: 4, repeat: Infinity, ease: 'easeInOut' },
-        }}
-      >
-        <Icon className="size-5" />
-      </motion.span>
-    </div>
-  )
-}
+import { motion, useReducedMotion } from 'framer-motion'
+import heroArtwork from '../../../assets/hero-social-studio.webp'
 
 export function HeroBackground() {
+  const prefersReducedMotion = useReducedMotion()
+
   return (
-    <motion.div
-      className="pointer-events-none absolute inset-0 overflow-hidden"
+    <div
+      className="pointer-events-none absolute inset-0 isolate overflow-hidden"
       aria-hidden="true"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 1.2 }}
     >
-      {/* Aurora blobs */}
-      {blobs.map((blob, i) => (
-        <motion.div
-          key={i}
-          className={`absolute rounded-full blur-[110px] ${blob.className}`}
-          animate={blob.animate}
+      {/* The artwork stays deliberately quiet so the message remains primary. */}
+      <div className="absolute inset-0 opacity-[0.24] sm:opacity-[0.3] lg:opacity-[0.36]">
+        <motion.img
+          src={heroArtwork}
+          alt=""
+          width="1376"
+          height="768"
+          fetchPriority="high"
+          className="hero-artwork h-full w-full max-w-none object-cover object-[54%_center] sm:object-center"
+          initial={prefersReducedMotion ? false : { opacity: 0, scale: 1.025 }}
+          animate={
+            prefersReducedMotion
+              ? undefined
+              : {
+                  opacity: 1,
+                  x: ['-0.7%', '0.7%', '-0.7%'],
+                  y: ['-0.35%', '0.35%', '-0.35%'],
+                  scale: [1.025, 1.055, 1.025],
+                }
+          }
           transition={{
-            duration: blob.duration,
-            repeat: Infinity,
-            ease: 'easeInOut',
+            opacity: { duration: 0.9, ease: 'easeOut' },
+            x: { duration: 22, repeat: Infinity, ease: 'easeInOut' },
+            y: { duration: 18, repeat: Infinity, ease: 'easeInOut' },
+            scale: { duration: 22, repeat: Infinity, ease: 'easeInOut' },
           }}
         />
-      ))}
-
-      {/* Orbiting agents around the brand core */}
-      <div className="absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2">
-        {orbits.map((orbit, i) => (
-          <motion.div
-            key={i}
-            className="absolute left-1/2 top-1/2 rounded-full border border-dashed border-[#4f378a]/20"
-            style={{
-              width: orbit.size,
-              height: orbit.size,
-              marginLeft: -orbit.size / 2,
-              marginTop: -orbit.size / 2,
-            }}
-            animate={{ rotate: 360 * orbit.dir }}
-            transition={{
-              duration: orbit.duration,
-              repeat: Infinity,
-              ease: 'linear',
-            }}
-          >
-            {orbit.agents.map((agent, j) => (
-              <AgentNode
-                key={j}
-                agent={agent}
-                orbitSize={orbit.size}
-                counterDir={-orbit.dir}
-                duration={orbit.duration}
-              />
-            ))}
-          </motion.div>
-        ))}
       </div>
 
-      {/* Twinkling particles */}
-      {particles.map((p, i) => (
-        <motion.span
-          key={i}
-          className="absolute rounded-full bg-[#4f378a]"
-          style={{ left: p.left, top: p.top, width: p.size, height: p.size }}
-          animate={{ y: [0, -26, 0], opacity: [0.12, 0.55, 0.12] }}
+      {/* A slow spectral current suggests content moving through the network. */}
+      {!prefersReducedMotion && (
+        <motion.div
+          className="absolute -inset-y-1/4 -left-[45vw] w-[32vw] min-w-72 -rotate-[12deg] bg-[linear-gradient(90deg,transparent,rgba(106,226,238,0.12),rgba(255,255,255,0.72),rgba(224,70,229,0.1),transparent)] blur-2xl"
+          initial={{ x: 0, opacity: 0 }}
+          animate={{
+            x: '190vw',
+            opacity: [0, 0.58, 0.58, 0],
+          }}
           transition={{
-            duration: p.dur,
-            repeat: Infinity,
-            ease: 'easeInOut',
-            delay: p.delay,
+            x: {
+              duration: 8.5,
+              repeat: Infinity,
+              repeatDelay: 6.5,
+              ease: [0.22, 1, 0.36, 1],
+            },
+            opacity: {
+              duration: 8.5,
+              repeat: Infinity,
+              repeatDelay: 6.5,
+              times: [0, 0.15, 0.78, 1],
+              ease: 'easeInOut',
+            },
           }}
         />
-      ))}
+      )}
 
-      {/* Central brand glow */}
-      <div className="absolute left-1/2 top-[38%] size-[600px] -translate-x-1/2 rounded-full bg-[#381e72]/[0.05] blur-[80px]" />
-    </motion.div>
+      {/* A soft reading veil opens around the copy and dissolves the image edges. */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_58%_62%_at_50%_43%,rgba(254,247,255,0.82)_0%,rgba(254,247,255,0.58)_48%,rgba(254,247,255,0.08)_100%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(254,247,255,0.6)_0%,transparent_18%,transparent_72%,#fef7ff_100%)]" />
+
+      {/* Color echoes from the artwork add depth without introducing more detail. */}
+      <div className="absolute -left-32 top-[18%] size-80 rounded-full bg-[#65dce8]/10 blur-[90px]" />
+      <div className="absolute -right-24 top-[32%] size-96 rounded-full bg-[#dd3ee5]/10 blur-[110px]" />
+
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#9c84bd]/20 to-transparent" />
+    </div>
   )
 }
