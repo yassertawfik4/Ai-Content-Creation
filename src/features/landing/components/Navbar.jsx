@@ -4,10 +4,10 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 
 const navLinks = [
-  { label: "Platform", href: "#platform" },
-  { label: "Solutions", href: "#pipeline" },
-  { label: "Connectors", href: "#connectors" },
-  { label: "Pricing", href: "#pricing" },
+  { label: "Platform", href: "/#platform" },
+  { label: "Generate", to: "/generate" },
+  { label: "Connectors", to: "/connectors" },
+  { label: "Pricing", href: "/#pricing" },
 ];
 
 export function Navbar() {
@@ -32,13 +32,23 @@ export function Navbar() {
 
         <div className="hidden items-center gap-8 md:flex">
           {navLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="text-sm text-[#494551] transition-colors hover:text-[#381e72]"
-            >
-              {link.label}
-            </a>
+            link.to ? (
+              <Link
+                key={link.to}
+                to={link.to}
+                className="text-sm text-[#494551] transition-colors hover:text-[#381e72]"
+              >
+                {link.label}
+              </Link>
+            ) : (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-sm text-[#494551] transition-colors hover:text-[#381e72]"
+              >
+                {link.label}
+              </a>
+            )
           ))}
         </div>
 
@@ -59,7 +69,7 @@ export function Navbar() {
 
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="flex items-center justify-center text-[#1d1b20] md:hidden"
+          className="flex size-11 items-center justify-center rounded-lg text-[#1d1b20] transition-colors hover:bg-[#eee7f2] md:hidden"
           aria-label="Toggle menu"
         >
           {mobileOpen ? <X className="size-6" /> : <Menu className="size-6" />}
@@ -77,14 +87,25 @@ export function Navbar() {
           >
             <div className="flex flex-col gap-2 px-6 py-4">
               {navLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="rounded-lg px-3 py-2 text-sm text-[#494551] transition-colors hover:bg-[#f2ecf3] hover:text-[#381e72]"
-                >
-                  {link.label}
-                </a>
+                link.to ? (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-lg px-3 py-3 text-sm text-[#494551] transition-colors hover:bg-[#f2ecf3] hover:text-[#381e72]"
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-lg px-3 py-3 text-sm text-[#494551] transition-colors hover:bg-[#f2ecf3] hover:text-[#381e72]"
+                  >
+                    {link.label}
+                  </a>
+                )
               ))}
               <hr className="my-2 border-[#cbc4d2]/40" />
               <Link
