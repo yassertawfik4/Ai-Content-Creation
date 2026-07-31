@@ -27,7 +27,7 @@ import {
   Video,
   Wand2,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import {
   campaignBriefSchema,
   campaignOutputSchema,
@@ -101,7 +101,16 @@ function BrandMark() {
   )
 }
 
+const navLinks = [
+  { label: 'Home', to: '/' },
+  { label: 'Generate', to: '/generate' },
+  { label: 'Connectors', to: '/connectors' },
+  { label: 'Pricing', href: '/#pricing' },
+]
+
 function AppHeader() {
+  const location = useLocation()
+
   return (
     <header className="relative z-30 flex h-16 shrink-0 items-center border-b border-[#ded7e3] bg-[#fffaff]/95 px-4 backdrop-blur-xl sm:px-6">
       <Link to="/" className="flex min-w-0 items-center gap-2.5" aria-label="AetherFlow home">
@@ -110,6 +119,22 @@ function AppHeader() {
           AetherFlow <span className="font-normal text-[#6a6170]">AI</span>
         </span>
       </Link>
+
+      <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-7 md:flex">
+        {navLinks.map((link) => {
+          const isActive = link.to ? location.pathname === link.to : false
+          const className = `text-sm transition-colors ${isActive ? 'font-semibold text-[#381e72]' : 'text-[#6a6170] hover:text-[#381e72]'}`
+          return link.to ? (
+            <Link key={link.to} to={link.to} className={className}>
+              {link.label}
+            </Link>
+          ) : (
+            <a key={link.href} href={link.href} className={className}>
+              {link.label}
+            </a>
+          )
+        })}
+      </nav>
 
       <div className="ml-auto flex items-center gap-1.5">
         <button
