@@ -8,6 +8,8 @@ import googleIcon from '@/assets/auth/google.svg'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { getErrorMessage } from '@/lib/authApi'
+import { useAuth } from '@/hooks/useAuth'
 import { registerSchema } from '../schema/authSchema'
 
 const inputClassName =
@@ -15,6 +17,8 @@ const inputClassName =
 
 export function RegisterForm({ onSuccess }) {
   const [showPassword, setShowPassword] = useState(false)
+  const [formError, setFormError] = useState('')
+  const { register: registerUser } = useAuth()
   const {
     register,
     handleSubmit,
@@ -22,8 +26,13 @@ export function RegisterForm({ onSuccess }) {
   } = useForm({ resolver: zodResolver(registerSchema) })
 
   const onSubmit = async (values) => {
-    // TODO: wire up to the auth API once it's implemented.
-    onSuccess?.(values)
+    setFormError('')
+    try {
+      await registerUser({ name: values.name, email: values.email, password: values.password })
+      onSuccess?.(values)
+    } catch (err) {
+      setFormError(getErrorMessage(err))
+    }
   }
 
   return (
@@ -116,6 +125,12 @@ export function RegisterForm({ onSuccess }) {
           </p>
         )}
       </div>
+
+      {formError ? (
+        <p role="alert" className="text-sm text-destructive">
+          {formError}
+        </p>
+      ) : null}
 
       <Button
         type="submit"
