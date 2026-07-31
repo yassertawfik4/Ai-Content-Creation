@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 
 const navLinks = [
-  { label: "Platform", href: "/#platform" },
+  { label: "Home", to: "/" },
   { label: "Generate", to: "/generate" },
   { label: "Connectors", to: "/connectors" },
   { label: "Pricing", href: "/#pricing" },
