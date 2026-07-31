@@ -1,7 +1,8 @@
 import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
   { label: "Home", to: "/" },
@@ -12,6 +13,23 @@ const navLinks = [
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    setMobileOpen(false);
+    navigate("/");
+  };
+
+  const initials = user?.name
+    ? user.name
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "";
 
   return (
     <motion.nav
@@ -53,18 +71,40 @@ export function Navbar() {
         </div>
 
         <div className="hidden items-center gap-2 md:flex">
-          <Link
-            to="/login"
-            className="rounded-md px-4 py-2 text-sm font-medium text-[#494551] transition-colors hover:text-[#381e72]"
-          >
-            Log In
-          </Link>
-          <Link
-            to="/register"
-            className="rounded-md bg-[#381e72] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#4f378a]"
-          >
-            Get Started
-          </Link>
+          {isAuthenticated ? (
+            <>
+              <span className="flex items-center gap-2 rounded-md px-3 py-2">
+                <span className="flex size-8 items-center justify-center rounded-full bg-[#e3d5f7] text-xs font-bold text-[#381e72] ring-1 ring-[#cbb9e3]">
+                  {initials}
+                </span>
+                <span className="max-w-[140px] truncate text-sm font-medium text-[#494551]">
+                  {user?.name ?? "Account"}
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="rounded-md bg-[#381e72] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#4f378a]"
+              >
+                Log Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="rounded-md px-4 py-2 text-sm font-medium text-[#494551] transition-colors hover:text-[#381e72]"
+              >
+                Log In
+              </Link>
+              <Link
+                to="/register"
+                className="rounded-md bg-[#381e72] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#4f378a]"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -108,20 +148,42 @@ export function Navbar() {
                 )
               ))}
               <hr className="my-2 border-[#cbc4d2]/40" />
-              <Link
-                to="/login"
-                onClick={() => setMobileOpen(false)}
-                className="rounded-lg px-3 py-2 text-sm text-[#494551] transition-colors hover:bg-[#f2ecf3] hover:text-[#381e72]"
-              >
-                Log In
-              </Link>
-              <Link
-                to="/register"
-                onClick={() => setMobileOpen(false)}
-                className="mt-1 rounded-lg bg-[#381e72] px-3 py-2.5 text-center text-sm font-semibold text-white"
-              >
-                Get Started
-              </Link>
+              {isAuthenticated ? (
+                <>
+                  <div className="flex items-center gap-2 rounded-lg px-3 py-2">
+                    <span className="flex size-8 items-center justify-center rounded-full bg-[#e3d5f7] text-xs font-bold text-[#381e72] ring-1 ring-[#cbb9e3]">
+                      {initials}
+                    </span>
+                    <span className="truncate text-sm font-medium text-[#494551]">
+                      {user?.name ?? "Account"}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="mt-1 rounded-lg bg-[#381e72] px-3 py-2.5 text-center text-sm font-semibold text-white"
+                  >
+                    Log Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-lg px-3 py-2 text-sm text-[#494551] transition-colors hover:bg-[#f2ecf3] hover:text-[#381e72]"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setMobileOpen(false)}
+                    className="mt-1 rounded-lg bg-[#381e72] px-3 py-2.5 text-center text-sm font-semibold text-white"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         )}

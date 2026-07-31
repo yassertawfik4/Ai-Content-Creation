@@ -28,7 +28,7 @@ export function RegisterPage() {
             </p>
           </header>
 
-          <RegisterForm onSuccess={() => navigate('/login')} />
+          <RegisterForm onSuccess={() => navigate('/', { replace: true })} />
 
           <p className="text-center text-sm leading-5 text-[#494551]">
             Already have an account?{' '}

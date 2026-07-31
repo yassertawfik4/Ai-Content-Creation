@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { getErrorMessage } from '@/lib/authApi'
+import { useAuth } from '@/hooks/useAuth'
 import { loginSchema } from '../schema/authSchema'
 
 const inputClassName =
@@ -17,6 +19,8 @@ const inputClassName =
 export function LoginForm({ onSuccess }) {
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
+  const [formError, setFormError] = useState('')
+  const { login } = useAuth()
   const {
     register,
     handleSubmit,
@@ -24,8 +28,13 @@ export function LoginForm({ onSuccess }) {
   } = useForm({ resolver: zodResolver(loginSchema) })
 
   const onSubmit = async (values) => {
-    // TODO: wire up to the auth API once it's implemented.
-    onSuccess?.({ ...values, rememberMe })
+    setFormError('')
+    try {
+      await login({ email: values.email, password: values.password })
+      onSuccess?.({ ...values, rememberMe })
+    } catch (err) {
+      setFormError(getErrorMessage(err))
+    }
   }
 
   return (
@@ -108,6 +117,12 @@ export function LoginForm({ onSuccess }) {
           Forgot password?
         </a>
       </div>
+
+      {formError ? (
+        <p role="alert" className="text-sm text-destructive">
+          {formError}
+        </p>
+      ) : null}
 
       <Button
         type="submit"
