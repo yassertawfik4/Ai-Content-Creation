@@ -1,18 +1,42 @@
-# React + Vite
+# AetherFlow AI frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React/Vite frontend for the campaign workflow in the sibling
+`../content-creation` Mastra service.
 
-Currently, two official plugins are available:
+## Run the connected generate flow
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Start the campaign API:
 
-## React Compiler
+```bash
+cd ../content-creation
+npm run server
+```
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+Then start this frontend:
 
-Note: This will impact Vite dev & build performances.
+```bash
+cp .env.example .env
+npm run dev
+```
 
-## Expanding the ESLint configuration
+Open `/generate`. The default environment value connects to:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```env
+VITE_API_BASE_URL=http://localhost:3001/api
+```
+
+Replace that value in `.env` when the campaign API is deployed elsewhere. Vite
+environment values are bundled into the browser, so do not place private API
+keys in this frontend file.
+
+The form sends every campaign-brief field to `POST /api/campaign`, polls the run
+endpoint until a terminal state, displays live workflow steps, and renders the
+strategy, QA notes, and scheduled posts. The visual-generation switch can be
+turned off when the configured image provider is unavailable or rate-limited.
+
+## Checks
+
+```bash
+npm run lint
+npm run build
+```
