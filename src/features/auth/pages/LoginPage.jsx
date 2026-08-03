@@ -1,10 +1,22 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import brandMark from '@/assets/auth/brand-mark.svg'
 import { LoginForm } from '../components/LoginForm'
 import { RegisterShowcasePanel } from '../components/RegisterShowcasePanel'
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+
+  const handleSuccess = () => {
+    const from = location.state?.from
+    navigate(typeof from === 'string' ? from : '/', { replace: true })
+  }
+
+  const handleUnverified = (email) => {
+    navigate('/verify-email', {
+      state: { email, from: location.state?.from },
+    })
+  }
 
   return (
     <main className="flex min-h-svh w-full bg-[#fef7ff] text-[#1d1b20]">
@@ -28,7 +40,7 @@ export function LoginPage() {
             </p>
           </header>
 
-          <LoginForm onSuccess={() => navigate('/')} />
+          <LoginForm onSuccess={handleSuccess} onUnverified={handleUnverified} />
 
           <p className="text-center text-sm leading-5 text-[#494551]">
             Don&apos;t have an account?{' '}
