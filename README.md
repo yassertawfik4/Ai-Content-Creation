@@ -1,14 +1,14 @@
 # AetherFlow AI frontend
 
-React/Vite frontend for the campaign workflow in the sibling
-`../content-creation` Mastra service.
+React/Vite frontend for the marketing strategy and content workflows in the
+sibling `../marketing-workflow-demo` Mastra service.
 
 ## Run the connected generate flow
 
-Start the campaign API:
+Start the marketing workflow API:
 
 ```bash
-cd ../content-creation
+cd ../marketing-workflow-demo
 npm run server
 ```
 
@@ -22,17 +22,35 @@ npm run dev
 Open `/generate`. The default environment value connects to:
 
 ```env
-VITE_API_BASE_URL=http://localhost:3001/api
+VITE_API_BASE_URL=http://localhost:4112/api
 ```
 
 Replace that value in `.env` when the campaign API is deployed elsewhere. Vite
 environment values are bundled into the browser, so do not place private API
 keys in this frontend file.
 
-The form sends every campaign-brief field to `POST /api/campaign`, polls the run
-endpoint until a terminal state, displays live workflow steps, and renders the
-strategy, QA notes, and scheduled posts. The visual-generation switch can be
-turned off when the configured image provider is unavailable or rate-limited.
+## Authentication
+
+Authentication uses the Better Auth session cookie exposed by the backend on
+`/api/auth`. The frontend never stores the session token in browser storage.
+For local development, Vite proxies `/api` to `http://localhost:3000`:
+
+```env
+VITE_AUTH_API_BASE_URL=/api
+```
+
+The frontend includes password signup with email verification, password login,
+email OTP login, session restoration, and logout. If the auth backend is hosted
+on another origin in production, set `VITE_AUTH_API_BASE_URL` to its `/api`
+base and configure backend CORS to allow credentials.
+
+The form sends the brief to `POST /api/strategy`, polls the marketing strategy
+workflow, and shows the structured plan for approval. Only after approval does
+the frontend send the strategy to `POST /api/content` to generate posts, visual
+prompts, hashtags, QA notes, and the final calendar. The visual-generation
+switch can be turned off when the configured image provider is unavailable or
+rate-limited. The current brief, reviewed strategy, and completed campaign are
+persisted locally so a browser refresh does not clear the workspace.
 
 ## Checks
 
