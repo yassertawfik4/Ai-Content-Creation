@@ -12,6 +12,12 @@ export function LoginPage() {
     navigate(typeof from === 'string' ? from : '/', { replace: true })
   }
 
+  const handleUnverified = (email) => {
+    navigate('/verify-email', {
+      state: { email, from: location.state?.from },
+    })
+  }
+
   return (
     <main className="flex min-h-svh w-full bg-[#fef7ff] text-[#1d1b20]">
       <section className="flex w-full shrink-0 flex-col justify-center px-6 py-12 sm:px-8 xl:w-[812px] xl:py-16">
@@ -34,7 +40,7 @@ export function LoginPage() {
             </p>
           </header>
 
-          <LoginForm onSuccess={handleSuccess} />
+          <LoginForm onSuccess={handleSuccess} onUnverified={handleUnverified} />
 
           <p className="text-center text-sm leading-5 text-[#494551]">
             Don&apos;t have an account?{' '}

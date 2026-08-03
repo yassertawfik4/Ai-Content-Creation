@@ -3,12 +3,11 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import arrowRight from '@/assets/auth/arrow-right.svg'
 import eyeIcon from '@/assets/auth/eye.svg'
-import facebookIcon from '@/assets/auth/facebook.svg'
-import googleIcon from '@/assets/auth/google.svg'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Link } from 'react-router-dom'
 import { getErrorMessage } from '@/lib/authApi'
 import { useAuth } from '@/hooks/useAuth'
 import { loginSchema } from '../schema/authSchema'
@@ -16,7 +15,7 @@ import { loginSchema } from '../schema/authSchema'
 const inputClassName =
   'h-[50px] rounded-md border-[#cbc4d2] bg-white px-4 text-base text-[#1d1b20] shadow-none placeholder:text-[#6b7280] focus-visible:border-[#4f378a] focus-visible:ring-2 focus-visible:ring-[#4f378a]/15'
 
-export function LoginForm({ onSuccess }) {
+export function LoginForm({ onSuccess, onUnverified }) {
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [formError, setFormError] = useState('')
@@ -30,10 +29,14 @@ export function LoginForm({ onSuccess }) {
   const onSubmit = async (values) => {
     setFormError('')
     try {
-      await login({ email: values.email, password: values.password })
+      await login({ email: values.email, password: values.password, rememberMe })
       onSuccess?.({ ...values, rememberMe })
     } catch (err) {
-      setFormError(getErrorMessage(err))
+      if (err?.code === 'EMAIL_NOT_VERIFIED') {
+        onUnverified?.(values.email)
+      } else {
+        setFormError(getErrorMessage(err))
+      }
     }
   }
 
@@ -110,12 +113,9 @@ export function LoginForm({ onSuccess }) {
           />
           Remember me
         </label>
-        <a
-          href="#forgot-password"
-          className="font-semibold text-[#4f378a] underline-offset-4 hover:underline"
-        >
-          Forgot password?
-        </a>
+        <Link to="/otp-login" className="font-semibold text-[#4f378a] underline-offset-4 hover:underline">
+          Sign in with email code
+        </Link>
       </div>
 
       {formError ? (
@@ -133,34 +133,6 @@ export function LoginForm({ onSuccess }) {
         {isSubmitting ? null : <img src={arrowRight} alt="" className="size-4" />}
       </Button>
 
-      <div className="flex items-center py-4" aria-hidden="true">
-        <span className="h-px flex-1 bg-[#cbc4d2]" />
-        <span className="px-4 text-xs font-medium leading-4 text-[#494551]">
-          OR CONTINUE WITH
-        </span>
-        <span className="h-px flex-1 bg-[#cbc4d2]" />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <Button
-          type="button"
-          variant="outline"
-          className="h-12 gap-2 rounded-md border-[#cbc4d2] bg-white text-sm font-semibold tracking-[1.4px] text-[#1d1b20] hover:bg-[#f8f3fa]"
-          aria-label="Continue with Gmail"
-        >
-          <img src={googleIcon} alt="" className="size-5" />
-          Gmail
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="h-12 gap-2 rounded-md border-[#cbc4d2] bg-white text-sm font-semibold tracking-[1.4px] text-[#1d1b20] hover:bg-[#f8f3fa]"
-          aria-label="Continue with Facebook"
-        >
-          <img src={facebookIcon} alt="" className="size-5" />
-          Facebook
-        </Button>
-      </div>
     </form>
   )
 }
