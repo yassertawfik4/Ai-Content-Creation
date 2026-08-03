@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { HeroBackground } from './HeroBackground'
 
 const container = {
@@ -18,7 +18,29 @@ const item = {
 // streak sweeps across, and each letter collapses to scale:0 then rebuilds
 // in a staggered wave.
 const tagVariants = {
+  hidden: {
+    opacity: 0,
+    rotate: -8,
+    scale: 0.78,
+    y: 30,
+    backgroundColor: '#4f378a',
+  },
   rest: { rotate: -2, scale: 1, backgroundColor: '#4f378a' },
+  show: {
+    opacity: 1,
+    rotate: -2,
+    scale: 1,
+    y: 0,
+    backgroundColor: '#4f378a',
+    transition: {
+      type: 'spring',
+      stiffness: 180,
+      damping: 16,
+      delay: 0.22,
+      delayChildren: 0.36,
+      staggerChildren: 0.045,
+    },
+  },
   hover: {
     rotate: 0,
     scale: 1.06,
@@ -33,12 +55,28 @@ const tagVariants = {
 }
 
 const glossVariants = {
+  hidden: { x: '-160%' },
   rest: { x: '-160%' },
-  hover: { x: '160%', transition: { duration: 0.7, ease: 'easeInOut' } },
+  show: {
+    x: ['-160%', '160%'],
+    transition: { duration: 0.8, delay: 0.42, ease: 'easeInOut' },
+  },
+  hover: {
+    x: ['-160%', '160%'],
+    transition: { duration: 0.7, ease: 'easeInOut' },
+  },
 }
 
 const letterVariants = {
+  hidden: { opacity: 0, scale: 0.65, rotate: -12, y: 16 },
   rest: { scale: 1, rotate: 0, y: 0 },
+  show: {
+    opacity: 1,
+    scale: 1,
+    rotate: 0,
+    y: 0,
+    transition: { type: 'spring', stiffness: 300, damping: 18 },
+  },
   hover: {
     scale: [1, 0, 1],
     rotate: [0, 180, 360],
@@ -48,12 +86,14 @@ const letterVariants = {
 }
 
 function MarketingTag() {
+  const prefersReducedMotion = useReducedMotion()
+
   return (
     <motion.span
       aria-label="marketing"
-      initial="rest"
-      animate="rest"
-      whileHover="hover"
+      initial={prefersReducedMotion ? false : 'hidden'}
+      animate={prefersReducedMotion ? 'rest' : 'show'}
+      whileHover={prefersReducedMotion ? 'rest' : 'hover'}
       variants={tagVariants}
       className="relative inline-block cursor-default px-4 py-1 text-white shadow-lg shadow-[#4f378a]/30"
     >
