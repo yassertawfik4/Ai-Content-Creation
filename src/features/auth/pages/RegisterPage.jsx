@@ -28,7 +28,14 @@ export function RegisterPage() {
             </p>
           </header>
 
-          <RegisterForm onSuccess={() => navigate('/login')} />
+          <RegisterForm
+            onSuccess={(values) =>
+              navigate('/verify-email', {
+                replace: true,
+                state: { email: values.email },
+              })
+            }
+          />
 
           <p className="text-center text-sm leading-5 text-[#494551]">
             Already have an account?{' '}
