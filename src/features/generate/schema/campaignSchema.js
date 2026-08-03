@@ -1,10 +1,10 @@
 import { z } from 'zod'
 
-// Mirrors the backend `campaignBriefSchema` so the frontend validates exactly
-// what the workflow expects before hitting the API.
+// Shared UI schemas for the legacy campaign shape and the marketing workflow
+// handoff used by the connected generate flow.
 
 export const platformEnum = z.enum([
-  'twitter',
+  'x',
   'instagram',
   'linkedin',
   'facebook',
@@ -70,12 +70,54 @@ export const campaignOutputSchema = z.object({
       }),
     )
     .default([]),
+  sources: z.array(z.object({ url: z.string(), title: z.string(), retrievedAt: z.string().optional() })).optional(),
+  claimVerification: z.record(z.string(), z.unknown()).optional(),
+})
+
+export const marketingStrategyInputSchema = z.object({
+  description: z.string().trim().min(10, 'Add a product description of at least 10 characters'),
+  industry: z.string().trim().min(2, 'Industry is required'),
+  businessType: z.string().trim().min(2, 'Business type is required'),
+  targetMarket: z.string().trim().optional(),
+  pricing: z.string().trim().optional(),
+  additionalNotes: z.string().trim().optional(),
+  intake: z.object({
+    targetGeography: z.string().trim().min(1),
+    primaryIcp: z.string().trim().min(1),
+    salesMotion: z.enum(['self-serve', 'sales-led', 'hybrid', 'unknown']),
+    monthlyBudget: z.string().trim().min(1),
+    supportedIntegrations: z.array(z.string().trim().min(1)).min(1),
+    verifiedProofPoints: z.array(z.string().trim().min(1)).min(1),
+    prohibitedClaims: z.array(z.string().trim().min(1)).min(1),
+    baselineMetrics: z.object({
+      monthlyQualifiedVisits: z.string().trim().min(1),
+      monthlyLeads: z.string().trim().min(1),
+      trialOrDemoConversionRate: z.string().trim().min(1),
+      activationRate: z.string().trim().min(1),
+      paidConversionRate: z.string().trim().min(1),
+      monthlyChurnRate: z.string().trim().min(1),
+    }),
+  }),
+  options: z.object({
+    maxPersonas: z.number().int().min(1).max(3),
+    primaryGoal: z.enum(['awareness', 'lead-generation', 'conversion', 'retention', 'balanced']),
+  }),
+})
+
+export const marketingStrategyOutputSchema = z.object({
+  product: z.unknown(),
+  stp: z.unknown(),
+  personas: z.array(z.unknown()),
+  buyerJourney: z.array(z.unknown()),
+  smartObjectives: z.array(z.unknown()),
+  campaignStrategy: z.unknown(),
+  planQuality: z.unknown(),
 })
 
 // Helpers used by the form to translate between UI labels and brief values.
 export const PLATFORM_OPTIONS = [
   { id: 'instagram', label: 'Instagram' },
-  { id: 'twitter', label: 'X / Twitter' },
+  { id: 'x', label: 'X' },
   { id: 'linkedin', label: 'LinkedIn' },
   { id: 'facebook', label: 'Facebook' },
   { id: 'tiktok', label: 'TikTok' },
