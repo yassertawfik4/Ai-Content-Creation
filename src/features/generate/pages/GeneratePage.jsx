@@ -27,7 +27,8 @@ import {
   Video,
   Wand2,
 } from 'lucide-react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '@/hooks/useAuth'
 import {
   campaignBriefSchema,
   campaignOutputSchema,
@@ -110,6 +111,22 @@ const navLinks = [
 
 function AppHeader() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { user, logout } = useAuth()
+
+  const initials = user?.name
+    ? user.name
+        .split(' ')
+        .map((part) => part[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase()
+    : ''
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/')
+  }
 
   return (
     <header className="relative z-30 flex h-16 shrink-0 items-center border-b border-[#ded7e3] bg-[#fffaff]/95 px-4 backdrop-blur-xl sm:px-6">
@@ -159,10 +176,11 @@ function AppHeader() {
         ))}
         <button
           type="button"
+          onClick={handleLogout}
           className="ml-1 flex size-9 items-center justify-center rounded-full bg-[#e3d5f7] text-xs font-bold text-[#381e72] ring-1 ring-[#cbb9e3] transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] focus-visible:ring-offset-2"
-          aria-label="Open profile menu"
+          aria-label="Log out"
         >
-          YA
+          {initials || 'A'}
         </button>
       </div>
     </header>

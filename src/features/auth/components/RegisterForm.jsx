@@ -3,8 +3,6 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import arrowRight from '@/assets/auth/arrow-right.svg'
 import eyeIcon from '@/assets/auth/eye.svg'
-import facebookIcon from '@/assets/auth/facebook.svg'
-import googleIcon from '@/assets/auth/google.svg'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -143,32 +141,6 @@ export function RegisterForm({ onSuccess }) {
         )}
       </Button>
 
-      <div className="flex items-center py-4" aria-hidden="true">
-        <span className="h-px flex-1 bg-[#cbc4d2]" />
-        <span className="px-4 text-xs font-medium leading-4 text-[#494551]">
-          OR CONTINUE WITH
-        </span>
-        <span className="h-px flex-1 bg-[#cbc4d2]" />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <Button
-          type="button"
-          variant="outline"
-          className="h-12 gap-2 rounded-md border-[#cbc4d2] bg-white text-sm font-semibold tracking-[1.4px] text-[#1d1b20] hover:bg-[#f8f3fa]"
-        >
-          <img src={googleIcon} alt="" className="size-5" />
-          Google
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="h-12 gap-2 rounded-md border-[#cbc4d2] bg-white text-sm font-semibold tracking-[1.4px] text-[#1d1b20] hover:bg-[#f8f3fa]"
-        >
-          <img src={facebookIcon} alt="" className="size-5" />
-          Facebook
-        </Button>
-      </div>
     </form>
   )
 }

@@ -32,7 +32,10 @@ async function readError(res) {
 
 async function apiFetch(path, options = {}) {
   try {
-    return await fetch(`${getApiBase()}${path}`, options)
+    return await fetch(`${getApiBase()}${path}`, {
+      ...options,
+      credentials: 'include',
+    })
   } catch (error) {
     if (error?.name === 'AbortError') throw error
     throw new Error(

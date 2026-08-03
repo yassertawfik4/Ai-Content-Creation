@@ -1,37 +1,19 @@
-const DEFAULT_BASE = '/api'
+const DEFAULT_AUTH_BASE = '/api'
 
-const ACCESS_TOKEN_KEY = 'aetherflow.accessToken'
-const REFRESH_TOKEN_KEY = 'aetherflow.refreshToken'
-const USER_KEY = 'aetherflow.user'
+export class AuthApiError extends Error {
+  constructor(message, { code, status, data } = {}) {
+    super(message)
+    this.name = 'AuthApiError'
+    this.code = code
+    this.status = status
+    this.data = data
+  }
+}
 
 export function getAuthBase() {
-  const fromEnv = import.meta.env?.VITE_API_BASE_URL
-  const base = (fromEnv && String(fromEnv).trim()) || DEFAULT_BASE
+  const fromEnv = import.meta.env?.VITE_AUTH_API_BASE_URL
+  const base = (fromEnv && String(fromEnv).trim()) || DEFAULT_AUTH_BASE
   return base.replace(/\/$/, '')
-}
-
-export function getStoredTokens() {
-  if (typeof window === 'undefined') {
-    return { accessToken: null, refreshToken: null }
-  }
-  return {
-    accessToken: window.localStorage.getItem(ACCESS_TOKEN_KEY),
-    refreshToken: window.localStorage.getItem(REFRESH_TOKEN_KEY),
-  }
-}
-
-export function storeAuthData({ accessToken, refreshToken, user }) {
-  if (typeof window === 'undefined') return
-  if (accessToken) window.localStorage.setItem(ACCESS_TOKEN_KEY, accessToken)
-  if (refreshToken) window.localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
-  if (user) window.localStorage.setItem(USER_KEY, JSON.stringify(user))
-}
-
-export function clearAuthData() {
-  if (typeof window === 'undefined') return
-  window.localStorage.removeItem(ACCESS_TOKEN_KEY)
-  window.localStorage.removeItem(REFRESH_TOKEN_KEY)
-  window.localStorage.removeItem(USER_KEY)
 }
 
 export function getErrorMessage(error) {
@@ -41,7 +23,7 @@ export function getErrorMessage(error) {
   return 'Something went wrong. Please try again.'
 }
 
-function extractErrorMessage(data, fallback) {
+function extractError(data, fallback) {
   const message = data?.message
   if (Array.isArray(message)) {
     const joined = message.filter(Boolean).join('; ')
@@ -53,63 +35,79 @@ function extractErrorMessage(data, fallback) {
 }
 
 async function authFetch(path, options = {}) {
-  const { token, ...init } = options
-
-  let res
+  let response
   try {
-    res = await fetch(`${getAuthBase()}${path}`, {
-      ...init,
+    response = await fetch(`${getAuthBase()}${path}`, {
+      ...options,
+      credentials: 'include',
       headers: {
         Accept: 'application/json',
-        ...(init.body ? { 'Content-Type': 'application/json' } : {}),
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(init.headers || {}),
+        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+        ...(options.headers || {}),
       },
     })
   } catch (error) {
     if (error?.name === 'AbortError') throw error
-    throw new Error(
+    throw new AuthApiError(
       `Cannot reach the authentication API at ${getAuthBase()}. ` +
-        'Check that the server is running and allows requests from this origin (CORS).',
-      { cause: error },
+        'Check that the server is running and allows credentialed requests from this origin.',
+      { data: error },
     )
   }
 
-  const data = await res.json().catch(() => null)
-  if (!res.ok) {
-    throw new Error(extractErrorMessage(data, `Request failed with status ${res.status}`))
+  const data = await response.json().catch(() => null)
+  if (!response.ok) {
+    throw new AuthApiError(
+      extractError(data, `Request failed with status ${response.status}`),
+      { code: data?.code, status: response.status, data },
+    )
   }
   return data
 }
 
-export function login({ email, password }) {
-  return authFetch('/auth/login', {
+export function signUpEmail({ name, email, password, image, callbackURL, rememberMe }) {
+  return authFetch('/auth/sign-up/email', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ name, email, password, image, callbackURL, rememberMe }),
   })
 }
 
-export function register({ name, email, password }) {
-  return authFetch('/auth/register', {
+export function signInEmail({ email, password, callbackURL, rememberMe }) {
+  return authFetch('/auth/sign-in/email', {
     method: 'POST',
-    body: JSON.stringify({ name, email, password }),
+    body: JSON.stringify({ email, password, callbackURL, rememberMe }),
   })
 }
 
-export function getCurrentUser(accessToken) {
-  return authFetch('/auth/me', { token: accessToken })
+export function signOut() {
+  return authFetch('/auth/sign-out', { method: 'POST' })
 }
 
-export function refreshToken(refreshTokenValue) {
-  return authFetch('/auth/refresh', {
+export function getSession({ disableCookieCache, disableRefresh } = {}) {
+  const params = new URLSearchParams()
+  if (disableCookieCache) params.set('disableCookieCache', 'true')
+  if (disableRefresh) params.set('disableRefresh', 'true')
+  const query = params.size ? `?${params.toString()}` : ''
+  return authFetch(`/auth/session${query}`)
+}
+
+export function sendVerificationOtp({ email, type }) {
+  return authFetch('/auth/email-otp/send-verification-otp', {
     method: 'POST',
-    body: JSON.stringify({ refreshToken: refreshTokenValue }),
+    body: JSON.stringify({ email, type }),
   })
 }
 
-export function logout(accessToken) {
-  return authFetch('/auth/logout', {
+export function verifyEmailOtp({ email, otp }) {
+  return authFetch('/auth/email-otp/verify-email', {
     method: 'POST',
-    token: accessToken,
+    body: JSON.stringify({ email, otp }),
+  })
+}
+
+export function signInEmailOtp({ email, otp, name, image }) {
+  return authFetch('/auth/sign-in/email-otp', {
+    method: 'POST',
+    body: JSON.stringify({ email, otp, name, image }),
   })
 }

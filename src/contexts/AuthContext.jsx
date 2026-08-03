@@ -4,23 +4,24 @@ import * as authApi from '@/lib/authApi'
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [storedToken] = useState(() => authApi.getStoredTokens().accessToken)
   const [user, setUser] = useState(null)
-  const [isLoading, setIsLoading] = useState(Boolean(storedToken))
+  const [isLoading, setIsLoading] = useState(true)
+
+  const refreshSession = useCallback(async (options = {}) => {
+    const data = await authApi.getSession(options)
+    setUser(data?.user ?? null)
+    return data
+  }, [])
 
   useEffect(() => {
-    if (!storedToken) return undefined
-
     let active = true
     authApi
-      .getCurrentUser(storedToken)
-      .then((currentUser) => {
-        if (!active) return
-        setUser(currentUser)
-        authApi.storeAuthData({ user: currentUser })
+      .getSession()
+      .then((data) => {
+        if (active) setUser(data?.user ?? null)
       })
       .catch(() => {
-        if (active) authApi.clearAuthData()
+        if (active) setUser(null)
       })
       .finally(() => {
         if (active) setIsLoading(false)
@@ -29,42 +30,51 @@ export function AuthProvider({ children }) {
     return () => {
       active = false
     }
-  }, [storedToken])
+  }, [refreshSession])
 
-  const login = useCallback(async ({ email, password }) => {
-    const data = await authApi.login({ email, password })
-    authApi.storeAuthData({
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
-      user: data.user,
+  const login = useCallback(async ({ email, password, rememberMe }) => {
+    const data = await authApi.signInEmail({
+      email,
+      password,
+      callbackURL: window.location.origin,
+      rememberMe,
     })
-    setUser(data.user)
-    return data.user
+    setUser(data?.user ?? null)
+    return data?.user ?? null
   }, [])
 
   const register = useCallback(async ({ name, email, password }) => {
-    const data = await authApi.register({ name, email, password })
-    authApi.storeAuthData({
-      accessToken: data.accessToken,
-      refreshToken: data.refreshToken,
-      user: data.user,
+    const data = await authApi.signUpEmail({
+      name,
+      email,
+      password,
+      callbackURL: window.location.origin,
     })
-    setUser(data.user)
-    return data.user
+    setUser(null)
+    return data?.user ?? null
   }, [])
 
-  const logout = useCallback(() => {
-    const { accessToken } = authApi.getStoredTokens()
-    authApi.clearAuthData()
-    setUser(null)
-    if (accessToken) {
-      authApi.logout(accessToken).catch(() => {})
+  const logout = useCallback(async () => {
+    try {
+      await authApi.signOut()
+    } catch {
+      // The local session state must still be cleared if the server is unreachable.
+    } finally {
+      setUser(null)
     }
   }, [])
 
   const value = useMemo(
-    () => ({ user, isAuthenticated: Boolean(user), isLoading, login, register, logout }),
-    [user, isLoading, login, register, logout],
+    () => ({
+      user,
+      isAuthenticated: Boolean(user),
+      isLoading,
+      login,
+      register,
+      logout,
+      refreshSession,
+    }),
+    [user, isLoading, login, register, logout, refreshSession],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
