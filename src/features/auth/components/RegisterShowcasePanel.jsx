@@ -57,22 +57,18 @@ function AgentPill({ label, icon, className, delay }) {
 
 export function RegisterShowcasePanel() {
   return (
-    <section className="relative hidden min-h-[400px] min-w-0 flex-1 items-center justify-center overflow-x-hidden overflow-y-auto bg-[#22005c] px-12 py-16 xl:flex">
+    <section className="relative hidden h-dvh min-w-0 flex-1 items-center justify-center overflow-hidden bg-[#22005c] px-8 py-8 2xl:px-12 2xl:py-10 xl:flex">
       <span className="pointer-events-none absolute -bottom-16 -left-16 size-64 rounded-full bg-[#4f378a]/20 blur-3xl" />
       <span className="pointer-events-none absolute -right-16 -top-16 size-64 rounded-full bg-[#381e72]/20 blur-3xl" />
 
-      <div className="relative flex w-full max-w-[672px] flex-col items-center">
-        <header className="flex flex-col items-center gap-[15px] pb-12 text-center">
-          <h2 className="font-display whitespace-nowrap text-[57px] font-bold leading-16 tracking-[-0.57px] text-[#e9ddff]">
+      <div className="auth-showcase-content relative flex w-full max-w-[672px] flex-col items-center">
+        <header className="flex flex-col items-center gap-3 pb-8 text-center 2xl:gap-[15px] 2xl:pb-10">
+          <h2 className="font-display text-[clamp(38px,3.2vw,57px)] font-bold leading-[1.1] tracking-[-0.57px] text-[#e9ddff]">
             Meet your new{' '}
             <em className="text-[#a38ae3]">workforce.</em>
           </h2>
-          <p className="text-lg leading-[28.8px] tracking-[0.15px] text-[#d0bcff]">
-            AetherFlow AI provides a specialized pod of intelligent
-            <br />
-            agents designed to scale your marketing from insight to
-            <br />
-            execution.
+          <p className="max-w-[560px] text-base leading-7 tracking-[0.15px] text-[#d0bcff] 2xl:text-lg 2xl:leading-[28.8px]">
+            AetherFlow AI provides a specialized pod of intelligent agents designed to scale your marketing from insight to execution.
           </p>
         </header>
 
@@ -110,7 +106,7 @@ export function RegisterShowcasePanel() {
           </div>
         </div>
 
-        <div className="pt-16">
+        <div className="pt-10 2xl:pt-12">
           <div className="auth-control-badge flex items-center overflow-hidden rounded-full border border-[#381e72]/50 bg-white/40 px-6 py-3 text-sm leading-5 text-[#e9ddff] backdrop-blur-md">
             <img src={shieldIcon} alt="" className="h-5 w-4 shrink-0" />
             <span className="pl-3 whitespace-nowrap">

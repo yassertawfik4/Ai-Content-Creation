@@ -104,7 +104,7 @@ export function LoginForm({ onSuccess, onUnverified }) {
         ) : null}
       </div>
 
-      <div className="flex w-full items-center justify-between text-sm text-[#494551]">
+      <div className="flex w-full flex-col items-start gap-3 text-sm text-[#494551] sm:flex-row sm:items-center sm:justify-between">
         <label className="flex cursor-pointer items-center gap-2">
           <Checkbox
             checked={rememberMe}
