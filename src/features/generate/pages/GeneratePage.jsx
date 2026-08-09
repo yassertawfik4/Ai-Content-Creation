@@ -59,8 +59,6 @@ import {
   PLATFORM_OPTIONS,
 } from '../schema/campaignSchema'
 import {
-  cancelContent,
-  cancelStrategy,
   createChat,
   createProject,
   deleteChat,
@@ -71,6 +69,7 @@ import {
   renameProject,
   startContent,
   startStrategy,
+  subscribeToWorkflow,
   waitForContent,
   waitForStrategy,
 } from '@/lib/campaignApi'
@@ -1950,6 +1949,17 @@ function fieldErrorsFromZod(issue) {
   return { [key]: issue.message }
 }
 
+function mergeWorkflowStatus(current, next) {
+  return {
+    ...current,
+    ...next,
+    // Polling returns durable status/result but no Mastra step graph. Retain
+    // the SSE snapshot until a newer SSE event advances it.
+    activeSteps: next.activeSteps?.length ? next.activeSteps : (current?.activeSteps ?? []),
+    completedSteps: next.completedSteps?.length ? next.completedSteps : (current?.completedSteps ?? []),
+  }
+}
+
 export function GeneratePage() {
   const [restoredState] = useState(() => readGenerateState())
   const [projects, setProjects] = useState([])
@@ -1958,6 +1968,7 @@ export function GeneratePage() {
   const [activeChat, setActiveChat] = useState(() => restoredState?.activeChat ?? '')
   const [campaign, setCampaign] = useState(() => restoredState?.campaign ?? null)
   const [strategy, setStrategy] = useState(() => restoredState?.strategy ?? null)
+  const [strategyRunId, setStrategyRunId] = useState(() => restoredState?.strategyRunId ?? '')
   const [phase, setPhase] = useState(() => {
     if (restoredState?.activeRunId && (restoredState.phase === 'strategy' || restoredState.phase === 'content')) return restoredState.phase
     return restoredState?.campaign ? 'complete' : restoredState?.strategy ? 'review' : 'idle'
@@ -1976,6 +1987,7 @@ export function GeneratePage() {
   const [mobileProjectName, setMobileProjectName] = useState('')
   const [chatPendingDelete, setChatPendingDelete] = useState(null)
   const abortRef = useRef(null)
+  const sseHealthyRef = useRef(false)
   const cancelMobileRenameRef = useRef(false)
 
   const currentProject = projects.find((project) => project.id === activeProject) ?? projects[0] ?? EMPTY_PROJECT
@@ -1987,6 +1999,23 @@ export function GeneratePage() {
   const restoredChatId = restoredState?.activeChat
 
   useEffect(() => () => abortRef.current?.abort(), [])
+
+  // Live agent progress arrives over SSE. `waitForStrategy`/`waitForContent`
+  // still poll the persisted run as a reconnect-safe fallback and to retrieve
+  // the full final result.
+  useEffect(() => {
+    if (!activeRunId || (phase !== 'strategy' && phase !== 'content')) return undefined
+    sseHealthyRef.current = false
+    return subscribeToWorkflow(phase, activeRunId, {
+      onProgress: (progress) => {
+        sseHealthyRef.current = progress.status !== 'success' && progress.status !== 'failed' && progress.status !== 'suspended'
+        setRunState(progress)
+      },
+      onError: () => {
+        sseHealthyRef.current = false
+      },
+    })
+  }, [activeRunId, phase])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -2006,7 +2035,10 @@ export function GeneratePage() {
         setProjects(loadedProjects.map((project) => project.id === selectedProject.id ? { ...project, chatCount: loadedChats.length } : project))
         setActiveProject(selectedProject.id)
         setChats(loadedChats)
-        setActiveChat(loadedChats.some((chat) => chat.id === restoredChatId) ? restoredChatId : loadedChats[0].id)
+        const selectedChatId = loadedChats.some((chat) => chat.id === restoredChatId) ? restoredChatId : loadedChats[0].id
+        setActiveChat(selectedChatId)
+        const history = await getChatHistory(selectedProject.id, selectedChatId, { signal: controller.signal })
+        restoreChatHistory(history)
       } catch (loadError) {
         if (loadError?.name !== 'AbortError') {
           setError(typeof loadError?.message === 'string' ? loadError.message : 'Could not load projects from the backend.')
@@ -2015,6 +2047,8 @@ export function GeneratePage() {
     }
     void loadProjects()
     return () => controller.abort()
+    // The restore helpers only use stable React state setters and schemas.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restoredChatId, restoredProjectId])
 
   useEffect(() => {
@@ -2030,8 +2064,8 @@ export function GeneratePage() {
     const resumeRun = async () => {
       try {
         const finalState = phase === 'strategy'
-          ? await waitForStrategy(activeRunId, { signal: controller.signal, onTick: (state) => setRunState(state) })
-          : await waitForContent(activeRunId, { signal: controller.signal, onTick: (state) => setRunState(state) })
+          ? await waitForStrategy(activeRunId, { signal: controller.signal, shouldPoll: () => !sseHealthyRef.current, onTick: (state) => setRunState((current) => mergeWorkflowStatus(current, state)) })
+          : await waitForContent(activeRunId, { signal: controller.signal, shouldPoll: () => !sseHealthyRef.current, onTick: (state) => setRunState((current) => mergeWorkflowStatus(current, state)) })
         setRunState(finalState)
 
         if (finalState.status === 'failed') {
@@ -2044,6 +2078,7 @@ export function GeneratePage() {
           const parsedResult = marketingStrategyOutputSchema.safeParse(finalState.result)
           if (!parsedResult.success) throw new Error('The restored strategy response did not match the strategy schema.')
           setStrategy(parsedResult.data)
+          setStrategyRunId(activeRunId)
           setPhase('review')
         } else if (finalState.result && phase === 'content') {
           const parsedResult = campaignOutputSchema.safeParse(finalState.result)
@@ -2081,13 +2116,14 @@ export function GeneratePage() {
         campaign,
         phase,
         strategy,
+        strategyRunId,
         submittedValues,
         values,
       }))
     } catch {
       // Persistence is best-effort when storage is disabled or unavailable.
     }
-  }, [activeChat, activeProject, activeRunId, campaign, phase, strategy, submittedValues, values])
+  }, [activeChat, activeProject, activeRunId, campaign, phase, strategy, strategyRunId, submittedValues, values])
 
   const refreshProjectNavigation = () => {
     if (!activeProject) return
@@ -2099,22 +2135,40 @@ export function GeneratePage() {
       .catch(() => undefined)
   }
 
-  const restoreHistoryEntry = (entry) => {
+  function restoreHistoryEntry(entry) {
     if (!entry?.result) return false
     if (entry.kind === 'content') {
       const parsed = campaignOutputSchema.safeParse(entry.result)
       if (!parsed.success) return false
       setCampaign(parsed.data)
       setStrategy(null)
+      setStrategyRunId('')
       setPhase('complete')
       return true
     }
     const parsed = marketingStrategyOutputSchema.safeParse(entry.result)
     if (!parsed.success) return false
     setStrategy(parsed.data)
+    setStrategyRunId(entry.id ?? '')
     setCampaign(null)
     setPhase('review')
     return true
+  }
+
+  function restoreChatHistory(entries) {
+    const active = entries.find((entry) => entry.status === 'running' && (entry.kind === 'strategy' || entry.kind === 'content'))
+    if (active?.id) {
+      setCampaign(null)
+      setStrategy(null)
+      setStrategyRunId('')
+      setPhase(active.kind)
+      setActiveRunId(active.id)
+      setRunState({ status: 'running', activeSteps: [], completedSteps: [] })
+      return true
+    }
+
+    const latestSuccess = entries.find((entry) => entry.status === 'success' && entry.result)
+    return latestSuccess ? restoreHistoryEntry(latestSuccess) : false
   }
 
   const handleNewProject = async () => {
@@ -2128,6 +2182,7 @@ export function GeneratePage() {
       setValues({ ...EMPTY_VALUES })
       setCampaign(null)
       setStrategy(null)
+      setStrategyRunId('')
       setSubmittedValues(null)
       setPhase('idle')
       setRunState(null)
@@ -2150,14 +2205,14 @@ export function GeneratePage() {
       setActiveChat(projectChats[0].id)
       setCampaign(null)
       setStrategy(null)
+      setStrategyRunId('')
       setSubmittedValues(null)
       setPhase('idle')
       setRunState(null)
       setHistoryOpen(false)
       setError('')
       const projectChatHistory = await getChatHistory(projectId, projectChats[0].id)
-      const latestSuccess = projectChatHistory.find((entry) => entry.status === 'success' && entry.result)
-      if (latestSuccess) restoreHistoryEntry(latestSuccess)
+      restoreChatHistory(projectChatHistory)
     } catch (selectError) {
       setError(typeof selectError?.message === 'string' ? selectError.message : 'Could not open the project.')
     }
@@ -2213,6 +2268,7 @@ export function GeneratePage() {
       setActiveChat(nextChats[0].id)
       setCampaign(null)
       setStrategy(null)
+      setStrategyRunId('')
       setSubmittedValues(null)
       setPhase('idle')
       setRunState(null)
@@ -2232,6 +2288,7 @@ export function GeneratePage() {
       setActiveChat(chat.id)
       setCampaign(null)
       setStrategy(null)
+      setStrategyRunId('')
       setSubmittedValues(null)
       setPhase('idle')
       setRunState(null)
@@ -2259,14 +2316,14 @@ export function GeneratePage() {
         setActiveChat(nextChat.id)
         setCampaign(null)
         setStrategy(null)
+        setStrategyRunId('')
         setSubmittedValues(null)
         setPhase('idle')
         setRunState(null)
         setHistoryOpen(false)
         const nextHistory = await getChatHistory(activeProject, nextChat.id)
         setHistoryEntries(nextHistory)
-        const latestSuccess = nextHistory.find((entry) => entry.status === 'success' && entry.result)
-        if (latestSuccess) restoreHistoryEntry(latestSuccess)
+        restoreChatHistory(nextHistory)
       }
       setError('')
     } catch (chatError) {
@@ -2281,6 +2338,7 @@ export function GeneratePage() {
     setActiveChat(chatId)
     setCampaign(null)
     setStrategy(null)
+    setStrategyRunId('')
     setSubmittedValues(null)
     setPhase('idle')
     setRunState(null)
@@ -2289,8 +2347,7 @@ export function GeneratePage() {
     try {
       const chatHistory = await getChatHistory(activeProject, chatId)
       setHistoryEntries(chatHistory)
-      const latestSuccess = chatHistory.find((entry) => entry.status === 'success' && entry.result)
-      if (latestSuccess) restoreHistoryEntry(latestSuccess)
+      restoreChatHistory(chatHistory)
     } catch (chatError) {
       setError(typeof chatError?.message === 'string' ? chatError.message : 'Could not load the chat.')
     }
@@ -2344,12 +2401,14 @@ export function GeneratePage() {
     }
 
     abortRef.current?.abort()
+    sseHealthyRef.current = false
     const controller = new AbortController()
     abortRef.current = controller
 
     setPhase('strategy')
     setCampaign(null)
     setStrategy(null)
+    setStrategyRunId('')
     setSubmittedValues({ ...values, platforms: [...values.platforms] })
     setRunState({
       status: 'running',
@@ -2362,9 +2421,10 @@ export function GeneratePage() {
 
       const finalState = await waitForStrategy(runId, {
         signal: controller.signal,
+        shouldPoll: () => !sseHealthyRef.current,
         intervalMs: 1500,
         maxAttempts: 600,
-        onTick: (state) => setRunState(state),
+        onTick: (state) => setRunState((current) => mergeWorkflowStatus(current, state)),
       })
 
       setRunState(finalState)
@@ -2382,6 +2442,7 @@ export function GeneratePage() {
           throw new Error('The strategy workflow completed, but its response did not match the strategy schema.')
         }
         setStrategy(parsedResult.data)
+        setStrategyRunId(runId)
         setPhase('review')
         refreshProjectNavigation()
       } else {
@@ -2400,8 +2461,7 @@ export function GeneratePage() {
     if (!strategy || isGenerating) return
 
     const sourceValues = submittedValues ?? values
-    const campaignStrategy = strategy.campaignStrategy
-    if (!campaignStrategy || typeof campaignStrategy !== 'object') {
+    if (!strategyRunId) {
       setError('The strategy did not include a campaign plan to send to the content workflow.')
       return
     }
@@ -2418,8 +2478,6 @@ export function GeneratePage() {
       brandName: sourceValues.brandName,
       product: sourceValues.product,
       targetAudience: sourceValues.targetAudience || strategy.campaignStrategy.audienceStrategy.primaryAudience,
-      campaignStrategy,
-      marketingStrategy: strategy,
       platforms: sourceValues.platforms,
       duration: sourceValues.duration,
       postsPerWeek: sourceValues.postsPerWeek,
@@ -2428,13 +2486,14 @@ export function GeneratePage() {
     }
 
     try {
-      const { runId } = await startContent(contentInput, { signal: controller.signal, projectId: activeProject, chatId: activeChat })
+      const { runId } = await startContent(contentInput, { signal: controller.signal, chatId: activeChat, strategyId: strategyRunId })
       setActiveRunId(runId)
       const finalState = await waitForContent(runId, {
         signal: controller.signal,
+        shouldPoll: () => !sseHealthyRef.current,
         intervalMs: 1500,
         maxAttempts: 600,
-        onTick: (state) => setRunState(state),
+        onTick: (state) => setRunState((current) => mergeWorkflowStatus(current, state)),
       })
 
       setRunState(finalState)
@@ -2467,6 +2526,7 @@ export function GeneratePage() {
   const handleEditStrategy = () => {
     abortRef.current?.abort()
     setStrategy(null)
+    setStrategyRunId('')
     setCampaign(null)
     setPhase('idle')
     setRunState(null)
@@ -2474,17 +2534,10 @@ export function GeneratePage() {
     window.setTimeout(() => document.querySelector('#product')?.focus(), 50)
   }
 
-  const handleCancel = async () => {
-    const runId = activeRunId
-    if (runId) {
-      try {
-        const state = phase === 'strategy' ? await cancelStrategy(runId) : await cancelContent(runId)
-        setRunState(state)
-      } catch (err) {
-        setError(typeof err?.message === 'string' ? err.message : 'Could not cancel the workflow.')
-      }
-    }
+  const handleCancel = () => {
     abortRef.current?.abort()
+    sseHealthyRef.current = false
+    setError('Stopped waiting for this run. It continues in the background and remains available in history.')
     setPhase(phase === 'content' ? 'review' : 'idle')
     setActiveRunId('')
   }

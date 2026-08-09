@@ -1,16 +1,6 @@
-// Tiny client for the marketing workflow API served by ../marketing-workflow-demo.
-// The server exposes:
-//   POST /api/strategy            -> 202 { runId, status }
-//   GET  /api/strategy/:runId     -> 200 { status, result?, error? }
-//   POST /api/content             -> 202 { runId, status }
-//   GET  /api/content/:runId      -> 200 { status, result?, error? }
-//
-// On content success, `result` is the content workflow output:
-//   - strategy: { coreNarrative, contentPillars[], tonePerPlatform, rationale }
-//   - calendar: [{ date, platform, caption, hashtags[], visualPrompt, imageUrl?, cta }]
-//   - notes:    [{ postId?, severity: 'info'|'warning'|'error', message, resolved }]
-
-const DEFAULT_BASE = 'http://localhost:4112/api'
+// Browser client for the Nest application API. The Mastra service is reached
+// by Nest workers only; it is never a browser data source.
+const DEFAULT_BASE = '/api'
 
 export function getApiBase() {
   const fromEnv = import.meta.env?.VITE_API_BASE_URL
@@ -21,14 +11,13 @@ export function getApiBase() {
 async function readError(res) {
   try {
     const data = await res.json()
-    if (Array.isArray(data?.details)) {
-      return data.details.map((issue) => issue?.message ?? JSON.stringify(issue)).join('; ')
-    }
-    if (data?.error) return data.error
-    return `Request failed with status ${res.status}`
+    if (Array.isArray(data?.message)) return data.message.join('; ')
+    if (typeof data?.message === 'string') return data.message
+    if (typeof data?.error === 'string') return data.error
   } catch {
-    return `Request failed with status ${res.status}`
+    // Keep the status fallback below for non-JSON responses.
   }
+  return `Request failed with status ${res.status}`
 }
 
 async function apiFetch(path, options = {}) {
@@ -40,203 +29,158 @@ async function apiFetch(path, options = {}) {
   } catch (error) {
     if (error?.name === 'AbortError') throw error
     throw new Error(
-      `Cannot reach the workflow API at ${getApiBase()}. ` +
-        'Check VITE_API_BASE_URL and make sure the marketing workflow server is running.',
+      `Cannot reach the application API at ${getApiBase()}. ` +
+        'Check VITE_API_BASE_URL and make sure the backend is running.',
       { cause: error },
     )
   }
 }
 
-export async function startCampaign(brief, { signal } = {}) {
-  const res = await apiFetch('/campaign', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(brief),
-    signal,
-  })
-
-  if (!res.ok) {
-    throw new Error(await readError(res))
-  }
-
-  const data = await res.json()
-  if (!data?.runId) {
-    throw new Error('Server responded without a runId')
-  }
-  return { runId: data.runId, status: data.status }
-}
-
-async function startWorkflow(kind, input, { signal, projectId, chatId } = {}) {
-  const res = await apiFetch(`/${kind}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(projectId ? { ...input, projectId, ...(chatId ? { chatId } : {}) } : input),
-    signal,
-  })
-
+async function request(path, options = {}) {
+  const res = await apiFetch(path, options)
   if (!res.ok) throw new Error(await readError(res))
-
-  const data = await res.json()
-  if (!data?.runId) throw new Error(`Server responded without a ${kind} run id`)
-  return { runId: data.runId, status: data.status }
+  if (res.status === 204) return undefined
+  return res.json()
 }
 
-export function startStrategy(input, options = {}) {
-  return startWorkflow('strategy', input, options)
+function asChat(campaign) {
+  return {
+    id: campaign.id,
+    title: campaign.name,
+    historyCount: 0,
+  }
 }
 
-export function startContent(input, options = {}) {
-  return startWorkflow('content', input, options)
+function workflowState(record) {
+  const statusByBackendStatus = {
+    PENDING: 'running',
+    RUNNING: 'running',
+    SUSPENDED: 'suspended',
+    READY: 'success',
+    FAILED: 'failed',
+  }
+  return {
+    ...record,
+    status: statusByBackendStatus[record.status] ?? 'failed',
+    result: record.output,
+  }
 }
 
 export async function listProjects({ signal } = {}) {
-  const res = await apiFetch('/projects', { headers: { Accept: 'application/json' }, signal })
-  if (!res.ok) throw new Error(await readError(res))
-  const data = await res.json()
-  return Array.isArray(data?.projects) ? data.projects : []
+  const data = await request('/projects?limit=100', { headers: { Accept: 'application/json' }, signal })
+  return Array.isArray(data?.items) ? data.items.map((project) => ({
+    ...project,
+    color: '#d0bcff',
+    chatCount: project._count?.campaigns ?? 0,
+    historyCount: 0,
+  })) : []
 }
 
-export async function createProject(name, { signal } = {}) {
-  const res = await apiFetch('/projects', {
+export function createProject(name, { signal } = {}) {
+  return request('/projects', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name }),
     signal,
   })
-  if (!res.ok) throw new Error(await readError(res))
-  const data = await res.json()
-  if (!data?.project) throw new Error('Server responded without a project')
-  return data.project
 }
 
-export async function renameProject(projectId, name, { signal } = {}) {
-  const res = await apiFetch(`/projects/${encodeURIComponent(projectId)}`, {
+export function renameProject(projectId, name, { signal } = {}) {
+  return request(`/projects/${encodeURIComponent(projectId)}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name }),
     signal,
   })
-  if (!res.ok) throw new Error(await readError(res))
-  const data = await res.json()
-  if (!data?.project) throw new Error('Server responded without a project')
-  return data.project
 }
 
-export async function deleteProject(projectId, { signal } = {}) {
-  const res = await apiFetch(`/projects/${encodeURIComponent(projectId)}`, { method: 'DELETE', signal })
-  if (!res.ok) throw new Error(await readError(res))
+export function deleteProject(projectId, { signal } = {}) {
+  return request(`/projects/${encodeURIComponent(projectId)}`, { method: 'DELETE', signal })
 }
 
+// The UI's pre-existing "chat" terminology is now a campaign. Keeping this
+// small adapter avoids a visual rewrite while moving all state to PostgreSQL.
 export async function listChats(projectId, { signal } = {}) {
-  const res = await apiFetch(`/projects/${encodeURIComponent(projectId)}/chats`, {
+  const data = await request(`/projects/${encodeURIComponent(projectId)}/campaigns?limit=100`, {
     headers: { Accept: 'application/json' },
     signal,
   })
-  if (!res.ok) throw new Error(await readError(res))
-  const data = await res.json()
-  return Array.isArray(data?.chats) ? data.chats : []
+  return Array.isArray(data?.items) ? data.items.map(asChat) : []
 }
 
 export async function createChat(projectId, title, { signal } = {}) {
-  const res = await apiFetch(`/projects/${encodeURIComponent(projectId)}/chats`, {
+  const campaign = await request(`/projects/${encodeURIComponent(projectId)}/campaigns`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title }),
+    body: JSON.stringify({ name: title }),
     signal,
   })
-  if (!res.ok) throw new Error(await readError(res))
-  const data = await res.json()
-  if (!data?.chat) throw new Error('Server responded without a chat')
-  return data.chat
+  return asChat(campaign)
 }
 
-export async function deleteChat(projectId, chatId, { signal } = {}) {
-  const res = await apiFetch(`/projects/${encodeURIComponent(projectId)}/chats/${encodeURIComponent(chatId)}`, {
-    method: 'DELETE',
-    signal,
-  })
-  if (!res.ok) throw new Error(await readError(res))
+export function deleteChat(_projectId, campaignId, { signal } = {}) {
+  return request(`/campaigns/${encodeURIComponent(campaignId)}`, { method: 'DELETE', signal })
 }
 
 export async function getProjectHistory(projectId, { signal } = {}) {
-  const res = await apiFetch(`/projects/${encodeURIComponent(projectId)}/history`, {
+  return request(`/projects/${encodeURIComponent(projectId)}/history`, {
     headers: { Accept: 'application/json' },
     signal,
   })
-  if (!res.ok) throw new Error(await readError(res))
-  const data = await res.json()
-  return Array.isArray(data?.history) ? data.history : []
 }
 
-export async function getChatHistory(projectId, chatId, { signal } = {}) {
-  const res = await apiFetch(`/projects/${encodeURIComponent(projectId)}/chats/${encodeURIComponent(chatId)}/history`, {
+export function getChatHistory(_projectId, campaignId, { signal } = {}) {
+  return request(`/campaigns/${encodeURIComponent(campaignId)}/history`, {
     headers: { Accept: 'application/json' },
     signal,
   })
-  if (!res.ok) throw new Error(await readError(res))
-  const data = await res.json()
-  return Array.isArray(data?.history) ? data.history : []
 }
 
-export async function getCampaign(runId, { signal } = {}) {
-  const res = await apiFetch(`/campaign/${encodeURIComponent(runId)}`, {
-    headers: { Accept: 'application/json' },
-    signal,
-  })
-  if (!res.ok) {
-    throw new Error(await readError(res))
-  }
-  return res.json()
-}
-
-export async function cancelCampaign(runId, { signal } = {}) {
-  const res = await apiFetch(`/campaign/${encodeURIComponent(runId)}/cancel`, {
+export async function startStrategy(input, { signal, chatId: campaignId } = {}) {
+  if (!campaignId) throw new Error('Choose a campaign before starting a strategy.')
+  const record = await request(`/campaigns/${encodeURIComponent(campaignId)}/strategy`, {
     method: 'POST',
-    headers: { Accept: 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
     signal,
   })
-  if (!res.ok) {
-    throw new Error(await readError(res))
-  }
-  return res.json()
+  return { runId: record.id, status: workflowState(record).status }
 }
 
-async function getWorkflow(kind, runId, { signal } = {}) {
-  const res = await apiFetch(`/${kind}/${encodeURIComponent(runId)}`, {
-    headers: { Accept: 'application/json' },
-    signal,
-  })
-  if (!res.ok) throw new Error(await readError(res))
-  return res.json()
-}
-
-async function cancelWorkflow(kind, runId, { signal } = {}) {
-  const res = await apiFetch(`/${kind}/${encodeURIComponent(runId)}/cancel`, {
+export async function startContent(input, { signal, chatId: campaignId, strategyId } = {}) {
+  if (!campaignId) throw new Error('Choose a campaign before creating content.')
+  if (!strategyId) throw new Error('Choose a completed strategy before creating content.')
+  const record = await request(`/campaigns/${encodeURIComponent(campaignId)}/content-runs`, {
     method: 'POST',
-    headers: { Accept: 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...input, strategyId }),
     signal,
   })
-  if (!res.ok) throw new Error(await readError(res))
-  return res.json()
+  return { runId: record.id, status: workflowState(record).status }
 }
 
-export function getStrategy(runId, options = {}) {
-  return getWorkflow('strategy', runId, options)
+async function getWorkflow(kind, id, { signal } = {}) {
+  const path = kind === 'strategy' ? `/strategies/${encodeURIComponent(id)}` : `/content-runs/${encodeURIComponent(id)}`
+  return workflowState(await request(path, { headers: { Accept: 'application/json' }, signal }))
 }
 
-export function getContent(runId, options = {}) {
-  return getWorkflow('content', runId, options)
+// SSE supplies immediate agent/step updates. The existing wait helpers remain
+// the durable fallback and retrieve the final persisted output.
+export function subscribeToWorkflow(kind, runId, { onProgress, onError } = {}) {
+  const path = kind === 'strategy' ? `/strategies/${encodeURIComponent(runId)}/events` : `/content-runs/${encodeURIComponent(runId)}/events`
+  const source = new EventSource(`${getApiBase()}${path}`, { withCredentials: true })
+  source.onmessage = (event) => {
+    try {
+      onProgress?.(JSON.parse(event.data))
+    } catch {
+      // Ignore a malformed progress event; polling will still recover state.
+    }
+  }
+  source.onerror = () => onError?.()
+  return () => source.close()
 }
 
-export function cancelStrategy(runId, options = {}) {
-  return cancelWorkflow('strategy', runId, options)
-}
-
-export function cancelContent(runId, options = {}) {
-  return cancelWorkflow('content', runId, options)
-}
-
-export const TERMINAL_STATES = new Set(['success', 'failed', 'canceled'])
+export const TERMINAL_STATES = new Set(['success', 'failed'])
 
 function abortableDelay(ms, signal) {
   return new Promise((resolve, reject) => {
@@ -244,7 +188,6 @@ function abortableDelay(ms, signal) {
       reject(new DOMException('Aborted', 'AbortError'))
       return
     }
-
     const onAbort = () => {
       window.clearTimeout(timer)
       reject(new DOMException('Aborted', 'AbortError'))
@@ -257,55 +200,22 @@ function abortableDelay(ms, signal) {
   })
 }
 
-// Polls the run until it reaches a terminal state. Aborts cleanly when the
-// provided AbortController signals. Returns the final run state.
-export async function waitForCampaign(runId, options = {}) {
-  const {
-    signal,
-    intervalMs = 1500,
-    maxAttempts = 400,
-    onTick,
-  } = options
-
-  let attempt = 0
-  while (true) {
-    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
-
-    attempt += 1
-    if (attempt > maxAttempts) {
-      throw new Error('Timed out waiting for the campaign to finish')
-    }
-
-    const state = await getCampaign(runId, { signal })
-    onTick?.(state, attempt)
-
-    if (TERMINAL_STATES.has(state.status)) {
-      return state
-    }
-
-    await abortableDelay(intervalMs, signal)
-  }
-}
-
 async function waitForWorkflow(kind, runId, options = {}) {
-  const {
-    signal,
-    intervalMs = 1500,
-    maxAttempts = 400,
-    onTick,
-  } = options
-
-  let attempt = 0
-  while (true) {
+  const { signal, intervalMs = 1500, maxAttempts = 400, onTick, shouldPoll } = options
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
-    attempt += 1
-    if (attempt > maxAttempts) throw new Error(`Timed out waiting for the ${kind} workflow to finish`)
-
+    // A healthy SSE stream already has fresher progress than this fallback.
+    // Keep the loop alive without issuing browser-to-backend status requests.
+    if (shouldPoll?.() === false) {
+      await abortableDelay(intervalMs, signal)
+      continue
+    }
     const state = await getWorkflow(kind, runId, { signal })
     onTick?.(state, attempt)
     if (TERMINAL_STATES.has(state.status)) return state
     await abortableDelay(intervalMs, signal)
   }
+  throw new Error(`Timed out waiting for the ${kind} workflow to finish`)
 }
 
 export function waitForStrategy(runId, options = {}) {
