@@ -11,9 +11,19 @@ export const loginSchema = z.object({
 export const registerSchema = z
   .object({
     name: z.string().min(1, "Name is required"),
-    email: z.string().min(1, "Email is required").email("Enter a valid email"),
+    email: z
+      .string()
+      .trim()
+      .min(1, "Email is required")
+      .email("Enter a valid email")
+      .transform((email) => email.toLowerCase()),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")
       .max(128, "Password must be at most 128 characters"),
+    confirmPassword: z.string().min(1, "Confirm your password"),
+  })
+  .refine((values) => values.password === values.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
   });

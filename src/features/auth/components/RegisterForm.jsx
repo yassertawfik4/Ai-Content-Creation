@@ -14,22 +14,37 @@ import { registerSchema } from '../schema/authSchema'
 const inputClassName =
   'h-[50px] rounded-md border-[#cbc4d2] bg-white px-4 text-base text-[#1d1b20] shadow-none placeholder:text-[#6b7280] focus-visible:border-[#4f378a] focus-visible:ring-2 focus-visible:ring-[#4f378a]/15'
 
+function isExistingEmailError(error) {
+  return error?.status === 422 || error?.code === 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL'
+}
+
 export function RegisterForm({ onSuccess }) {
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [formError, setFormError] = useState('')
   const { register: registerUser } = useAuth()
   const {
     register,
     handleSubmit,
+    clearErrors,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm({ resolver: zodResolver(registerSchema) })
 
   const onSubmit = async (values) => {
     setFormError('')
+    clearErrors('email')
     try {
       await registerUser({ name: values.name, email: values.email, password: values.password })
-      onSuccess?.(values)
+      onSuccess?.({ email: values.email })
     } catch (err) {
+      if (isExistingEmailError(err)) {
+        setError('email', {
+          type: 'server',
+          message: 'The email already exists.',
+        }, { shouldFocus: true })
+        return
+      }
       setFormError(getErrorMessage(err))
     }
   }
@@ -78,7 +93,12 @@ export function RegisterForm({ onSuccess }) {
           className={inputClassName}
           aria-invalid={Boolean(errors.email)}
           aria-describedby={errors.email ? 'email-error' : undefined}
-          {...register('email')}
+          {...register('email', {
+            onChange: () => {
+              clearErrors('email')
+              setFormError('')
+            },
+          })}
         />
         {errors.email ? (
           <p id="email-error" className="text-xs text-destructive">
@@ -123,6 +143,40 @@ export function RegisterForm({ onSuccess }) {
             Minimum 8 characters with one special symbol.
           </p>
         )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label
+          htmlFor="confirmPassword"
+          className="text-sm font-medium tracking-[1.4px] text-[#494551]"
+        >
+          Confirm Password
+        </Label>
+        <div className="relative">
+          <Input
+            id="confirmPassword"
+            type={showConfirmPassword ? 'text' : 'password'}
+            autoComplete="new-password"
+            placeholder="••••••••"
+            className={`${inputClassName} pr-12`}
+            aria-invalid={Boolean(errors.confirmPassword)}
+            aria-describedby={errors.confirmPassword ? 'confirm-password-error' : undefined}
+            {...register('confirmPassword')}
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword((value) => !value)}
+            className="absolute inset-y-0 right-3 flex w-7 items-center justify-center rounded text-[#494551] transition-opacity hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4f378a]"
+            aria-label={showConfirmPassword ? 'Hide confirmed password' : 'Show confirmed password'}
+          >
+            <img src={showConfirmPassword ? eyeIcon : eyeOffIcon} alt="" className="h-[15px] w-[22px]" />
+          </button>
+        </div>
+        {errors.confirmPassword ? (
+          <p id="confirm-password-error" className="text-xs text-destructive">
+            {errors.confirmPassword.message}
+          </p>
+        ) : null}
       </div>
 
       {formError ? (

@@ -71,6 +71,7 @@ import {
   getChatHistory,
   listChats,
   listProjects,
+  renameChat,
   renameProject,
   startContent,
   startStrategy,
@@ -292,6 +293,7 @@ function ProjectSidebar({
   onRenameProject,
   onDeleteProject,
   onSelectChat,
+  onRenameChat,
   onNewChat,
   onDeleteChat,
   onOpenHistory,
@@ -299,19 +301,40 @@ function ProjectSidebar({
   isOpen,
   onToggle,
 }) {
-  const [collapsedProjectId, setCollapsedProjectId] = useState('')
+  const [expandedProjectIds, setExpandedProjectIds] = useState([])
+  const [collapsedProjectIds, setCollapsedProjectIds] = useState([])
+  const [chatsByProjectId, setChatsByProjectId] = useState({})
   const [editingProjectId, setEditingProjectId] = useState('')
+  const [editingChatId, setEditingChatId] = useState('')
   const [openProjectMenuId, setOpenProjectMenuId] = useState('')
+  const [openChatMenuId, setOpenChatMenuId] = useState('')
   const [projectNameDraft, setProjectNameDraft] = useState('')
+  const [chatTitleDraft, setChatTitleDraft] = useState('')
   const cancelRenameRef = useRef(false)
+  const cancelChatRenameRef = useRef(false)
   const projectMenuRef = useRef(null)
+  const chatMenuRef = useRef(null)
+
+  const cacheActiveChats = () => {
+    if (!activeProject) return
+    setChatsByProjectId((current) => ({ ...current, [activeProject]: chats }))
+  }
+
+  const keepActiveProjectOpen = () => {
+    if (!activeProject || collapsedProjectIds.includes(activeProject)) return
+    setExpandedProjectIds((current) => current.includes(activeProject) ? current : [...current, activeProject])
+  }
 
   useEffect(() => {
-    if (!openProjectMenuId) return undefined
+    if (!openProjectMenuId && !openChatMenuId) return undefined
 
     const closeMenu = (event) => {
-      if (event.key === 'Escape' || (event.type === 'pointerdown' && !projectMenuRef.current?.contains(event.target))) {
+      const clickedOutside = event.type === 'pointerdown'
+        && !projectMenuRef.current?.contains(event.target)
+        && !chatMenuRef.current?.contains(event.target)
+      if (event.key === 'Escape' || clickedOutside) {
         setOpenProjectMenuId('')
+        setOpenChatMenuId('')
       }
     }
 
@@ -321,19 +344,59 @@ function ProjectSidebar({
       document.removeEventListener('pointerdown', closeMenu)
       document.removeEventListener('keydown', closeMenu)
     }
-  }, [openProjectMenuId])
+  }, [openProjectMenuId, openChatMenuId])
 
   const selectProject = (project) => {
-    setCollapsedProjectId('')
+    cacheActiveChats()
+    const openActiveProject = activeProject && !collapsedProjectIds.includes(activeProject) ? [activeProject] : []
+    setExpandedProjectIds((current) => [...new Set([...current, ...openActiveProject, project.id])])
+    setCollapsedProjectIds((current) => current.filter((projectId) => projectId !== project.id))
     onSelect(project.id)
   }
 
   const toggleProject = (project) => {
-    if (project.id !== activeProject) {
-      selectProject(project)
-      return
+    const isExpanded = expandedProjectIds.includes(project.id)
+      || (project.id === activeProject && !collapsedProjectIds.includes(project.id))
+    if (isExpanded) {
+      setExpandedProjectIds((current) => current.filter((projectId) => projectId !== project.id))
+      setCollapsedProjectIds((current) => current.includes(project.id) ? current : [...current, project.id])
+    } else {
+      cacheActiveChats()
+      const openActiveProject = activeProject && !collapsedProjectIds.includes(activeProject) ? [activeProject] : []
+      setExpandedProjectIds((current) => [...new Set([...current, ...openActiveProject, project.id])])
+      setCollapsedProjectIds((current) => current.filter((projectId) => projectId !== project.id))
     }
-    setCollapsedProjectId((current) => current === project.id ? '' : project.id)
+    if (!isExpanded && project.id !== activeProject && !chatsByProjectId[project.id]) {
+      onSelect(project.id)
+    }
+  }
+
+  const createProjectFromSidebar = async () => {
+    cacheActiveChats()
+    keepActiveProjectOpen()
+    await onNewProject()
+  }
+
+  const createChatInProject = (projectId) => {
+    cacheActiveChats()
+    if (projectId !== activeProject) keepActiveProjectOpen()
+    onNewChat(projectId)
+  }
+
+  const selectChat = (chatId, projectId) => {
+    if (projectId !== activeProject) {
+      cacheActiveChats()
+      keepActiveProjectOpen()
+    }
+    onSelectChat(chatId, projectId)
+  }
+
+  const requestDeleteChat = (chat, projectId) => {
+    if (projectId !== activeProject) {
+      cacheActiveChats()
+      keepActiveProjectOpen()
+    }
+    onDeleteChat(chat, projectId)
   }
 
   const beginRename = (project) => {
@@ -355,6 +418,32 @@ function ProjectSidebar({
     if (renamed === false) {
       setEditingProjectId(project.id)
     }
+  }
+
+  const beginChatRename = (chat) => {
+    setOpenChatMenuId('')
+    cancelChatRenameRef.current = false
+    setChatTitleDraft(chat.title)
+    setEditingChatId(chat.id)
+  }
+
+  const commitChatRename = async (chat, projectId) => {
+    if (cancelChatRenameRef.current) {
+      cancelChatRenameRef.current = false
+      return
+    }
+    const nextTitle = chatTitleDraft.trim()
+    setEditingChatId('')
+    if (!nextTitle || nextTitle === chat.title) return
+    const renamed = await onRenameChat(chat, nextTitle, projectId)
+    if (renamed === false) {
+      setEditingChatId(chat.id)
+      return
+    }
+    setChatsByProjectId((current) => ({
+      ...current,
+      [projectId]: (current[projectId] ?? []).map((item) => item.id === chat.id ? renamed : item),
+    }))
   }
 
   if (!isOpen) {
@@ -403,7 +492,7 @@ function ProjectSidebar({
         </div>
         <button
           type="button"
-          onClick={onNewProject}
+          onClick={createProjectFromSidebar}
           aria-label="Create new project"
           title="Create new project"
           className="flex size-10 items-center justify-center rounded-xl bg-[#e8dff0] text-[#4f378a] transition-colors hover:bg-[#ddd0e8] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
@@ -415,24 +504,25 @@ function ProjectSidebar({
       <div className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto px-0.5 pb-3">
         {projects.map((project) => {
           const isActive = project.id === activeProject
-          const isExpanded = isActive && collapsedProjectId !== project.id
-          const chatLabel = project.chatCount === 1 ? '1 chat' : project.chatCount ? `${project.chatCount} chats` : 'No chats yet'
+          const isExpanded = expandedProjectIds.includes(project.id)
+            || (isActive && !collapsedProjectIds.includes(project.id))
+          const projectChats = isActive ? chats : (chatsByProjectId[project.id] ?? [])
           return (
             <div key={project.id} className="group/project">
-              <div className={`relative flex min-h-[62px] items-center overflow-visible rounded-2xl transition-colors ${isActive ? 'bg-[#e9dfef]' : 'hover:bg-[#eee7f1]'}`}>
-                {isActive ? <span className="absolute inset-y-3 left-0 w-[3px] rounded-r-full bg-[#6b4c9a]" aria-hidden="true" /> : null}
+              <div className={`relative flex min-h-13 items-center overflow-visible rounded-xl transition-colors ${isActive ? 'bg-[#e9dfef]' : 'hover:bg-[#eee7f1]'}`}>
+                {isActive ? <span className="absolute inset-y-2.5 left-0 w-0.5 rounded-r-full bg-[#6b4c9a]" aria-hidden="true" /> : null}
                 <button
                   type="button"
                   onClick={() => toggleProject(project)}
                   aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${project.name}`}
                   aria-expanded={isExpanded}
-                  className="ml-1 flex size-11 shrink-0 items-center justify-center rounded-xl text-[#817687] transition-colors hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                  className="flex size-11 shrink-0 items-center justify-center rounded-xl text-[#817687] transition-colors hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
                 >
                   <ChevronRight className={`size-4 transition-transform duration-200 ${isExpanded ? 'rotate-90 text-[#4f378a]' : ''}`} />
                 </button>
 
                 {editingProjectId === project.id ? (
-                  <div className="min-w-0 flex-1 py-2 pr-12">
+                  <div className="flex min-w-0 flex-1 items-center py-2 pr-12">
                     <input
                       autoFocus
                       value={projectNameDraft}
@@ -451,28 +541,27 @@ function ProjectSidebar({
                       aria-label={`New name for ${project.name}`}
                       className="h-9 w-full rounded-lg border border-[#8e70b2] bg-[#f7f1fa] px-2.5 text-sm font-semibold text-[#201a25] outline-none ring-2 ring-[#ddd0ef] selection:bg-[#d9c8f4]"
                     />
-                    <span className="mt-0.5 block text-[10px] text-[#89808e]">Enter to save · Esc to cancel</span>
                   </div>
                 ) : (
-                  <button type="button" onClick={() => selectProject(project)} aria-current={isActive ? 'page' : undefined} className="flex min-w-0 flex-1 items-center gap-2.5 self-stretch py-2 pr-11 text-left focus-visible:rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
-                    <span className="size-2.5 shrink-0 rounded-full ring-[3px] ring-[#dcd0e3]" style={{ backgroundColor: project.color }} />
-                    <span className="min-w-0">
-                      <span className={`block truncate text-sm leading-5 ${isActive ? 'font-semibold text-[#281d2f]' : 'font-medium text-[#514a56]'}`} title={project.name}>
-                        {project.name}
-                      </span>
-                      <span className={`mt-0.5 block truncate text-[11px] ${isActive ? 'text-[#75667f]' : 'text-[#89808e]'}`}>{chatLabel}</span>
+                  <button type="button" onClick={() => selectProject(project)} aria-current={isActive ? 'page' : undefined} className="flex min-w-0 flex-1 items-center gap-2.5 self-stretch pr-11 text-left focus-visible:rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
+                    <span className="size-2 shrink-0 rounded-full ring-2 ring-[#dcd0e3]" style={{ backgroundColor: project.color }} />
+                    <span className={`min-w-0 flex-1 truncate text-[13px] ${isActive ? 'font-semibold text-[#281d2f]' : 'font-medium text-[#514a56]'}`} title={project.name}>
+                      {project.name}
                     </span>
                   </button>
                 )}
 
-                <div ref={openProjectMenuId === project.id ? projectMenuRef : undefined} className={`absolute right-1.5 top-2.5 z-30 transition-opacity ${isActive || openProjectMenuId === project.id ? 'opacity-100' : 'opacity-0 group-hover/project:opacity-100 group-focus-within/project:opacity-100'}`}>
+                <div ref={openProjectMenuId === project.id ? projectMenuRef : undefined} className={`absolute right-1 top-1 z-30 transition-opacity ${isActive || openProjectMenuId === project.id ? 'opacity-100' : 'opacity-0 group-hover/project:opacity-100 group-focus-within/project:opacity-100'}`}>
                   <button
                     type="button"
-                    onClick={() => setOpenProjectMenuId((current) => current === project.id ? '' : project.id)}
+                    onClick={() => {
+                      setOpenChatMenuId('')
+                      setOpenProjectMenuId((current) => current === project.id ? '' : project.id)
+                    }}
                     aria-label={`More actions for ${project.name}`}
                     aria-haspopup="menu"
                     aria-expanded={openProjectMenuId === project.id}
-                    className="flex size-10 items-center justify-center rounded-xl text-[#716777] transition-colors hover:bg-[#ddd0e8] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                    className="flex size-11 items-center justify-center rounded-xl text-[#716777] transition-colors hover:bg-[#ddd0e8] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
                   >
                     <MoreVertical className="size-4" />
                   </button>
@@ -489,30 +578,75 @@ function ProjectSidebar({
                 <div className="relative ml-[22px] mt-2 border-l border-[#cfc1d8] pb-1 pl-3">
                   <div className="flex min-h-10 items-center justify-between pl-2">
                     <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#807486]">Chats</p>
-                    <button type="button" onClick={onNewChat} aria-label={`Create chat in ${project.name}`} className="flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-[11px] font-semibold text-[#59416f] transition-colors hover:bg-[#e9dfef] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"><Plus className="size-3.5" /> New chat</button>
+                    <button type="button" onClick={() => createChatInProject(project.id)} aria-label={`Create chat in ${project.name}`} className="flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-[11px] font-semibold text-[#59416f] transition-colors hover:bg-[#e9dfef] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"><Plus className="size-3.5" /> New chat</button>
                   </div>
                   <div className="space-y-1 pb-1">
-                    {chats.map((chat) => {
-                      const selected = chat.id === activeChat
+                    {projectChats.map((chat) => {
+                      const selected = isActive && chat.id === activeChat
                       return (
-                        <div key={chat.id} className={`group/chat relative rounded-xl transition-colors ${selected ? 'bg-[#381e72] text-white shadow-[0_5px_14px_rgba(56,30,114,0.18)]' : 'text-[#625b71] hover:bg-[#ebe3ee] hover:text-[#201a25]'}`}>
-                          <button type="button" onClick={() => onSelectChat(chat.id)} aria-current={selected ? 'page' : undefined} className="flex min-h-12 w-full items-center gap-2.5 rounded-xl px-3 pr-12 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
-                            <MessageSquare className={`size-4 shrink-0 ${selected ? 'text-[#d8ff9d]' : 'text-[#8d7c98]'}`} />
-                            <span className="min-w-0 flex-1 truncate text-[13px] font-semibold" title={chat.title}>{chat.title}</span>
-                          </button>
-                          <div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5">
-                            {chat.historyCount ? <span className={`mr-0.5 text-[10px] transition-opacity group-hover/chat:opacity-0 ${selected ? 'text-white/60' : 'text-[#9a909e]'}`}>{chat.historyCount}</span> : null}
-                            <button type="button" onClick={() => onDeleteChat(chat)} aria-label={`Delete ${chat.title}`} title="Delete chat" className={`flex size-9 items-center justify-center rounded-lg transition focus-visible:outline-none focus-visible:ring-2 ${selected ? 'text-white/70 hover:bg-white/15 hover:text-white focus-visible:ring-white/70' : 'opacity-0 text-[#9b6573] hover:bg-[#f2dce3] hover:text-[#ad3150] group-hover/chat:opacity-100 group-focus-within/chat:opacity-100 focus-visible:opacity-100 focus-visible:ring-[#ad3150]'}`}>
-                              <Trash2 className="size-3.5" />
+                        <div
+                          key={chat.id}
+                          className={`group/chat relative rounded-xl transition-colors duration-200 ${selected ? 'bg-[#e9dfef] text-[#281d2f]' : 'text-[#625b71] hover:bg-[#eee7f1] hover:text-[#201a25]'}`}
+                        >
+                          {selected ? <span className="absolute inset-y-2.5 left-0 w-0.5 rounded-r-full bg-[#6b4c9a]" aria-hidden="true" /> : null}
+                          {editingChatId === chat.id ? (
+                            <div className="flex min-h-12 items-center gap-2.5 px-3 pr-2">
+                              <MessageSquare className={`size-4 shrink-0 ${selected ? 'text-[#4f378a]' : 'text-[#8d7c98]'}`} />
+                              <input
+                                autoFocus
+                                value={chatTitleDraft}
+                                onChange={(event) => setChatTitleDraft(event.target.value)}
+                                onFocus={(event) => event.currentTarget.select()}
+                                onBlur={() => void commitChatRename(chat, project.id)}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter') event.currentTarget.blur()
+                                  if (event.key === 'Escape') {
+                                    cancelChatRenameRef.current = true
+                                    setEditingChatId('')
+                                    event.currentTarget.blur()
+                                  }
+                                }}
+                                maxLength={120}
+                                aria-label={`New name for ${chat.title}`}
+                                className="h-9 min-w-0 flex-1 rounded-lg border border-[#8e70b2] bg-[#f7f1fa] px-2.5 text-[13px] font-semibold text-[#201a25] outline-none ring-2 ring-[#ddd0ef]"
+                              />
+                            </div>
+                          ) : (
+                            <button type="button" onClick={() => selectChat(chat.id, project.id)} aria-current={selected ? 'page' : undefined} className="flex min-h-12 w-full items-center gap-2.5 rounded-xl px-3 pr-12 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
+                              <MessageSquare className={`size-4 shrink-0 ${selected ? 'text-[#4f378a]' : 'text-[#8d7c98]'}`} />
+                              <span className="min-w-0 flex-1 truncate text-[13px] font-semibold" title={chat.title}>{chat.title}</span>
                             </button>
-                          </div>
+                          )}
+                          {editingChatId !== chat.id ? (
+                            <div ref={openChatMenuId === chat.id ? chatMenuRef : undefined} className={`absolute right-1.5 top-1/2 z-40 -translate-y-1/2 transition-opacity ${selected || openChatMenuId === chat.id ? 'opacity-100' : 'opacity-0 group-hover/chat:opacity-100 group-focus-within/chat:opacity-100'}`}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setOpenProjectMenuId('')
+                                  setOpenChatMenuId((current) => current === chat.id ? '' : chat.id)
+                                }}
+                                aria-label={`More actions for ${chat.title}`}
+                                aria-haspopup="menu"
+                                aria-expanded={openChatMenuId === chat.id}
+                                className="flex size-11 items-center justify-center rounded-xl text-[#75667f] transition-colors hover:bg-[#d9cce2] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                              >
+                                <MoreVertical className="size-4" />
+                              </button>
+                              {openChatMenuId === chat.id ? (
+                                <div role="menu" aria-label={`Actions for ${chat.title}`} className="absolute right-0 top-[calc(100%+4px)] w-40 overflow-hidden rounded-xl border border-[#d8ccdf] bg-[#f8f3f9] p-1.5 shadow-[0_12px_28px_rgba(45,31,52,0.16)]">
+                                  <button type="button" role="menuitem" onClick={() => beginChatRename(chat)} className="flex min-h-10 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-xs font-semibold text-[#514a56] transition-colors hover:bg-[#e9dfef] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"><Pencil className="size-3.5" /> Rename chat</button>
+                                  <button type="button" role="menuitem" onClick={() => { setOpenChatMenuId(''); requestDeleteChat(chat, project.id) }} className="flex min-h-10 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-xs font-semibold text-[#9f2949] transition-colors hover:bg-[#f4dfe5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ad3150]"><Trash2 className="size-3.5" /> Delete chat</button>
+                                </div>
+                              ) : null}
+                            </div>
+                          ) : null}
                         </div>
                       )
                     })}
-                    {chats.length === 0 ? (
+                    {projectChats.length === 0 ? (
                       <button
                         type="button"
-                        onClick={onNewChat}
+                        onClick={() => createChatInProject(project.id)}
                         className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[#cbbdd4] bg-[#eee7f1] px-3 text-xs font-semibold text-[#59416f] transition-colors hover:border-[#a995b7] hover:bg-[#e9dfef] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
                       >
                         <Plus className="size-3.5" /> Start the first chat
@@ -528,7 +662,7 @@ function ProjectSidebar({
           <div className="rounded-2xl border border-dashed border-[#cfc1d8] bg-[#eee7f1] px-4 py-5 text-center">
             <Folder className="mx-auto size-5 text-[#7b6b84]" />
             <p className="mt-2 text-xs font-semibold text-[#514a56]">No projects yet</p>
-            <button type="button" onClick={onNewProject} className="mt-2 text-xs font-semibold text-[#4f378a] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">Create your first project</button>
+            <button type="button" onClick={createProjectFromSidebar} className="mt-2 text-xs font-semibold text-[#4f378a] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">Create your first project</button>
           </div>
         ) : null}
       </div>
@@ -2456,11 +2590,10 @@ export function GeneratePage() {
   const handleNewProject = async () => {
     try {
       const project = await createProject(`Untitled Project ${projects.length + 1}`)
-      const chat = await createChat(project.id, 'Campaign chat 1')
-      setProjects((current) => [{ ...project, chatCount: 1 }, ...current])
+      setProjects((current) => [{ ...project, chatCount: 0 }, ...current])
       setActiveProject(project.id)
-      setChats([chat])
-      setActiveChat(chat.id)
+      setChats([])
+      setActiveChat('')
       setValues({ ...EMPTY_VALUES })
       setCampaign(null)
       setStrategy(null)
@@ -2470,20 +2603,21 @@ export function GeneratePage() {
       setRunState(null)
       setHistoryOpen(false)
       setError('')
-      window.setTimeout(() => document.querySelector('#product')?.focus(), 50)
+      return project
     } catch (createError) {
       setError(typeof createError?.message === 'string' ? createError.message : 'Could not create the project.')
+      return null
     }
   }
 
-  const handleSelectProject = async (projectId) => {
-    if (isGenerating || projectId === activeProject) return
+  const handleSelectProject = async (projectId, preferredChatId = '') => {
+    if (isGenerating || (projectId === activeProject && !preferredChatId)) return
     try {
       const projectChats = await listChats(projectId)
       setActiveProject(projectId)
       setChats(projectChats)
       setProjects((current) => current.map((project) => project.id === projectId ? { ...project, chatCount: projectChats.length } : project))
-      const nextChat = projectChats[0]
+      const nextChat = projectChats.find((chat) => chat.id === preferredChatId) ?? projectChats[0]
       setActiveChat(nextChat?.id ?? '')
       setValues({ ...EMPTY_VALUES })
       setCampaign(null)
@@ -2515,6 +2649,21 @@ export function GeneratePage() {
       return true
     } catch (renameError) {
       setError(typeof renameError?.message === 'string' ? renameError.message : 'Could not rename the project.')
+      return false
+    }
+  }
+
+  const handleRenameChat = async (chat, nextTitle, projectId = activeProject) => {
+    const title = nextTitle?.trim()
+    if (!title || title === chat.title) return chat
+    try {
+      const updated = await renameChat(chat.id, title)
+      if (projectId === activeProject) {
+        setChats((current) => current.map((item) => item.id === updated.id ? updated : item))
+      }
+      return updated
+    } catch (renameError) {
+      setError(typeof renameError?.message === 'string' ? renameError.message : 'Could not rename the chat.')
       return false
     }
   }
@@ -2582,13 +2731,16 @@ export function GeneratePage() {
     }
   }
 
-  const handleNewChat = async () => {
-    if (!activeProject || isGenerating) return
+  const handleNewChat = async (projectId = activeProject) => {
+    if (!projectId || isGenerating) return
     try {
-      const chat = await createChat(activeProject, `Campaign chat ${chats.length + 1}`)
-      setChats((current) => [chat, ...current])
-      setProjects((current) => current.map((project) => project.id === activeProject ? { ...project, chatCount: (project.chatCount ?? 0) + 1 } : project))
+      const existingChats = projectId === activeProject ? chats : await listChats(projectId)
+      const chat = await createChat(projectId, `Campaign chat ${existingChats.length + 1}`)
+      setActiveProject(projectId)
+      setChats([chat, ...existingChats])
+      setProjects((current) => current.map((project) => project.id === projectId ? { ...project, chatCount: existingChats.length + 1 } : project))
       setActiveChat(chat.id)
+      setValues({ ...EMPTY_VALUES })
       setCampaign(null)
       setStrategy(null)
       setStrategyRunId('')
@@ -2603,14 +2755,15 @@ export function GeneratePage() {
   }
 
   const handleConfirmDeleteChat = async () => {
-    const chat = chatPendingDelete
-    if (!chat || !activeProject || isGenerating) return
+    const chat = chatPendingDelete?.chat
+    const projectId = chatPendingDelete?.projectId
+    if (!chat || !projectId || isGenerating) return
     try {
-      await deleteChat(activeProject, chat.id)
-      const remainingChats = await listChats(activeProject)
-      const deletedActiveChat = chat.id === activeChat
-      setChats(remainingChats)
-      setProjects((current) => current.map((project) => project.id === activeProject ? { ...project, chatCount: remainingChats.length } : project))
+      await deleteChat(projectId, chat.id)
+      const remainingChats = await listChats(projectId)
+      const deletedActiveChat = projectId === activeProject && chat.id === activeChat
+      if (projectId === activeProject) setChats(remainingChats)
+      setProjects((current) => current.map((project) => project.id === projectId ? { ...project, chatCount: remainingChats.length } : project))
       if (deletedActiveChat) {
         const nextChat = remainingChats[0]
         setActiveChat(nextChat?.id ?? '')
@@ -2624,7 +2777,7 @@ export function GeneratePage() {
         setHistoryOpen(false)
         setHistoryEntries([])
         if (nextChat) {
-          const nextHistory = await getChatHistory(activeProject, nextChat.id)
+          const nextHistory = await getChatHistory(projectId, nextChat.id)
           setHistoryEntries(nextHistory)
           restoreChatHistory(nextHistory)
         }
@@ -2637,7 +2790,17 @@ export function GeneratePage() {
     }
   }
 
-  const handleSelectChat = async (chatId) => {
+  const handleRequestDeleteChat = async (chat, projectId = activeProject) => {
+    if (isGenerating) return
+    if (projectId !== activeProject) await handleSelectProject(projectId, chat.id)
+    setChatPendingDelete({ chat, projectId })
+  }
+
+  const handleSelectChat = async (chatId, projectId = activeProject) => {
+    if (projectId !== activeProject) {
+      await handleSelectProject(projectId, chatId)
+      return
+    }
     if (isGenerating || chatId === activeChat) return
     setActiveChat(chatId)
     setCampaign(null)
@@ -2894,10 +3057,10 @@ export function GeneratePage() {
             {chats.map((chat) => (
               <div key={chat.id} className={`flex h-8 shrink-0 items-center overflow-hidden rounded-lg ${chat.id === activeChat ? 'bg-[#381e72] text-white' : 'bg-white text-[#625b71] ring-1 ring-[#ded7e3]'}`}>
                 <button type="button" onClick={() => handleSelectChat(chat.id)} className="h-full px-2.5 text-[11px] font-semibold">{chat.title}</button>
-                <button type="button" onClick={() => setChatPendingDelete(chat)} aria-label={`Delete ${chat.title}`} className={`flex h-full w-8 items-center justify-center ${chat.id === activeChat ? 'text-white/70 hover:bg-white/15 hover:text-white' : 'text-[#a45b70] hover:bg-[#fbe2e8]'}`}><Trash2 className="size-3.5" /></button>
+                <button type="button" onClick={() => void handleRequestDeleteChat(chat, activeProject)} aria-label={`Delete ${chat.title}`} className={`flex h-full w-8 items-center justify-center ${chat.id === activeChat ? 'text-white/70 hover:bg-white/15 hover:text-white' : 'text-[#a45b70] hover:bg-[#fbe2e8]'}`}><Trash2 className="size-3.5" /></button>
               </div>
             ))}
-            <button type="button" onClick={handleNewChat} disabled={!activeProject} className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#4f378a] ring-1 ring-[#ded7e3] disabled:cursor-not-allowed disabled:opacity-40" aria-label="Create new chat"><Plus className="size-3.5" /></button>
+            <button type="button" onClick={() => void handleNewChat()} disabled={!activeProject} className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#4f378a] ring-1 ring-[#ded7e3] disabled:cursor-not-allowed disabled:opacity-40" aria-label="Create new chat"><Plus className="size-3.5" /></button>
             <button type="button" onClick={handleOpenHistory} disabled={!activeChat} className="flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-white px-2.5 text-[11px] font-semibold text-[#4f378a] ring-1 ring-[#ded7e3] disabled:cursor-not-allowed disabled:opacity-40"><History className="size-3.5" /> History</button>
           </div>
         </div>
@@ -2913,8 +3076,9 @@ export function GeneratePage() {
           onRenameProject={handleRenameProject}
           onDeleteProject={handleDeleteProject}
           onSelectChat={handleSelectChat}
+          onRenameChat={handleRenameChat}
           onNewChat={handleNewChat}
-          onDeleteChat={setChatPendingDelete}
+          onDeleteChat={handleRequestDeleteChat}
           onOpenHistory={handleOpenHistory}
           historyOpen={historyOpen}
           isOpen={sidebarOpen}
@@ -2974,7 +3138,7 @@ export function GeneratePage() {
             </span>
             <AlertDialogTitle>Delete this chat?</AlertDialogTitle>
             <AlertDialogDescription>
-              “{chatPendingDelete?.title}” and all of its strategy and content history will be permanently deleted. This action cannot be undone.
+              “{chatPendingDelete?.chat?.title}” and all of its strategy and content history will be permanently deleted. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
