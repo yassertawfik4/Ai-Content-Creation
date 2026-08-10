@@ -118,6 +118,16 @@ export async function createChat(projectId, title, { signal } = {}) {
   return asChat(campaign)
 }
 
+export async function renameChat(campaignId, title, { signal } = {}) {
+  const campaign = await request(`/campaigns/${encodeURIComponent(campaignId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: title }),
+    signal,
+  })
+  return asChat(campaign)
+}
+
 export function deleteChat(_projectId, campaignId, { signal } = {}) {
   return request(`/campaigns/${encodeURIComponent(campaignId)}`, { method: 'DELETE', signal })
 }
