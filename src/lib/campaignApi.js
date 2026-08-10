@@ -94,8 +94,57 @@ export function renameProject(projectId, name, { signal } = {}) {
   })
 }
 
+export function updateProjectBrandProfile(projectId, brandProfile, { signal } = {}) {
+  return request(`/projects/${encodeURIComponent(projectId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ brandProfile }),
+    signal,
+  })
+}
+
 export function deleteProject(projectId, { signal } = {}) {
   return request(`/projects/${encodeURIComponent(projectId)}`, { method: 'DELETE', signal })
+}
+
+export function listKnowledgeSources(projectId, { signal } = {}) {
+  return request(`/projects/${encodeURIComponent(projectId)}/knowledge/sources`, { headers: { Accept: 'application/json' }, signal })
+}
+
+export function addWebsiteKnowledgeSource(projectId, input, { signal } = {}) {
+  return request(`/projects/${encodeURIComponent(projectId)}/knowledge/sources/website`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input), signal,
+  })
+}
+
+export function addDocumentKnowledgeSource(projectId, input, { signal } = {}) {
+  return request(`/projects/${encodeURIComponent(projectId)}/knowledge/sources/document`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input), signal,
+  })
+}
+
+export function addSocialKnowledgeSource(projectId, input, { signal } = {}) {
+  return request(`/projects/${encodeURIComponent(projectId)}/knowledge/sources/social-posts`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input), signal,
+  })
+}
+
+export function refreshKnowledgeSource(projectId, sourceId, { signal } = {}) {
+  return request(`/projects/${encodeURIComponent(projectId)}/knowledge/sources/${encodeURIComponent(sourceId)}/refresh`, { method: 'POST', signal })
+}
+
+export function reindexProjectKnowledge(projectId, { signal } = {}) {
+  return request(`/projects/${encodeURIComponent(projectId)}/knowledge/reindex`, { method: 'POST', signal })
+}
+
+export function deleteKnowledgeSource(projectId, sourceId, { signal } = {}) {
+  return request(`/projects/${encodeURIComponent(projectId)}/knowledge/sources/${encodeURIComponent(sourceId)}`, { method: 'DELETE', signal })
+}
+
+export function askProjectKnowledge(projectId, query, { signal } = {}) {
+  return request(`/projects/${encodeURIComponent(projectId)}/knowledge/ask`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query }), signal,
+  })
 }
 
 // The UI's pre-existing "chat" terminology is now a campaign. Keeping this
