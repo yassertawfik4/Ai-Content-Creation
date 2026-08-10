@@ -6,6 +6,7 @@ import {
   BarChart3,
   Bell,
   BriefcaseBusiness,
+  CalendarDays,
   Camera,
   Check,
   ChevronDown,
@@ -14,14 +15,17 @@ import {
   Clock3,
   Copy,
   Folder,
+  Hash,
   HelpCircle,
   History,
   Image as ImageIcon,
   Lightbulb,
+  Layers3,
   Loader2,
   LogOut,
   MessageSquare,
-  MoreHorizontal,
+  MoreVertical,
+  MousePointerClick,
   Music2,
   PanelLeftClose,
   PanelLeftOpen,
@@ -30,6 +34,7 @@ import {
   RefreshCw,
   Search,
   Settings,
+  ShieldCheck,
   Sparkles,
   Trash2,
   Users,
@@ -296,8 +301,27 @@ function ProjectSidebar({
 }) {
   const [collapsedProjectId, setCollapsedProjectId] = useState('')
   const [editingProjectId, setEditingProjectId] = useState('')
+  const [openProjectMenuId, setOpenProjectMenuId] = useState('')
   const [projectNameDraft, setProjectNameDraft] = useState('')
   const cancelRenameRef = useRef(false)
+  const projectMenuRef = useRef(null)
+
+  useEffect(() => {
+    if (!openProjectMenuId) return undefined
+
+    const closeMenu = (event) => {
+      if (event.key === 'Escape' || (event.type === 'pointerdown' && !projectMenuRef.current?.contains(event.target))) {
+        setOpenProjectMenuId('')
+      }
+    }
+
+    document.addEventListener('pointerdown', closeMenu)
+    document.addEventListener('keydown', closeMenu)
+    return () => {
+      document.removeEventListener('pointerdown', closeMenu)
+      document.removeEventListener('keydown', closeMenu)
+    }
+  }, [openProjectMenuId])
 
   const selectProject = (project) => {
     setCollapsedProjectId('')
@@ -313,6 +337,7 @@ function ProjectSidebar({
   }
 
   const beginRename = (project) => {
+    setOpenProjectMenuId('')
     cancelRenameRef.current = false
     setProjectNameDraft(project.name)
     setEditingProjectId(project.id)
@@ -349,7 +374,7 @@ function ProjectSidebar({
   }
 
   return (
-    <aside className="hidden w-[244px] shrink-0 flex-col border-r border-[#ded7e3] bg-[#f6f0f7] p-3 lg:flex">
+    <aside className="hidden w-[260px] shrink-0 flex-col border-r border-[#ded7e3] bg-[#f6f0f7] p-3 lg:flex">
       <div className="flex h-11 items-center justify-end">
         <button
           type="button"
@@ -371,38 +396,43 @@ function ProjectSidebar({
         </button>
       </nav>
 
-      <div className="mt-6 flex items-center justify-between px-2">
-        <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#827887]">Your projects</p>
+      <div className="mt-6 flex min-h-10 items-center justify-between px-2">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#716777]">Your projects</p>
+          <p className="mt-0.5 text-[11px] text-[#948a98]">{projects.length} {projects.length === 1 ? 'workspace' : 'workspaces'}</p>
+        </div>
         <button
           type="button"
           onClick={onNewProject}
           aria-label="Create new project"
-          className="flex size-8 items-center justify-center rounded-lg text-[#625b71] transition-colors hover:bg-white hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+          title="Create new project"
+          className="flex size-10 items-center justify-center rounded-xl bg-[#e8dff0] text-[#4f378a] transition-colors hover:bg-[#ddd0e8] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
         >
           <Plus className="size-4" />
         </button>
       </div>
 
-      <div className="mt-1.5 min-h-0 flex-1 space-y-2 overflow-y-auto px-0.5 pb-3">
+      <div className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto px-0.5 pb-3">
         {projects.map((project) => {
           const isActive = project.id === activeProject
           const isExpanded = isActive && collapsedProjectId !== project.id
           const chatLabel = project.chatCount === 1 ? '1 chat' : project.chatCount ? `${project.chatCount} chats` : 'No chats yet'
           return (
             <div key={project.id} className="group/project">
-              <div className={`relative flex min-h-[60px] items-center rounded-xl transition-all ${isActive ? 'bg-white shadow-[0_2px_12px_rgba(37,24,44,0.07)] ring-1 ring-[#e0d7e4]' : 'hover:bg-white/60'}`}>
+              <div className={`relative flex min-h-[62px] items-center overflow-visible rounded-2xl transition-colors ${isActive ? 'bg-[#e9dfef]' : 'hover:bg-[#eee7f1]'}`}>
+                {isActive ? <span className="absolute inset-y-3 left-0 w-[3px] rounded-r-full bg-[#6b4c9a]" aria-hidden="true" /> : null}
                 <button
                   type="button"
                   onClick={() => toggleProject(project)}
                   aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${project.name}`}
                   aria-expanded={isExpanded}
-                  className="flex size-11 shrink-0 items-center justify-center rounded-xl text-[#817687] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                  className="ml-1 flex size-11 shrink-0 items-center justify-center rounded-xl text-[#817687] transition-colors hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
                 >
                   <ChevronRight className={`size-4 transition-transform duration-200 ${isExpanded ? 'rotate-90 text-[#4f378a]' : ''}`} />
                 </button>
 
                 {editingProjectId === project.id ? (
-                  <div className="min-w-0 flex-1 py-2 pr-[66px]">
+                  <div className="min-w-0 flex-1 py-2 pr-12">
                     <input
                       autoFocus
                       value={projectNameDraft}
@@ -419,58 +449,88 @@ function ProjectSidebar({
                       }}
                       maxLength={80}
                       aria-label={`New name for ${project.name}`}
-                      className="h-8 w-full rounded-md border border-[#8e70b2] bg-[#faf6ff] px-2 text-sm font-semibold text-[#201a25] outline-none ring-2 ring-[#ddd0ef] selection:bg-[#d9c8f4]"
+                      className="h-9 w-full rounded-lg border border-[#8e70b2] bg-[#f7f1fa] px-2.5 text-sm font-semibold text-[#201a25] outline-none ring-2 ring-[#ddd0ef] selection:bg-[#d9c8f4]"
                     />
                     <span className="mt-0.5 block text-[10px] text-[#89808e]">Enter to save · Esc to cancel</span>
                   </div>
                 ) : (
-                  <button type="button" onClick={() => selectProject(project)} className="flex min-w-0 flex-1 items-center gap-2 py-2 pr-[66px] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
-                    <span className="size-2.5 shrink-0 rounded-full ring-4 ring-white" style={{ backgroundColor: project.color }} />
+                  <button type="button" onClick={() => selectProject(project)} aria-current={isActive ? 'page' : undefined} className="flex min-w-0 flex-1 items-center gap-2.5 self-stretch py-2 pr-11 text-left focus-visible:rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
+                    <span className="size-2.5 shrink-0 rounded-full ring-[3px] ring-[#dcd0e3]" style={{ backgroundColor: project.color }} />
                     <span className="min-w-0">
-                      <span className={`block truncate text-sm ${isActive ? 'font-semibold text-[#201a25]' : 'font-medium text-[#514a56]'}`} title={project.name}>
+                      <span className={`block truncate text-sm leading-5 ${isActive ? 'font-semibold text-[#281d2f]' : 'font-medium text-[#514a56]'}`} title={project.name}>
                         {project.name}
                       </span>
-                      <span className="mt-0.5 block truncate text-[11px] text-[#89808e]">{chatLabel}</span>
+                      <span className={`mt-0.5 block truncate text-[11px] ${isActive ? 'text-[#75667f]' : 'text-[#89808e]'}`}>{chatLabel}</span>
                     </span>
                   </button>
                 )}
 
-                <div className={`absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center transition-opacity ${isActive ? 'opacity-100' : 'opacity-0 group-hover/project:opacity-100 group-focus-within/project:opacity-100'}`}>
-                  <button type="button" onClick={() => beginRename(project)} aria-label={`Rename ${project.name}`} title="Rename project" className="flex size-8 items-center justify-center rounded-lg text-[#786e7e] hover:bg-[#f2eafa] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"><Pencil className="size-3.5" /></button>
-                  <button type="button" onClick={() => onDeleteProject(project)} aria-label={`Delete ${project.name}`} title="Delete project" className="flex size-8 items-center justify-center rounded-lg text-[#9b6573] hover:bg-[#fbe2e8] hover:text-[#ad3150] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ad3150]"><Trash2 className="size-3.5" /></button>
+                <div ref={openProjectMenuId === project.id ? projectMenuRef : undefined} className={`absolute right-1.5 top-2.5 z-30 transition-opacity ${isActive || openProjectMenuId === project.id ? 'opacity-100' : 'opacity-0 group-hover/project:opacity-100 group-focus-within/project:opacity-100'}`}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenProjectMenuId((current) => current === project.id ? '' : project.id)}
+                    aria-label={`More actions for ${project.name}`}
+                    aria-haspopup="menu"
+                    aria-expanded={openProjectMenuId === project.id}
+                    className="flex size-10 items-center justify-center rounded-xl text-[#716777] transition-colors hover:bg-[#ddd0e8] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                  >
+                    <MoreVertical className="size-4" />
+                  </button>
+                  {openProjectMenuId === project.id ? (
+                    <div role="menu" aria-label={`Actions for ${project.name}`} className="absolute right-0 top-[calc(100%+4px)] w-40 overflow-hidden rounded-xl border border-[#d8ccdf] bg-[#f8f3f9] p-1.5 shadow-[0_12px_28px_rgba(45,31,52,0.16)]">
+                      <button type="button" role="menuitem" onClick={() => beginRename(project)} className="flex min-h-10 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-xs font-semibold text-[#514a56] transition-colors hover:bg-[#e9dfef] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"><Pencil className="size-3.5" /> Rename project</button>
+                      <button type="button" role="menuitem" onClick={() => { setOpenProjectMenuId(''); onDeleteProject(project) }} className="flex min-h-10 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-xs font-semibold text-[#9f2949] transition-colors hover:bg-[#f4dfe5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ad3150]"><Trash2 className="size-3.5" /> Delete project</button>
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
               {isExpanded ? (
-                <div className="ml-[21px] mt-1.5 border-l border-[#d8ccdf] pl-2">
-                  <div className="flex min-h-10 items-center justify-between px-2">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#8a7f90]">Chats</p>
-                    <button type="button" onClick={onNewChat} aria-label={`Create chat in ${project.name}`} title="Create new chat" className="flex size-10 items-center justify-center rounded-lg text-[#625b71] transition-colors hover:bg-white hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"><Plus className="size-4" /></button>
+                <div className="relative ml-[22px] mt-2 border-l border-[#cfc1d8] pb-1 pl-3">
+                  <div className="flex min-h-10 items-center justify-between pl-2">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#807486]">Chats</p>
+                    <button type="button" onClick={onNewChat} aria-label={`Create chat in ${project.name}`} className="flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-[11px] font-semibold text-[#59416f] transition-colors hover:bg-[#e9dfef] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"><Plus className="size-3.5" /> New chat</button>
                   </div>
                   <div className="space-y-1 pb-1">
                     {chats.map((chat) => {
                       const selected = chat.id === activeChat
                       return (
-                        <div key={chat.id} className={`group/chat relative rounded-xl transition ${selected ? 'bg-[#381e72] text-white shadow-[0_6px_16px_rgba(56,30,114,0.2)]' : 'text-[#625b71] hover:bg-white/75 hover:text-[#201a25]'}`}>
-                          <button type="button" onClick={() => onSelectChat(chat.id)} className="flex min-h-11 w-full items-center gap-2 rounded-xl px-2.5 pr-14 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
+                        <div key={chat.id} className={`group/chat relative rounded-xl transition-colors ${selected ? 'bg-[#381e72] text-white shadow-[0_5px_14px_rgba(56,30,114,0.18)]' : 'text-[#625b71] hover:bg-[#ebe3ee] hover:text-[#201a25]'}`}>
+                          <button type="button" onClick={() => onSelectChat(chat.id)} aria-current={selected ? 'page' : undefined} className="flex min-h-12 w-full items-center gap-2.5 rounded-xl px-3 pr-12 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
                             <MessageSquare className={`size-4 shrink-0 ${selected ? 'text-[#d8ff9d]' : 'text-[#8d7c98]'}`} />
-                            <span className="min-w-0 flex-1 truncate text-xs font-semibold" title={chat.title}>{chat.title}</span>
+                            <span className="min-w-0 flex-1 truncate text-[13px] font-semibold" title={chat.title}>{chat.title}</span>
                           </button>
                           <div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5">
                             {chat.historyCount ? <span className={`mr-0.5 text-[10px] transition-opacity group-hover/chat:opacity-0 ${selected ? 'text-white/60' : 'text-[#9a909e]'}`}>{chat.historyCount}</span> : null}
-                            <button type="button" onClick={() => onDeleteChat(chat)} aria-label={`Delete ${chat.title}`} title="Delete chat" className={`flex size-8 items-center justify-center rounded-lg opacity-0 transition group-hover/chat:opacity-100 group-focus-within/chat:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 ${selected ? 'text-white/70 hover:bg-white/15 hover:text-white focus-visible:ring-white/70' : 'text-[#9b6573] hover:bg-[#fbe2e8] hover:text-[#ad3150] focus-visible:ring-[#ad3150]'}`}>
+                            <button type="button" onClick={() => onDeleteChat(chat)} aria-label={`Delete ${chat.title}`} title="Delete chat" className={`flex size-9 items-center justify-center rounded-lg transition focus-visible:outline-none focus-visible:ring-2 ${selected ? 'text-white/70 hover:bg-white/15 hover:text-white focus-visible:ring-white/70' : 'opacity-0 text-[#9b6573] hover:bg-[#f2dce3] hover:text-[#ad3150] group-hover/chat:opacity-100 group-focus-within/chat:opacity-100 focus-visible:opacity-100 focus-visible:ring-[#ad3150]'}`}>
                               <Trash2 className="size-3.5" />
                             </button>
                           </div>
                         </div>
                       )
                     })}
+                    {chats.length === 0 ? (
+                      <button
+                        type="button"
+                        onClick={onNewChat}
+                        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[#cbbdd4] bg-[#eee7f1] px-3 text-xs font-semibold text-[#59416f] transition-colors hover:border-[#a995b7] hover:bg-[#e9dfef] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                      >
+                        <Plus className="size-3.5" /> Start the first chat
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               ) : null}
             </div>
           )
         })}
+        {projects.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-[#cfc1d8] bg-[#eee7f1] px-4 py-5 text-center">
+            <Folder className="mx-auto size-5 text-[#7b6b84]" />
+            <p className="mt-2 text-xs font-semibold text-[#514a56]">No projects yet</p>
+            <button type="button" onClick={onNewProject} className="mt-2 text-xs font-semibold text-[#4f378a] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">Create your first project</button>
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-auto rounded-2xl border border-[#ded3e4] bg-[#fffaff] p-3.5">
@@ -534,6 +594,24 @@ const EMPTY_VALUES = {
   generateImages: true,
   keyMessagesText: '',
   constraints: '',
+}
+
+const TEST_VALUES = {
+  brandName: 'Shark & Sprout',
+  product: 'Playful baby t-shirts with cheerful shark illustrations, made from soft organic cotton for everyday adventures.',
+  industry: 'Children’s apparel',
+  businessType: 'Direct-to-consumer',
+  pricing: '$28 per t-shirt or $72 for a three-pack, with free shipping over $50',
+  campaignGoal: 'launch',
+  targetAudience: 'Style-conscious parents and gift buyers, ages 25–40, shopping for children ages 0–5',
+  brandVoice: 'playful, upbeat, reassuring',
+  voicePreset: 'playful',
+  platforms: ['instagram', 'tiktok', 'facebook'],
+  duration: '2 weeks',
+  postsPerWeek: 4,
+  generateImages: true,
+  keyMessagesText: 'Soft organic cotton for all-day comfort\nMade for tiny explorers and big imaginations\nEasy giftable three-packs for growing wardrobes',
+  constraints: 'Avoid fear-based language and do not make unverified sustainability claims.',
 }
 
 const GENERATE_STORAGE_KEY = 'aetherflow.generate.workspace.v1'
@@ -602,7 +680,7 @@ function buildStrategyBrief(values) {
   }
 }
 
-function CampaignForm({ values, setValues, errors, onGenerate, isGenerating, isLocked = false }) {
+function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, isGenerating, isLocked = false }) {
   const set = (patch) => setValues((current) => ({ ...current, ...patch }))
 
   const togglePlatform = (id) => {
@@ -638,6 +716,13 @@ function CampaignForm({ values, setValues, errors, onGenerate, isGenerating, isL
           <p className="mt-2 text-sm leading-5 text-[#746b79]">
             Start with the business context. A strategy team will turn it into a plan for you to review before any posts are made.
           </p>
+          <button
+            type="button"
+            onClick={onFillTestData}
+            className="mt-3 text-xs font-semibold text-[#4f378a] transition-colors hover:text-[#381e72] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] focus-visible:ring-offset-2"
+          >
+            Fill with test data
+          </button>
         </div>
 
         <div>
@@ -947,40 +1032,49 @@ function CampaignForm({ values, setValues, errors, onGenerate, isGenerating, isL
   )
 }
 
-function PostArtwork({ gradient, imageUrl, label, product, platform }) {
+function PostArtwork({ gradient, imageUrl, label, brandName, platform }) {
   const canRenderImage = typeof imageUrl === 'string' && /^(https?:|data:image\/|blob:)/i.test(imageUrl)
   return (
-    <div role="img" aria-label={label} className={`relative min-h-48 overflow-hidden ${canRenderImage ? '' : `bg-gradient-to-br ${gradient}`}`}>
+    <div role="img" aria-label={label} className={`relative aspect-[4/3] min-h-60 overflow-hidden rounded-2xl ${canRenderImage ? '' : `bg-gradient-to-br ${gradient}`}`}>
       {canRenderImage ? (
-        <img src={imageUrl} alt="" className="absolute inset-0 size-full object-cover" />
+        <img src={imageUrl} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
       ) : null}
       <div className="absolute -right-8 -top-8 size-36 rounded-full border border-white/35 bg-white/10" />
       <div className="absolute bottom-[-52px] left-[-38px] size-44 rounded-full bg-[#201a25]/20 blur-sm" />
-      <div className="absolute inset-x-6 bottom-5 flex items-end justify-between">
+      <div className="absolute inset-x-5 bottom-5 flex items-end justify-between">
         <div>
           <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.2em] text-white/80">
             {platform}
           </span>
-          <span className="font-display text-3xl leading-none tracking-tight text-white drop-shadow-sm">
-            {product || 'Your brand'}
+          <span className="font-display text-[28px] leading-none tracking-tight text-white drop-shadow-sm">
+            {brandName || 'Your brand'}
           </span>
         </div>
-        <span className="flex size-12 items-center justify-center rounded-full border border-white/35 bg-white/15 backdrop-blur-md">
-          <Sparkles className="size-5 text-white" />
+        <span className="flex size-11 items-center justify-center rounded-full border border-white/40 bg-[#201a25]/15 backdrop-blur-md">
+          <Sparkles className="size-[18px] text-white" aria-hidden="true" />
         </span>
       </div>
     </div>
   )
 }
 
-function PostCard({ post, index, showImage, product, onCaptionChange }) {
+function PostCard({ post, index, showImage, brandName, onCaptionChange }) {
   const [copied, setCopied] = useState(false)
+  const [draftCaption, setDraftCaption] = useState(post.caption ?? '')
+  const captionRef = useRef(null)
   const platformLabel = PLATFORM_OPTIONS.find((option) => option.id === post.platform)?.label ?? post.platform
   const Icon = PLATFORM_ICONS[post.platform]
   const gradient = ART_GRADIENTS[index % ART_GRADIENTS.length]
 
+  useEffect(() => {
+    const textarea = captionRef.current
+    if (!textarea) return
+    textarea.style.height = 'auto'
+    textarea.style.height = `${textarea.scrollHeight}px`
+  }, [draftCaption])
+
   const copyPost = async () => {
-    const value = [post.caption, post.hashtags?.length ? post.hashtags.map((tag) => `#${tag}`).join(' ') : '', post.cta]
+    const value = [draftCaption, post.hashtags?.length ? post.hashtags.map((tag) => `#${tag.replace(/^#/, '')}`).join(' ') : '', post.cta]
       .filter(Boolean)
       .join('\n\n')
     try {
@@ -993,121 +1087,165 @@ function PostCard({ post, index, showImage, product, onCaptionChange }) {
   }
 
   return (
-    <motion.article
-      layout
-      className="overflow-hidden rounded-[20px] border border-[#dcd3df] bg-[#fffaff] shadow-[0_12px_34px_rgba(46,32,51,0.07)]"
-    >
-      <div className="flex min-h-14 items-center gap-3 border-b border-[#e5dee7] px-4 sm:px-5">
-        <span className="flex size-7 items-center justify-center rounded-full bg-[#e8fbcf] text-[11px] font-bold text-[#315016]">
+    <article className="overflow-hidden rounded-[24px] border border-[#d8cedc] bg-[#fffaff] shadow-[0_12px_32px_rgba(46,32,51,0.06)] transition-shadow duration-200 hover:shadow-[0_18px_42px_rgba(46,32,51,0.09)]">
+      <header className="flex min-h-16 items-center gap-3 border-b border-[#e5dee7] px-4 sm:px-5">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#e6fbc7] text-xs font-bold tabular-nums text-[#315016]">
           {String(index + 1).padStart(2, '0')}
         </span>
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.13em] text-[#716777]">
-            {Icon ? <Icon className="size-3.5" /> : null}
+            {Icon ? <Icon className="size-3.5" aria-hidden="true" /> : null}
             {platformLabel}
           </p>
-          <p className="truncate text-xs text-[#918895]">{post.date || 'Scheduled'}</p>
+          <p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-[#807586]">
+            <CalendarDays className="size-3.5" aria-hidden="true" /> {post.date || 'Schedule pending'}
+          </p>
         </div>
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex items-center gap-2">
+          <span className="hidden items-center gap-1.5 rounded-full bg-[#f3f9e9] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[#456321] sm:flex">
+            <span className="size-1.5 rounded-full bg-[#6d9d2d]" /> Ready
+          </span>
           <button
             type="button"
             onClick={copyPost}
             aria-label={`Copy post ${index + 1}`}
-            className="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-[#625b71] transition-colors hover:bg-[#f1eaf3] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+            className="flex h-11 items-center gap-2 rounded-xl border border-[#ded4e2] bg-white px-3.5 text-xs font-semibold text-[#554c5b] transition-colors hover:border-[#bbaac5] hover:bg-[#f8f3f8] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
           >
-            {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-            <span className="hidden sm:inline">{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button type="button" aria-label={`More options for post ${index + 1}`} className="flex size-9 items-center justify-center rounded-lg text-[#716777] hover:bg-[#f1eaf3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
-            <MoreHorizontal className="size-[18px]" />
+            {copied ? <Check className="size-4" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}
+            <span>{copied ? 'Copied' : 'Copy post'}</span>
           </button>
         </div>
-      </div>
+      </header>
 
-      <div className={`grid ${showImage ? 'md:grid-cols-[minmax(210px,0.82fr)_minmax(0,1.18fr)]' : ''}`}>
+      <div className={`grid gap-1 p-4 sm:p-5 ${showImage ? 'md:grid-cols-[minmax(260px,0.76fr)_minmax(0,1.24fr)] md:gap-5' : ''}`}>
         {showImage ? (
           <PostArtwork
             gradient={gradient}
             imageUrl={post.imageUrl}
-            label={post.visualPrompt || `Campaign visual for ${product}`}
-            product={product?.split(' ')[0]}
+            label={post.visualPrompt || `Campaign visual for ${brandName}`}
+            brandName={brandName}
             platform={platformLabel}
           />
         ) : null}
-        <div className="p-5 sm:p-6">
-          <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.16em] text-[#948a98]" htmlFor={`post-caption-${index}`}>
-            Caption
-          </label>
+        <div className={`${showImage ? 'pt-5 md:pt-1' : ''} min-w-0`}>
+          <div className="mb-2.5 flex items-end justify-between gap-3">
+            <label className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#746a7a]" htmlFor={`post-caption-${index}`}>
+              Caption
+            </label>
+            <span id={`post-caption-count-${index}`} className="text-[11px] tabular-nums text-[#8a7f90]">{draftCaption.length} characters</span>
+          </div>
           <textarea
+            ref={captionRef}
             id={`post-caption-${index}`}
-            rows={5}
-            defaultValue={post.caption}
-            onBlur={(event) => onCaptionChange(index, event.target.value)}
-            className="w-full resize-none border-0 bg-transparent text-sm leading-[1.65] text-[#514a56] outline-none focus-visible:rounded-md focus-visible:ring-2 focus-visible:ring-[#4f378a]/30"
+            rows={3}
+            value={draftCaption}
+            onChange={(event) => setDraftCaption(event.target.value)}
+            onBlur={() => onCaptionChange(index, draftCaption)}
+            aria-describedby={`post-caption-count-${index} post-caption-help-${index}`}
+            className="min-h-28 w-full resize-none overflow-hidden rounded-2xl border border-[#ddd3e1] bg-[#fbf8fb] px-4 py-3.5 text-base leading-7 text-[#423a47] outline-none transition-colors placeholder:text-[#aaa1ae] focus:border-[#6b4c9a] focus:bg-white focus:ring-3 focus:ring-[#4f378a]/10 sm:text-[15px]"
           />
+          <p id={`post-caption-help-${index}`} className="mt-1.5 text-[11px] text-[#8a7f90]">Your edit saves when you leave this field.</p>
+
           {post.hashtags?.length ? (
-            <input
-              readOnly
-              value={post.hashtags.map((tag) => `#${tag}`).join(' ')}
-              className="mt-3 w-full border-0 bg-transparent text-xs font-medium text-[#4f378a] outline-none"
-              aria-label={`Hashtags for post ${index + 1}`}
-            />
+            <div className="mt-4">
+              <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.13em] text-[#817686]"><Hash className="size-3.5" aria-hidden="true" /> Hashtags</p>
+              <div className="mt-2 flex flex-wrap gap-1.5" aria-label={`Hashtags for post ${index + 1}`}>
+                {post.hashtags.map((tag) => (
+                  <span key={tag} className="rounded-full border border-[#ded4e2] bg-white px-2.5 py-1 text-[11px] font-medium text-[#4f378a]">#{tag.replace(/^#/, '')}</span>
+                ))}
+              </div>
+            </div>
           ) : null}
+
           {post.cta ? (
-            <p className="mt-3 rounded-lg bg-[#f3edf5] px-3 py-2 text-xs font-semibold text-[#4f378a]">{post.cta}</p>
+            <div className="mt-4 flex items-start gap-3 rounded-2xl border border-[#e3d9e6] bg-[#f3edf5] p-3.5">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#4f378a] shadow-sm"><MousePointerClick className="size-4" aria-hidden="true" /></span>
+              <div><p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#817686]">Call to action</p><p className="mt-1 text-sm font-semibold text-[#4f378a]">{post.cta}</p></div>
+            </div>
           ) : null}
+
           {showImage && post.visualPrompt ? (
-            <p className="mt-3 border-t border-[#ece4ee] pt-3 text-[11px] leading-[1.5] text-[#948a98]">
-              <span className="font-semibold uppercase tracking-[0.13em]">Visual prompt</span> · {post.visualPrompt}
-            </p>
+            <details className="group mt-4 rounded-xl border border-[#e6dee8] bg-white">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3.5 py-2.5 text-xs font-semibold text-[#62566b] transition-colors hover:bg-[#faf7fb] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] [&::-webkit-details-marker]:hidden">
+                View visual direction
+                <ChevronDown className="size-4 transition-transform duration-200 group-open:rotate-180 motion-reduce:transition-none" aria-hidden="true" />
+              </summary>
+              <p className="border-t border-[#ece4ee] px-3.5 py-3 text-xs leading-5 text-[#7b7081]">{post.visualPrompt}</p>
+            </details>
           ) : null}
         </div>
       </div>
-    </motion.article>
+    </article>
   )
 }
 
 function StrategySummary({ strategy }) {
   if (!strategy) return null
+  const tones = strategy.tonePerPlatform ? Object.entries(strategy.tonePerPlatform) : []
+
   return (
-    <section className="mb-6 rounded-[20px] border border-[#dcd3df] bg-[#fffaff] p-5 shadow-[0_8px_24px_rgba(46,32,51,0.05)] sm:p-6">
-      <div className="mb-4 flex items-center gap-2">
-        <span className="flex size-8 items-center justify-center rounded-full bg-[#e6fbc7] text-[#315016]">
-          <Lightbulb className="size-4" />
-        </span>
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.13em] text-[#716777]">Strategy</p>
-          <h3 className="font-display text-lg tracking-[-0.3px] text-[#201a25]">Core narrative &amp; pillars</h3>
+    <section id="campaign-strategy" className="overflow-hidden rounded-[24px] border border-[#d8cedc] bg-[#fffaff] shadow-[0_14px_35px_rgba(46,32,51,0.06)]">
+      <div className="border-b border-[#e6dee8] px-5 py-5 sm:px-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#e6fbc7] text-[#315016]">
+              <Lightbulb className="size-[18px]" />
+            </span>
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#716777]">Campaign strategy</p>
+              <h3 className="font-display text-[22px] leading-tight tracking-[-0.35px] text-[#201a25]">The idea behind the work</h3>
+            </div>
+          </div>
+          <span className="hidden rounded-full border border-[#d8cbe0] bg-[#faf6fb] px-3 py-1.5 text-xs font-semibold text-[#594a63] sm:inline-flex">
+            {strategy.contentPillars?.length ?? 0} pillars
+          </span>
         </div>
+        <blockquote className="mt-5 border-l-2 border-[#7ba63b] pl-4 font-display text-xl leading-[1.45] tracking-[-0.2px] text-[#34283a] sm:text-[23px]">
+          {strategy.coreNarrative}
+        </blockquote>
       </div>
-      <p className="text-sm leading-[1.65] text-[#514a56]">{strategy.coreNarrative}</p>
 
       {Array.isArray(strategy.contentPillars) && strategy.contentPillars.length > 0 ? (
-        <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+        <div className="px-5 py-5 sm:px-6">
+          <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.15em] text-[#817486]">Content pillars</p>
+          <ol className="grid gap-3 sm:grid-cols-2">
           {strategy.contentPillars.map((pillar, index) => (
-            <li key={`${pillar.name}-${index}`} className="rounded-xl border border-[#ece4ee] bg-[#f8f3f8] p-3">
-              <p className="text-sm font-semibold text-[#201a25]">{pillar.name}</p>
-              <p className="mt-1 text-xs leading-[1.55] text-[#746b79]">{pillar.description}</p>
+            <li key={`${pillar.name}-${index}`} className="group rounded-2xl border border-[#e7dfe9] bg-[#f8f3f8] p-4 transition-colors hover:border-[#cdbed4] hover:bg-[#faf7fb]">
+              <div className="flex items-start gap-3">
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-[#d7c9de] bg-white text-[11px] font-bold tabular-nums text-[#4f378a]">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-[#201a25]">{pillar.name}</p>
+                  <p className="mt-1 text-xs leading-5 text-[#6f6475]">{pillar.description}</p>
+                </div>
+              </div>
             </li>
           ))}
-        </ul>
+          </ol>
+        </div>
       ) : null}
 
-      {strategy.tonePerPlatform && Object.keys(strategy.tonePerPlatform).length > 0 ? (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {Object.entries(strategy.tonePerPlatform).map(([platform, tone]) => {
+      {tones.length > 0 ? (
+        <div className="border-t border-[#e6dee8] bg-[#fbf8fb] px-5 py-4 sm:px-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <p className="shrink-0 text-[11px] font-bold uppercase tracking-[0.15em] text-[#817486]">Voice by channel</p>
+            <div className="flex flex-wrap gap-2">
+          {tones.map(([platform, tone]) => {
             const label = PLATFORM_OPTIONS.find((option) => option.id === platform)?.label ?? platform
             return (
-              <span key={platform} className="rounded-full border border-[#e2d9e6] bg-white px-3 py-1 text-[11px] text-[#5d5462]">
+              <span key={platform} className="rounded-full border border-[#ded4e2] bg-white px-3 py-1.5 text-xs text-[#5d5462]">
                 <span className="font-semibold text-[#4f378a]">{label}:</span> {tone}
               </span>
             )
           })}
+            </div>
+          </div>
         </div>
       ) : null}
 
       {strategy.rationale ? (
-        <p className="mt-4 text-xs italic leading-[1.55] text-[#827889]">{strategy.rationale}</p>
+        <p className="border-t border-[#e6dee8] px-5 py-4 text-xs italic leading-5 text-[#796e7f] sm:px-6">{strategy.rationale}</p>
       ) : null}
     </section>
   )
@@ -1613,7 +1751,8 @@ function StrategyReview({ strategy, onConfirm, onEdit, onStrategyChange, isSubmi
 }
 
 function QANotes({ notes }) {
-  if (!notes || notes.length === 0) return null
+  const safeNotes = Array.isArray(notes) ? notes : []
+  const openNotes = safeNotes.filter((note) => !note.resolved)
   const icons = { info: CircleAlert, warning: AlertTriangle, error: AlertTriangle }
   const colors = {
     info: 'text-[#4f378a] bg-[#f2eafa]',
@@ -1621,38 +1760,51 @@ function QANotes({ notes }) {
     error: 'text-[#ad3150] bg-[#fbe2e8]',
   }
   return (
-    <section className="mb-6 rounded-[20px] border border-[#dcd3df] bg-[#fffaff] p-5 shadow-[0_8px_24px_rgba(46,32,51,0.05)] sm:p-6">
-      <div className="mb-3 flex items-center gap-2">
-        <span className="flex size-8 items-center justify-center rounded-full bg-[#e6fbc7] text-[#315016]">
-          <Check className="size-4" />
-        </span>
+    <aside id="campaign-qa" className="self-start overflow-hidden rounded-[24px] border border-[#d8cedc] bg-[#fffaff] shadow-[0_14px_35px_rgba(46,32,51,0.06)]">
+      <div className="border-b border-[#e6dee8] px-5 py-5">
+        <div className="flex items-center justify-between gap-3">
+          <span className="flex size-10 items-center justify-center rounded-xl bg-[#e6fbc7] text-[#315016]">
+            <ShieldCheck className="size-[18px]" />
+          </span>
+          <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] ${openNotes.length > 0 ? 'bg-[#fcefd9] text-[#8a4700]' : 'bg-[#e6fbc7] text-[#315016]'}`}>
+            {openNotes.length > 0 ? `${openNotes.length} open` : 'All clear'}
+          </span>
+        </div>
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.13em] text-[#716777]">QA notes</p>
-          <h3 className="font-display text-lg tracking-[-0.3px] text-[#201a25]">Editor review</h3>
+          <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-[#716777]">Quality check</p>
+          <h3 className="font-display text-[22px] leading-tight tracking-[-0.35px] text-[#201a25]">Before you publish</h3>
+          <p className="mt-2 text-xs leading-5 text-[#716777]">Review these final checks before scheduling the campaign.</p>
         </div>
       </div>
-      <ul className="space-y-2">
-        {notes.map((note, index) => {
+      {safeNotes.length > 0 ? (
+      <ul className="space-y-2 p-4">
+        {safeNotes.map((note, index) => {
           const Icon = icons[note.severity] ?? CircleAlert
           return (
-            <li key={index} className="flex items-start gap-2.5 rounded-xl bg-[#f8f3f8] p-3">
-              <span className={`flex size-6 shrink-0 items-center justify-center rounded-full ${colors[note.severity] ?? colors.info}`}>
-                <Icon className="size-3.5" />
+            <li key={index} className="rounded-2xl border border-[#ebe3ed] bg-[#f8f3f8] p-3.5">
+              <div className="flex items-start gap-3">
+              <span className={`flex size-7 shrink-0 items-center justify-center rounded-full ${colors[note.severity] ?? colors.info}`}>
+                <Icon className="size-3.5" aria-hidden="true" />
               </span>
               <div className="min-w-0">
-                <p className="text-sm text-[#514a56]">
+                <p className="text-sm leading-5 text-[#514a56]">
                   {String(note.message)}
-                  {note.postId ? <span className="ml-1 text-xs text-[#948a98]">· {note.postId}</span> : null}
                 </p>
-                <p className="mt-0.5 text-[11px] uppercase tracking-[0.08em] text-[#948a98]">
-                  {note.severity} · {note.resolved ? 'resolved' : 'open'}
+                <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.1em] text-[#84798a]">
+                  {note.postId ? `${note.postId} · ` : ''}{note.severity} · {note.resolved ? 'Resolved' : 'Needs review'}
                 </p>
+              </div>
               </div>
             </li>
           )
         })}
       </ul>
-    </section>
+      ) : (
+        <div className="p-4">
+          <div className="rounded-2xl bg-[#f3f9e9] p-4 text-sm leading-6 text-[#405625]">No quality issues were found. Your campaign is ready for a final human review.</div>
+        </div>
+      )}
+    </aside>
   )
 }
 
@@ -1834,6 +1986,7 @@ function ResultsPanel({
   onEditStrategy,
   onStrategyChange,
 }) {
+  const [campaignCopied, setCampaignCopied] = useState(false)
   const selectedPlatforms = PLATFORM_OPTIONS.filter((platform) => values.platforms.includes(platform.id))
 
   const updateCaption = (index, value) => {
@@ -1849,10 +2002,91 @@ function ResultsPanel({
   const workflowKind = phase === 'strategy' ? 'strategy' : 'content'
   const hasStrategyReview = Boolean(strategy) && !campaign && phase === 'review'
   const totalPosts = campaign?.calendar?.length ?? 0
+  const openQaNotes = campaign?.notes?.filter((note) => !note.resolved).length ?? 0
+
+  const copyCampaign = async () => {
+    const content = (campaign?.calendar ?? []).map((post, index) => {
+      const platform = PLATFORM_OPTIONS.find((option) => option.id === post.platform)?.label ?? post.platform
+      return [
+        `${index + 1}. ${platform}${post.date ? ` — ${post.date}` : ''}`,
+        post.caption,
+        post.hashtags?.length ? post.hashtags.map((tag) => `#${tag}`).join(' ') : '',
+        post.cta,
+      ].filter(Boolean).join('\n')
+    }).join('\n\n')
+
+    try {
+      await navigator.clipboard.writeText(content)
+    } catch {
+      // Clipboard access can be unavailable in embedded previews.
+    }
+    setCampaignCopied(true)
+    window.setTimeout(() => setCampaignCopied(false), 1600)
+  }
 
   return (
     <main className="min-w-0 flex-1 bg-[#f8f3f8] lg:max-h-[calc(100dvh-64px)] lg:overflow-y-auto" id="generated-results">
-      <div className={`mx-auto px-4 py-6 transition-[max-width] duration-300 sm:px-7 lg:px-8 lg:py-8 xl:px-10 ${hasStrategyReview ? 'max-w-[1180px]' : 'max-w-[960px]'}`}>
+      <div className={`mx-auto px-4 py-6 transition-[max-width] duration-300 sm:px-7 lg:px-8 lg:py-8 xl:px-10 ${hasStrategyReview || hasResults ? 'max-w-[1180px]' : 'max-w-[960px]'}`}>
+        {hasResults ? (
+          <header className="mb-6 overflow-hidden rounded-[28px] bg-[#2b174f] text-white shadow-[0_24px_60px_rgba(43,23,79,0.18)]">
+            <div className="relative px-5 py-6 sm:px-7 sm:py-7 lg:px-8">
+              <div className="pointer-events-none absolute -right-16 -top-24 size-72 rounded-full border border-[#d8ff9d]/20 bg-[#d8ff9d]/10" />
+              <div className="pointer-events-none absolute -bottom-32 right-1/3 size-56 rounded-full border border-white/10" />
+              <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                <div className="max-w-2xl">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-white/60">
+                    <span>{projectName}</span>
+                    <ChevronRight className="size-3.5" aria-hidden="true" />
+                    <span className="font-semibold text-[#d8ff9d]">Campaign ready</span>
+                  </div>
+                  <div className="mt-5 flex items-center gap-2">
+                    <span className="flex size-7 items-center justify-center rounded-full bg-[#d8ff9d] text-[#2b174f]">
+                      <Check className="size-4" strokeWidth={2.5} aria-hidden="true" />
+                    </span>
+                    <span className="text-[11px] font-bold uppercase tracking-[0.17em] text-[#d8ff9d]">Generation complete</span>
+                  </div>
+                  <h2 className="mt-3 font-display text-[38px] leading-[0.98] tracking-[-0.9px] sm:text-[48px]">Your campaign is ready to shape.</h2>
+                  <p className="mt-3 max-w-xl text-sm leading-6 text-white/70">Review the strategy, clear any QA notes, then edit or copy each post when you are ready to publish.</p>
+                </div>
+                <div className="flex flex-wrap gap-2 lg:justify-end">
+                  <button
+                    type="button"
+                    onClick={onEditStrategy}
+                    className="flex h-11 items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d8ff9d]"
+                  >
+                    <Pencil className="size-4" aria-hidden="true" /> Edit brief
+                  </button>
+                  <button
+                    type="button"
+                    onClick={copyCampaign}
+                    className="flex h-11 items-center gap-2 rounded-xl bg-[#d8ff9d] px-4 text-sm font-bold text-[#2b174f] transition-colors hover:bg-[#e4ffb9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#2b174f]"
+                  >
+                    {campaignCopied ? <Check className="size-4" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}
+                    {campaignCopied ? 'Campaign copied' : 'Copy all posts'}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <dl className="grid border-t border-white/10 bg-white/[0.06] sm:grid-cols-2 lg:grid-cols-4">
+              <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4 sm:border-r lg:border-b-0 lg:px-6">
+                <Layers3 className="size-5 text-[#d8ff9d]" aria-hidden="true" />
+                <div><dt className="text-[10px] font-bold uppercase tracking-[0.13em] text-white/45">Posts</dt><dd className="mt-0.5 text-sm font-semibold">{totalPosts} ready</dd></div>
+              </div>
+              <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4 lg:border-b-0 lg:border-r lg:px-6">
+                <Camera className="size-5 text-[#d8ff9d]" aria-hidden="true" />
+                <div><dt className="text-[10px] font-bold uppercase tracking-[0.13em] text-white/45">Channels</dt><dd className="mt-0.5 text-sm font-semibold">{selectedPlatforms.length} selected</dd></div>
+              </div>
+              <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4 sm:border-b-0 sm:border-r lg:px-6">
+                <CalendarDays className="size-5 text-[#d8ff9d]" aria-hidden="true" />
+                <div><dt className="text-[10px] font-bold uppercase tracking-[0.13em] text-white/45">Duration</dt><dd className="mt-0.5 text-sm font-semibold">{values.duration}</dd></div>
+              </div>
+              <div className="flex items-center gap-3 px-5 py-4 lg:px-6">
+                <ShieldCheck className="size-5 text-[#d8ff9d]" aria-hidden="true" />
+                <div><dt className="text-[10px] font-bold uppercase tracking-[0.13em] text-white/45">QA status</dt><dd className="mt-0.5 text-sm font-semibold">{openQaNotes > 0 ? `${openQaNotes} to review` : 'All clear'}</dd></div>
+              </div>
+            </dl>
+          </header>
+        ) : (
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-[#776e7d]">
@@ -1885,6 +2119,7 @@ function ResultsPanel({
             <span className="rounded-full border border-[#d9d0dc] bg-white px-3 py-1.5 text-xs font-semibold text-[#5d5462]">{hasStrategyReview ? 'Plan ready' : `${totalPosts} posts`}</span>
           </div>
         </div>
+        )}
 
         {error ? <ErrorBanner message={error} onDismiss={onDismissError} onRetry={onRetryError} title={phase === 'strategy' || (!campaign && !strategy) ? 'Strategy generation failed' : 'Content generation failed'} /> : null}
 
@@ -1913,19 +2148,48 @@ function ResultsPanel({
           ) : hasStrategyReview ? (
             <StrategyReview strategy={strategy} onConfirm={onConfirmStrategy} onEdit={onEditStrategy} onStrategyChange={onStrategyChange} isSubmitting={false} />
           ) : hasResults ? (
-            <motion.div key="results" className="space-y-5" aria-live="polite">
-              <StrategySummary strategy={campaign?.strategy} />
-              <QANotes notes={campaign?.notes ?? []} />
-              {(campaign?.calendar ?? []).map((entry, index) => (
-                <PostCard
-                  key={`${entry.platform}-${index}`}
-                  post={entry}
-                  index={index}
-                  showImage={values.generateImages}
-                  product={values.product}
-                  onCaptionChange={updateCaption}
-                />
-              ))}
+            <motion.div key="results" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6" aria-live="polite">
+              <nav aria-label="Campaign sections" className="flex gap-2 overflow-x-auto rounded-2xl border border-[#ded4e2] bg-[#fffaff] p-2 shadow-[0_6px_18px_rgba(46,32,51,0.04)]">
+                <a href="#campaign-strategy" className="flex h-10 shrink-0 items-center gap-2 rounded-xl bg-[#f2eafa] px-3.5 text-sm font-semibold text-[#381e72] transition-colors hover:bg-[#e9def3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
+                  <Lightbulb className="size-4" aria-hidden="true" /> Strategy
+                </a>
+                <a href="#campaign-qa" className="flex h-10 shrink-0 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-[#625b71] transition-colors hover:bg-[#f3edf5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
+                  <ShieldCheck className="size-4" aria-hidden="true" /> QA review
+                </a>
+                <a href="#campaign-posts" className="flex h-10 shrink-0 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-[#625b71] transition-colors hover:bg-[#f3edf5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
+                  <CalendarDays className="size-4" aria-hidden="true" /> Content calendar
+                </a>
+              </nav>
+
+              <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(280px,0.75fr)]">
+                <StrategySummary strategy={campaign?.strategy} />
+                <QANotes notes={campaign?.notes ?? []} />
+              </div>
+
+              <section id="campaign-posts" aria-labelledby="campaign-posts-heading" className="scroll-mt-6">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#716777]">Content calendar</p>
+                    <h3 id="campaign-posts-heading" className="mt-1 font-display text-[30px] leading-tight tracking-[-0.55px] text-[#201a25]">Review every post</h3>
+                    <p className="mt-1 text-sm leading-6 text-[#716777]">Captions are editable. Changes save to this campaign automatically when you leave the field.</p>
+                  </div>
+                  <span className="inline-flex h-9 shrink-0 items-center self-start rounded-full border border-[#d8cedc] bg-[#fffaff] px-3 text-xs font-semibold text-[#5d5462] sm:self-auto">
+                    {totalPosts} posts · {selectedPlatforms.length} channels
+                  </span>
+                </div>
+                <div className="space-y-4">
+                  {(campaign?.calendar ?? []).map((entry, index) => (
+                    <PostCard
+                      key={`${entry.platform}-${entry.date ?? 'unscheduled'}-${index}-${entry.caption}`}
+                      post={entry}
+                      index={index}
+                      showImage={values.generateImages}
+                      brandName={values.brandName}
+                      onCaptionChange={updateCaption}
+                    />
+                  ))}
+                </div>
+              </section>
             </motion.div>
           ) : (
             <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center rounded-[24px] border border-dashed border-[#c8bcd0] bg-[#fffaff]/70 px-6 py-20 text-center">
@@ -2021,22 +2285,40 @@ export function GeneratePage() {
     const controller = new AbortController()
     const loadProjects = async () => {
       try {
-        let loadedProjects = await listProjects({ signal: controller.signal })
+        const loadedProjects = await listProjects({ signal: controller.signal })
         if (loadedProjects.length === 0) {
-          const firstProject = await createProject('My first campaign', { signal: controller.signal })
-          loadedProjects = [firstProject]
+          setProjects([])
+          setActiveProject('')
+          setChats([])
+          setActiveChat('')
+          setValues({ ...EMPTY_VALUES })
+          setCampaign(null)
+          setStrategy(null)
+          setStrategyRunId('')
+          setSubmittedValues(null)
+          setPhase('idle')
+          setRunState(null)
+          setHistoryEntries([])
+          return
         }
         const selectedProject = loadedProjects.find((project) => project.id === restoredProjectId) ?? loadedProjects[0]
-        let loadedChats = await listChats(selectedProject.id, { signal: controller.signal })
-        if (loadedChats.length === 0) {
-          const firstChat = await createChat(selectedProject.id, 'Campaign chat 1', { signal: controller.signal })
-          loadedChats = [firstChat]
-        }
+        const loadedChats = await listChats(selectedProject.id, { signal: controller.signal })
         setProjects(loadedProjects.map((project) => project.id === selectedProject.id ? { ...project, chatCount: loadedChats.length } : project))
         setActiveProject(selectedProject.id)
         setChats(loadedChats)
-        const selectedChatId = loadedChats.some((chat) => chat.id === restoredChatId) ? restoredChatId : loadedChats[0].id
+        const selectedChatId = loadedChats.some((chat) => chat.id === restoredChatId) ? restoredChatId : (loadedChats[0]?.id ?? '')
         setActiveChat(selectedChatId)
+        if (!selectedChatId) {
+          setValues({ ...EMPTY_VALUES })
+          setCampaign(null)
+          setStrategy(null)
+          setStrategyRunId('')
+          setSubmittedValues(null)
+          setPhase('idle')
+          setRunState(null)
+          setHistoryEntries([])
+          return
+        }
         const history = await getChatHistory(selectedProject.id, selectedChatId, { signal: controller.signal })
         restoreChatHistory(history)
       } catch (loadError) {
@@ -2197,12 +2479,13 @@ export function GeneratePage() {
   const handleSelectProject = async (projectId) => {
     if (isGenerating || projectId === activeProject) return
     try {
-      let projectChats = await listChats(projectId)
-      if (projectChats.length === 0) projectChats = [await createChat(projectId, 'Campaign chat 1')]
+      const projectChats = await listChats(projectId)
       setActiveProject(projectId)
       setChats(projectChats)
       setProjects((current) => current.map((project) => project.id === projectId ? { ...project, chatCount: projectChats.length } : project))
-      setActiveChat(projectChats[0].id)
+      const nextChat = projectChats[0]
+      setActiveChat(nextChat?.id ?? '')
+      setValues({ ...EMPTY_VALUES })
       setCampaign(null)
       setStrategy(null)
       setStrategyRunId('')
@@ -2210,9 +2493,12 @@ export function GeneratePage() {
       setPhase('idle')
       setRunState(null)
       setHistoryOpen(false)
+      setHistoryEntries([])
       setError('')
-      const projectChatHistory = await getChatHistory(projectId, projectChats[0].id)
-      restoreChatHistory(projectChatHistory)
+      if (nextChat) {
+        const projectChatHistory = await getChatHistory(projectId, nextChat.id)
+        restoreChatHistory(projectChatHistory)
+      }
     } catch (selectError) {
       setError(typeof selectError?.message === 'string' ? selectError.message : 'Could not open the project.')
     }
@@ -2257,15 +2543,31 @@ export function GeneratePage() {
     if (!confirmed) return
     try {
       await deleteProject(project.id)
-      let remaining = await listProjects()
-      if (remaining.length === 0) remaining = [await createProject('My first campaign')]
-      const nextProject = remaining[0]
-      let nextChats = await listChats(nextProject.id)
-      if (nextChats.length === 0) nextChats = [await createChat(nextProject.id, 'Campaign chat 1')]
+      const remaining = await listProjects()
+      if (remaining.length === 0) {
+        setProjects([])
+        setActiveProject('')
+        setChats([])
+        setActiveChat('')
+        setValues({ ...EMPTY_VALUES })
+        setCampaign(null)
+        setStrategy(null)
+        setStrategyRunId('')
+        setSubmittedValues(null)
+        setPhase('idle')
+        setRunState(null)
+        setHistoryOpen(false)
+        setHistoryEntries([])
+        setError('')
+        return
+      }
+      const nextProject = remaining.find((item) => item.id === activeProject) ?? remaining[0]
+      const nextChats = await listChats(nextProject.id)
       setProjects(remaining)
       setActiveProject(nextProject.id)
       setChats(nextChats)
-      setActiveChat(nextChats[0].id)
+      setActiveChat(nextChats[0]?.id ?? '')
+      setValues({ ...EMPTY_VALUES })
       setCampaign(null)
       setStrategy(null)
       setStrategyRunId('')
@@ -2273,6 +2575,7 @@ export function GeneratePage() {
       setPhase('idle')
       setRunState(null)
       setHistoryOpen(false)
+      setHistoryEntries([])
       setError('')
     } catch (deleteError) {
       setError(typeof deleteError?.message === 'string' ? deleteError.message : 'Could not delete the project.')
@@ -2304,16 +2607,14 @@ export function GeneratePage() {
     if (!chat || !activeProject || isGenerating) return
     try {
       await deleteChat(activeProject, chat.id)
-      let remainingChats = await listChats(activeProject)
-      if (remainingChats.length === 0) {
-        remainingChats = [await createChat(activeProject, 'Campaign chat 1')]
-      }
+      const remainingChats = await listChats(activeProject)
       const deletedActiveChat = chat.id === activeChat
       setChats(remainingChats)
       setProjects((current) => current.map((project) => project.id === activeProject ? { ...project, chatCount: remainingChats.length } : project))
       if (deletedActiveChat) {
         const nextChat = remainingChats[0]
-        setActiveChat(nextChat.id)
+        setActiveChat(nextChat?.id ?? '')
+        setValues({ ...EMPTY_VALUES })
         setCampaign(null)
         setStrategy(null)
         setStrategyRunId('')
@@ -2321,9 +2622,12 @@ export function GeneratePage() {
         setPhase('idle')
         setRunState(null)
         setHistoryOpen(false)
-        const nextHistory = await getChatHistory(activeProject, nextChat.id)
-        setHistoryEntries(nextHistory)
-        restoreChatHistory(nextHistory)
+        setHistoryEntries([])
+        if (nextChat) {
+          const nextHistory = await getChatHistory(activeProject, nextChat.id)
+          setHistoryEntries(nextHistory)
+          restoreChatHistory(nextHistory)
+        }
       }
       setError('')
     } catch (chatError) {
@@ -2457,6 +2761,11 @@ export function GeneratePage() {
     }
   }
 
+  const handleFillTestData = () => {
+    setValues({ ...TEST_VALUES, platforms: [...TEST_VALUES.platforms] })
+    setErrors({})
+  }
+
   const handleConfirmStrategy = async () => {
     if (!strategy || isGenerating) return
 
@@ -2572,12 +2881,13 @@ export function GeneratePage() {
                 className="h-9 min-w-0 flex-1 rounded-lg border border-[#8e70b2] bg-[#faf6ff] px-2.5 text-sm font-semibold text-[#201a25] outline-none ring-2 ring-[#ddd0ef] selection:bg-[#d9c8f4]"
               />
             ) : (
-              <select value={activeProject} onChange={(event) => void handleSelectProject(event.target.value)} disabled={isGenerating} aria-label="Active project" className="min-w-0 flex-1 truncate rounded-lg border border-[#ded7e3] bg-white px-2.5 py-2 text-xs font-semibold text-[#201a25] outline-none focus:border-[#4f378a]">
+              <select value={activeProject} onChange={(event) => void handleSelectProject(event.target.value)} disabled={isGenerating || projects.length === 0} aria-label="Active project" className="min-w-0 flex-1 truncate rounded-lg border border-[#ded7e3] bg-white px-2.5 py-2 text-xs font-semibold text-[#201a25] outline-none focus:border-[#4f378a] disabled:text-[#948a98]">
+                {projects.length === 0 ? <option value="">No projects yet</option> : null}
                 {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
               </select>
             )}
-            <button type="button" onClick={beginMobileRename} aria-label="Rename current project" className="flex size-9 items-center justify-center rounded-lg bg-white text-[#625b71] ring-1 ring-[#ded7e3]"><Pencil className="size-3.5" /></button>
-            <button type="button" onClick={() => handleDeleteProject(currentProject)} aria-label="Delete current project" className="flex size-9 items-center justify-center rounded-lg bg-white text-[#ad3150] ring-1 ring-[#eccfd5]"><Trash2 className="size-3.5" /></button>
+            <button type="button" onClick={beginMobileRename} disabled={!activeProject} aria-label="Rename current project" className="flex size-9 items-center justify-center rounded-lg bg-white text-[#625b71] ring-1 ring-[#ded7e3] disabled:cursor-not-allowed disabled:opacity-40"><Pencil className="size-3.5" /></button>
+            <button type="button" onClick={() => handleDeleteProject(currentProject)} disabled={!activeProject} aria-label="Delete current project" className="flex size-9 items-center justify-center rounded-lg bg-white text-[#ad3150] ring-1 ring-[#eccfd5] disabled:cursor-not-allowed disabled:opacity-40"><Trash2 className="size-3.5" /></button>
             <button type="button" onClick={handleNewProject} aria-label="Create new project" className="flex size-9 items-center justify-center rounded-lg bg-[#381e72] text-white"><Plus className="size-3.5" /></button>
           </div>
           <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
@@ -2587,8 +2897,8 @@ export function GeneratePage() {
                 <button type="button" onClick={() => setChatPendingDelete(chat)} aria-label={`Delete ${chat.title}`} className={`flex h-full w-8 items-center justify-center ${chat.id === activeChat ? 'text-white/70 hover:bg-white/15 hover:text-white' : 'text-[#a45b70] hover:bg-[#fbe2e8]'}`}><Trash2 className="size-3.5" /></button>
               </div>
             ))}
-            <button type="button" onClick={handleNewChat} className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#4f378a] ring-1 ring-[#ded7e3]" aria-label="Create new chat"><Plus className="size-3.5" /></button>
-            <button type="button" onClick={handleOpenHistory} className="flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-white px-2.5 text-[11px] font-semibold text-[#4f378a] ring-1 ring-[#ded7e3]"><History className="size-3.5" /> History</button>
+            <button type="button" onClick={handleNewChat} disabled={!activeProject} className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white text-[#4f378a] ring-1 ring-[#ded7e3] disabled:cursor-not-allowed disabled:opacity-40" aria-label="Create new chat"><Plus className="size-3.5" /></button>
+            <button type="button" onClick={handleOpenHistory} disabled={!activeChat} className="flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-white px-2.5 text-[11px] font-semibold text-[#4f378a] ring-1 ring-[#ded7e3] disabled:cursor-not-allowed disabled:opacity-40"><History className="size-3.5" /> History</button>
           </div>
         </div>
       </div>
@@ -2610,14 +2920,17 @@ export function GeneratePage() {
           isOpen={sidebarOpen}
           onToggle={() => setSidebarOpen((current) => !current)}
         />
-        <CampaignForm
-          values={values}
-          setValues={setValues}
-          errors={errors}
-          onGenerate={handleGenerate}
-          isGenerating={isGenerating}
-          isLocked={!activeProject || !activeChat || phase === 'strategy' || phase === 'review' || phase === 'content'}
-        />
+        {phase === 'idle' ? (
+          <CampaignForm
+            values={values}
+            setValues={setValues}
+            errors={errors}
+            onGenerate={handleGenerate}
+            onFillTestData={handleFillTestData}
+            isGenerating={isGenerating}
+            isLocked={!activeProject || !activeChat || phase === 'strategy' || phase === 'review' || phase === 'content'}
+          />
+        ) : null}
         <ResultsPanel
           campaign={campaign}
           setCampaign={setCampaign}
