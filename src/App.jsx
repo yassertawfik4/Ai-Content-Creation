@@ -25,6 +25,9 @@ const GeneratePage = lazy(() =>
 const ConnectorsPage = lazy(() =>
   import("@/features/connectors/pages/ConnectorsPage").then((module) => ({ default: module.ConnectorsPage })),
 );
+const KnowledgePage = lazy(() =>
+  import("@/features/knowledge/pages/KnowledgePage").then((module) => ({ default: module.KnowledgePage })),
+);
 
 function App() {
   return (
@@ -38,6 +41,7 @@ function App() {
           <Route path="/otp-login" element={<GuestRoute><OtpLoginPage /></GuestRoute>} />
           <Route path="/generate" element={<ProtectedRoute><GeneratePage /></ProtectedRoute>} />
           <Route path="/connectors" element={<ProtectedRoute><ConnectorsPage /></ProtectedRoute>} />
+          <Route path="/knowledge" element={<ProtectedRoute><KnowledgePage /></ProtectedRoute>} />
         </Routes>
       </Suspense>
     </AuthProvider>
