@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import arrowRight from '@/assets/auth/arrow-right.svg'
 import eyeIcon from '@/assets/auth/eye.svg'
+import eyeOffIcon from '@/assets/auth/eye-off.svg'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
@@ -94,7 +95,7 @@ export function LoginForm({ onSuccess, onUnverified }) {
             className="absolute inset-y-0 right-3 flex w-7 items-center justify-center rounded text-[#494551] transition-opacity hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4f378a]"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
-            <img src={eyeIcon} alt="" className="h-[15px] w-[22px]" />
+            <img src={showPassword ? eyeIcon : eyeOffIcon} alt="" className="h-[15px] w-[22px]" />
           </button>
         </div>
         {errors.password ? (

@@ -1,8 +1,22 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import brandMark from '@/assets/auth/brand-mark.svg'
+import { LoaderCircle, MailCheck, RefreshCw } from 'lucide-react'
+import { AuthShell } from '../components/AuthShell'
+import { OtpInput } from '../components/OtpInput'
 import { getErrorMessage, sendVerificationOtp, signInEmailOtp } from '@/lib/authApi'
 import { useAuth } from '@/hooks/useAuth'
+import { useCountdown } from '@/hooks/useCountdown'
+import { maskEmail } from '@/lib/maskEmail'
+
+const RESEND_COOLDOWN_SECONDS = 60
+
+const inputClassName =
+  'h-[50px] rounded-xl border border-[#cbc4d2] bg-white px-4 text-base text-[#1d1b20] outline-none transition placeholder:text-[#a29ba8] focus-visible:border-[#4f378a] focus-visible:ring-2 focus-visible:ring-[#4f378a]/25 disabled:cursor-not-allowed disabled:opacity-60'
+
+const primaryClassName =
+  'h-14 w-full gap-2 rounded-xl bg-[#4f378a] text-sm font-semibold tracking-[1.4px] text-white shadow-lg shadow-[#4f378a]/20 transition-colors hover:bg-[#432f75] disabled:cursor-not-allowed disabled:opacity-60'
+
+const labelClassName = 'text-sm font-medium tracking-[1.4px] text-[#494551]'
 
 export function OtpLoginPage() {
   const location = useLocation()
@@ -10,118 +24,289 @@ export function OtpLoginPage() {
   const { refreshSession } = useAuth()
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
-  const [step, setStep] = useState('email')
-  const [error, setError] = useState('')
+  const [emailError, setEmailError] = useState('')
+  const [formError, setFormError] = useState('')
   const [notice, setNotice] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [status, setStatus] = useState('idle')
+  const countdown = useCountdown(0)
+
+  const isEmailStep = status !== 'email-sent' && status !== 'verifying' && status !== 'success'
+
+  const startResendCooldown = () => countdown.restart(RESEND_COOLDOWN_SECONDS)
 
   const handleSend = async (event) => {
     event.preventDefault()
-    setError('')
+    const trimmed = email.trim()
+    if (!trimmed || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmed)) {
+      setEmailError('Enter a valid work email to receive your code.')
+      return
+    }
+    setEmailError('')
+    setFormError('')
     setNotice('')
-    setIsSubmitting(true)
+    setStatus('sending')
     try {
-      await sendVerificationOtp({ email: email.trim(), type: 'sign-in' })
-      setStep('otp')
-      setNotice('A sign-in code was sent to your email.')
+      await sendVerificationOtp({ email: trimmed, type: 'sign-in' })
+      setStatus('email-sent')
+      setNotice('A sign-in code was sent to your inbox.')
+      startResendCooldown()
     } catch (err) {
-      setError(getErrorMessage(err))
-    } finally {
-      setIsSubmitting(false)
+      setFormError(getErrorMessage(err))
+      setStatus('idle')
     }
   }
 
-  const handleSignIn = async (event) => {
+  const handleVerify = async (event) => {
     event.preventDefault()
-    setError('')
+    if (otp.length !== 6) return
+    setFormError('')
     setNotice('')
-    setIsSubmitting(true)
+    setStatus('verifying')
     try {
       await signInEmailOtp({ email: email.trim(), otp: otp.trim() })
       await refreshSession()
-      const from = location.state?.from
-      navigate(typeof from === 'string' ? from : '/', { replace: true })
+      setStatus('success')
     } catch (err) {
-      setError(getErrorMessage(err))
-    } finally {
-      setIsSubmitting(false)
+      setFormError(getErrorMessage(err))
+      setStatus('email-sent')
     }
   }
 
-  return (
-    <main className="flex min-h-svh w-full items-center justify-center bg-[#fef7ff] px-6 py-12 text-[#1d1b20]">
-      <section className="w-full max-w-[448px] rounded-2xl border border-[#ded5e2] bg-white p-7 shadow-[0_20px_60px_rgba(56,30,114,0.1)] sm:p-10">
-        <div className="flex items-center">
-          <span className="flex size-10 items-center justify-center rounded-full bg-[#4f378a] shadow-lg shadow-black/10">
-            <img src={brandMark} alt="" className="size-[19px]" />
+  const handleResend = async () => {
+    setFormError('')
+    setNotice('')
+    setOtp('')
+    setStatus('email-sent')
+    try {
+      await sendVerificationOtp({ email: email.trim(), type: 'sign-in' })
+      setNotice('A fresh sign-in code was sent to your inbox.')
+      startResendCooldown()
+    } catch (err) {
+      setFormError(getErrorMessage(err))
+    }
+  }
+
+  useEffect(() => {
+    if (status !== 'success') return undefined
+    const timer = setTimeout(() => {
+      const from = location.state?.from
+      navigate(typeof from === 'string' ? from : '/', { replace: true })
+    }, 1600)
+    return () => clearTimeout(timer)
+  }, [status, location.state?.from, navigate])
+
+  const formatCountdown = (secs) =>
+    `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`
+
+  if (status === 'success') {
+    return (
+      <AuthShell>
+        <div className="flex flex-col items-center py-6 text-center">
+          <span className="auth-pop mb-6 flex size-20 items-center justify-center rounded-full bg-[#e6f3e1] shadow-[0_0_0_10px_rgba(58,130,74,0.08)]">
+            <MailCheck className="size-9 text-[#2e6b3e]" strokeWidth={2.2} />
           </span>
-          <span className="pl-2 text-[22px] font-medium leading-7">AetherFlow AI</span>
+          <h1 className="auth-fade-up font-display text-[38px] leading-[1.1] tracking-[-1px]">
+            You&apos;re signed in
+          </h1>
+          <p className="auth-fade-up auth-fade-up-delay mt-3 text-sm leading-6 text-[#494551]">
+            Verifying your session — taking you to your workspace…
+          </p>
         </div>
-        <h1 className="mt-10 font-display text-[38px] leading-[1.1] tracking-[-1px]">Email sign in</h1>
-        <p className="mt-3 text-sm leading-6 text-[#494551]">
-          Get a one-time code by email. No password required.
-        </p>
+      </AuthShell>
+    )
+  }
 
-        <form className="mt-8 flex flex-col gap-5" onSubmit={step === 'email' ? handleSend : handleSignIn} noValidate>
-          <label className="flex flex-col gap-2 text-sm font-medium text-[#494551]" htmlFor="otp-email">
-            Email
-            <input
-              id="otp-email"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              autoComplete="email"
-              required
-              disabled={step === 'otp'}
-              className="h-12 rounded-md border border-[#cbc4d2] px-4 outline-none focus:border-[#4f378a] focus:ring-2 focus:ring-[#4f378a]/15 disabled:bg-[#f5f0f6]"
-            />
-          </label>
-          {step === 'otp' ? (
-            <label className="flex flex-col gap-2 text-sm font-medium text-[#494551]" htmlFor="login-otp">
-              Sign-in code
+  return (
+    <AuthShell>
+      {isEmailStep ? (
+        <div className="auth-rise flex flex-col">
+          <div className="flex flex-col gap-1">
+            <div className="pt-5 sm:pt-7">
+              <h1 className="font-display text-[36px] leading-[1.2] tracking-[-0.9px] sm:text-[42px] sm:leading-[1.25] sm:tracking-[-1.05px]">
+                Sign in with a code
+              </h1>
+            </div>
+            <p className="text-sm leading-5 text-[#494551] sm:max-w-[360px]">
+              We&apos;ll email a one-time code to confirm it&apos;s really you. No password needed.
+            </p>
+          </div>
+
+          <form className="mt-8 flex flex-col gap-5" onSubmit={handleSend} noValidate>
+            <div className="flex flex-col gap-2">
+              <label className={labelClassName} htmlFor="otp-email">
+                Work Email
+              </label>
               <input
-                id="login-otp"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={6}
-                value={otp}
-                onChange={(event) => setOtp(event.target.value.replace(/\D/g, ''))}
-                autoComplete="one-time-code"
-                required
-                className="h-12 rounded-md border border-[#cbc4d2] px-4 text-lg tracking-[0.35em] outline-none focus:border-[#4f378a] focus:ring-2 focus:ring-[#4f378a]/15"
+                id="otp-email"
+                type="email"
+                autoComplete="email"
+                placeholder="alex@company.com"
+                value={email}
+                onChange={(event) => {
+                  setEmail(event.target.value)
+                  if (emailError) setEmailError('')
+                }}
+                disabled={status === 'sending'}
+                className={inputClassName}
+                aria-invalid={Boolean(emailError)}
+                aria-describedby={emailError ? 'otp-email-error' : undefined}
               />
-            </label>
-          ) : null}
+              {emailError ? (
+                <p id="otp-email-error" role="alert" className="text-xs leading-5 text-destructive">
+                  {emailError}
+                </p>
+              ) : null}
+            </div>
 
-          {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
-          {notice ? <p role="status" className="text-sm text-[#315016]">{notice}</p> : null}
+            {formError ? (
+              <p role="alert" className="auth-drop text-sm leading-5 text-destructive">
+                {formError}
+              </p>
+            ) : null}
 
-          <button
-            type="submit"
-            disabled={isSubmitting || !email.trim() || (step === 'otp' && otp.length !== 6)}
-            className="h-13 rounded-md bg-[#4f378a] text-sm font-semibold tracking-[1.2px] text-white shadow-lg shadow-black/10 transition-colors hover:bg-[#432f75] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isSubmitting ? 'Please wait…' : step === 'email' ? 'Send sign-in code' : 'Sign in'}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={status === 'sending'}
+              className={primaryClassName}
+            >
+              {status === 'sending' ? (
+                <>
+                  <LoaderCircle className="size-4 animate-spin" />
+                  Sending code…
+                </>
+              ) : (
+                'Send my code'
+              )}
+            </button>
+          </form>
 
-        {step === 'otp' ? (
-          <button
-            type="button"
-            onClick={() => {
-              setStep('email')
-              setOtp('')
-              setNotice('')
-            }}
-            className="mt-4 block w-full text-sm font-semibold text-[#4f378a] underline-offset-4 hover:underline"
-          >
-            Use a different email
-          </button>
-        ) : null}
-        <p className="mt-7 text-center text-sm text-[#494551]">
-          <Link to="/login" className="font-semibold text-[#4f378a] hover:underline">Back to password login</Link>
-        </p>
-      </section>
-    </main>
+          <p className="mt-6 text-center text-sm leading-5 text-[#494551] sm:mt-8">
+            <Link
+              to="/login"
+              className="font-semibold text-[#4f378a] underline-offset-4 hover:underline"
+            >
+              Back to password login
+            </Link>
+          </p>
+        </div>
+      ) : (
+        <div className="auth-rise flex flex-col">
+          <div className="flex flex-col gap-1">
+            <div className="pt-5 sm:pt-7">
+              <h1 className="font-display text-[36px] leading-[1.2] tracking-[-0.9px] sm:text-[42px] sm:leading-[1.25] sm:tracking-[-1.05px]">
+                Check your inbox
+              </h1>
+            </div>
+            <p className="text-sm leading-5 text-[#494551] sm:max-w-[380px]">
+              Enter the 6-digit code below. It expires in a few minutes.
+            </p>
+          </div>
+
+          <div className="mt-7 flex items-center gap-3 rounded-xl border border-[#cbc4d2] bg-white px-4 py-3 shadow-sm">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#4f378a]/10">
+              <MailCheck className="size-5 text-[#4f378a]" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-semibold tracking-[1px] text-[#494551] uppercase">
+                Code sent to
+              </p>
+              <p className="truncate text-sm font-medium text-[#1d1b20]">{maskEmail(email)}</p>
+            </div>
+          </div>
+
+          <form className="mt-6 flex flex-col gap-5" onSubmit={handleVerify} noValidate>
+            <div className="flex flex-col gap-3">
+              <span className={labelClassName} id="otp-code-label">
+                Verification code
+              </span>
+              <OtpInput
+                value={otp}
+                onChange={(value) => {
+                  setOtp(value)
+                  if (formError) setFormError('')
+                }}
+                autoFocus
+                disabled={status === 'verifying'}
+                error={Boolean(formError)}
+                describedBy={formError ? 'otp-code-error' : 'otp-code-help'}
+              />
+              {formError ? (
+                <p
+                  id="otp-code-error"
+                  role="alert"
+                  className="auth-drop text-sm leading-5 text-destructive"
+                >
+                  {formError}
+                </p>
+              ) : (
+                <p id="otp-code-help" className="text-xs leading-5 text-[#494551]">
+                  {otp.length}/6 digits entered
+                </p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={otp.length !== 6 || status === 'verifying'}
+              className={primaryClassName}
+            >
+              {status === 'verifying' ? (
+                <>
+                  <LoaderCircle className="size-4 animate-spin" />
+                  Verifying…
+                </>
+              ) : (
+                'Verify & sign in'
+              )}
+            </button>
+          </form>
+
+          <div className="mt-5 flex flex-col items-center gap-3">
+            {notice ? (
+              <p role="status" className="auth-drop text-sm leading-5 text-[#2e6b3e]">
+                {notice}
+              </p>
+            ) : null}
+            <div className="flex items-center gap-2 text-sm leading-5 text-[#494551]">
+              {countdown.isRunning ? (
+                <span className="flex items-center gap-2 tabular-nums">
+                  <RefreshCw className="size-4 animate-spin-slow" />
+                  Resend in {formatCountdown(countdown.seconds)}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResend}
+                  className="font-semibold text-[#4f378a] underline-offset-4 hover:underline"
+                >
+                  Resend the code
+                </button>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setStatus('idle')
+                setOtp('')
+                setFormError('')
+                setNotice('')
+              }}
+              className="text-sm font-medium text-[#494551] underline-offset-4 hover:text-[#4f378a] hover:underline"
+            >
+              Use a different email
+            </button>
+          </div>
+
+          <p className="mt-6 text-center text-sm leading-5 text-[#494551]">
+            <Link
+              to="/login"
+              className="font-semibold text-[#4f378a] underline-offset-4 hover:underline"
+            >
+              Back to password login
+            </Link>
+          </p>
+        </div>
+      )}
+    </AuthShell>
   )
 }
