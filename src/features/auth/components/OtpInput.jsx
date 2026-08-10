@@ -12,6 +12,7 @@ function OtpInput({
   error = false,
   autoFocus = true,
   className,
+  labelledBy,
   describedBy,
 }) {
   const refs = useRef([])
@@ -87,7 +88,8 @@ function OtpInput({
   return (
     <div
       role="group"
-      aria-label="Verification code"
+      aria-label={labelledBy ? undefined : 'Verification code'}
+      aria-labelledby={labelledBy}
       aria-describedby={describedBy}
       className={cn('-mx-1 flex justify-between gap-2 px-1 sm:gap-3', error && 'auth-shake', className)}
     >
