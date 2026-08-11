@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   AlertTriangle,
@@ -141,6 +141,15 @@ function BrandMark() {
   )
 }
 
+function LoadingRing({ className = 'size-4' }) {
+  return (
+    <span className={`relative inline-block shrink-0 ${className}`} aria-hidden="true">
+      <span className="absolute inset-0 rounded-full border-2 border-current opacity-25" />
+      <span className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-current" />
+    </span>
+  )
+}
+
 const navLinks = [
   { label: 'Home', to: '/' },
   { label: 'Generate', to: '/generate' },
@@ -195,10 +204,10 @@ function AppHeader() {
 
   return (
     <header className="relative z-30 flex h-16 shrink-0 items-center border-b border-[#ded7e3] bg-[#fffaff]/95 px-4 backdrop-blur-xl sm:px-6">
-      <Link to="/" className="flex min-w-0 items-center gap-2.5" aria-label="AetherFlow home">
+      <Link to="/" className="flex min-w-0 items-center gap-2.5" aria-label="Sada home">
         <BrandMark />
         <span className="hidden text-[17px] font-semibold tracking-[-0.4px] text-[#201a25] sm:inline">
-          AetherFlow <span className="font-normal text-[#6a6170]">AI</span>
+          Sada
         </span>
       </Link>
 
@@ -269,10 +278,19 @@ function AppHeader() {
                 className="absolute right-0 top-[calc(100%+7px)] z-50 w-60 origin-top-right overflow-hidden rounded-2xl border border-[#ded7e3] bg-[#fffaff] p-2 shadow-[0_16px_40px_rgba(45,31,52,0.16)]"
               >
                 <div className="px-3 py-2.5">
-                  <p className="truncate text-sm font-semibold text-[#201a25]">{user?.name || 'AetherFlow user'}</p>
+                  <p className="truncate text-sm font-semibold text-[#201a25]">{user?.name || 'Sada user'}</p>
                   {user?.email ? <p className="mt-0.5 truncate text-xs text-[#7b7180]">{user.email}</p> : null}
                 </div>
                 <div className="my-1 h-px bg-[#e7dfe9]" />
+                <Link
+                  to="/settings"
+                  role="menuitem"
+                  onClick={() => setProfileMenuOpen(false)}
+                  className="flex min-h-11 w-full items-center gap-2.5 rounded-xl px-3 text-left text-sm font-semibold text-[#514759] transition-colors hover:bg-[#f1eaf4] hover:text-[#4f378a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#675094]"
+                >
+                  <Settings className="size-[17px]" />
+                  Settings
+                </Link>
                 <button
                   type="button"
                   role="menuitem"
@@ -721,6 +739,37 @@ function inputClass(hasError) {
   }`
 }
 
+const CAMPAIGN_FORM_STEPS = [
+  {
+    id: 'basics',
+    label: 'Basics',
+    title: 'Tell us about the campaign',
+    description: 'Start with the brand and the offer you want to bring to market.',
+    isComplete: (values) => [values.brandName, values.product, values.industry, values.businessType].every((value) => value.trim()),
+  },
+  {
+    id: 'audience',
+    label: 'Audience',
+    title: 'Who should this reach?',
+    description: 'Set the campaign goal and describe the people you want to move.',
+    isComplete: (values) => Boolean(values.campaignGoal && values.targetAudience.trim()),
+  },
+  {
+    id: 'voice',
+    label: 'Voice',
+    title: 'Shape the campaign voice',
+    description: 'Choose how the brand should sound and how often it should appear.',
+    isComplete: (values) => Boolean(values.brandVoice.trim() && values.duration && Number(values.postsPerWeek) > 0),
+  },
+  {
+    id: 'channels',
+    label: 'Channels',
+    title: 'Choose where it goes',
+    description: 'Select publishing channels and add any final guidance for the team.',
+    isComplete: (values) => values.platforms.length > 0,
+  },
+]
+
 const EMPTY_VALUES = {
   brandName: '',
   product: '',
@@ -823,8 +872,15 @@ function buildStrategyBrief(values) {
   }
 }
 
-function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, isGenerating, isLocked = false }) {
+function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, isGenerating, isLocked = false, initiallyOpen = false, onRequestClose, isModal = false }) {
+  const [isOpen, setIsOpen] = useState(initiallyOpen)
+  const [currentStep, setCurrentStep] = useState(0)
+  const [furthestStep, setFurthestStep] = useState(0)
   const set = (patch) => setValues((current) => ({ ...current, ...patch }))
+  const stepCompletion = CAMPAIGN_FORM_STEPS.map((step) => Boolean(step.isComplete(values)))
+  const currentStepData = CAMPAIGN_FORM_STEPS[currentStep]
+  const currentStepComplete = stepCompletion[currentStep]
+  const isLastStep = currentStep === CAMPAIGN_FORM_STEPS.length - 1
 
   const togglePlatform = (id) => {
     setValues((current) => ({
@@ -843,31 +899,129 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
     }))
   }
 
+  const fillWithTestData = () => {
+    onFillTestData()
+    setCurrentStep(0)
+    setFurthestStep(0)
+    setIsOpen(true)
+  }
+
+  const goToStep = (index) => {
+    const previousStepsComplete = stepCompletion.slice(0, index).every(Boolean)
+    if (index <= furthestStep && previousStepsComplete) setCurrentStep(index)
+  }
+
+  const submitStep = (event) => {
+    if (isLastStep) {
+      onGenerate(event)
+      return
+    }
+    event.preventDefault()
+    if (currentStepComplete) {
+      const nextStep = Math.min(currentStep + 1, CAMPAIGN_FORM_STEPS.length - 1)
+      setCurrentStep(nextStep)
+      setFurthestStep((step) => Math.max(step, nextStep))
+    }
+  }
+
+  const closeForm = () => {
+    if (onRequestClose) onRequestClose()
+    else setIsOpen(false)
+  }
+
+  if (!isOpen) {
+    return (
+      <section className="w-full shrink-0 border-b border-[#ded7e3] bg-[#fffaff] lg:w-[410px] lg:border-b-0 lg:border-r">
+        <div className="mx-auto flex max-w-xl flex-col px-5 py-6 sm:px-7 lg:h-[calc(100dvh-64px)] lg:justify-center lg:overflow-y-auto">
+          <div className="overflow-hidden rounded-[26px] border border-[#ded4e4] bg-white shadow-[0_18px_50px_rgba(54,35,68,0.09)]">
+            <div className="relative border-b border-[#ece4ef] bg-[#f4eef9] px-6 py-7">
+              <span className="pointer-events-none absolute -right-8 -top-10 size-32 rounded-full border-[18px] border-white/45" />
+              <span className="relative flex size-11 items-center justify-center rounded-2xl bg-[#4f378a] text-white shadow-[0_8px_18px_rgba(79,55,138,0.24)]">
+                <Wand2 className="size-5" />
+              </span>
+              <p className="relative mt-5 text-[11px] font-bold uppercase tracking-[0.17em] text-[#4f378a]">Campaign builder</p>
+              <h1 className="relative mt-2 font-display text-[34px] leading-[1.05] tracking-[-0.8px] text-[#201a25]">Create with a clear brief.</h1>
+              <p className="relative mt-3 text-sm leading-6 text-[#706676]">A short guided form will turn your business context into a strategy ready for review.</p>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-4 gap-2" aria-hidden="true">
+                {CAMPAIGN_FORM_STEPS.map((step, index) => (
+                  <div key={step.id} className="text-center">
+                    <span className="mx-auto flex size-7 items-center justify-center rounded-full border border-[#d8cce1] bg-[#faf7fc] text-[11px] font-bold text-[#695d70]">{index + 1}</span>
+                    <span className="mt-1.5 block truncate text-[10px] font-semibold text-[#7a7080]">{step.label}</span>
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsOpen(true)}
+                disabled={isLocked}
+                className="mt-6 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#381e72] px-4 text-sm font-bold text-white shadow-[0_9px_22px_rgba(56,30,114,0.22)] transition hover:-translate-y-0.5 hover:bg-[#4f378a] hover:shadow-[0_13px_28px_rgba(56,30,114,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] focus-visible:ring-offset-2 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                <Sparkles className="size-4" />
+                {isLocked ? 'Select a campaign chat first' : 'Open campaign brief'}
+                {!isLocked ? <ChevronRight className="size-4" /> : null}
+              </button>
+              {!isLocked ? <button type="button" onClick={fillWithTestData} className="mt-3 w-full text-center text-xs font-semibold text-[#4f378a] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">Or fill with test data</button> : null}
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   return (
-    <section className="w-full shrink-0 border-b border-[#ded7e3] bg-[#fffaff] lg:w-[374px] lg:border-b-0 lg:border-r">
+    <section className={isModal ? 'w-full bg-[#fffaff]' : 'w-full shrink-0 border-b border-[#ded7e3] bg-[#fffaff] lg:w-[410px] lg:border-b-0 lg:border-r'}>
       <form
-        className="mx-auto flex max-w-xl flex-col px-5 py-6 sm:px-7 lg:max-h-[calc(100dvh-64px)] lg:overflow-y-auto"
-        onSubmit={onGenerate}
+        className={isModal ? 'mx-auto flex max-h-[calc(100dvh-48px)] max-w-3xl flex-col overflow-y-auto px-5 py-6 sm:px-8 sm:py-8 lg:px-10' : 'mx-auto flex max-w-xl flex-col px-5 py-6 sm:px-7 lg:max-h-[calc(100dvh-64px)] lg:overflow-y-auto'}
+        onSubmit={submitStep}
       >
         <fieldset disabled={isLocked} className="contents">
         <div className="mb-6">
-          <div className="mb-2 flex items-center gap-2">
-            <span className="h-px w-5 bg-[#4f378a]" />
+          <div className="flex items-center justify-between gap-3">
             <span className="text-[11px] font-bold uppercase tracking-[0.17em] text-[#4f378a]">Campaign brief</span>
+            <button type="button" onClick={closeForm} className="rounded-lg px-2 py-1 text-[11px] font-semibold text-[#746b79] transition hover:bg-[#f1eaf4] hover:text-[#4f378a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">{isModal ? 'Close' : 'Hide form'}</button>
           </div>
-          <h1 className="font-display text-[32px] leading-[1.05] tracking-[-0.8px] text-[#201a25]">What are we creating?</h1>
-          <p className="mt-2 text-sm leading-5 text-[#746b79]">
-            Start with the business context. A strategy team will turn it into a plan for you to review before any posts are made.
-          </p>
-          <button
-            type="button"
-            onClick={onFillTestData}
-            className="mt-3 text-xs font-semibold text-[#4f378a] transition-colors hover:text-[#381e72] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] focus-visible:ring-offset-2"
-          >
-            Fill with test data
-          </button>
+
+          <div className="relative mt-5 px-1">
+            <div className="absolute left-[12.5%] right-[12.5%] top-4 h-px bg-[#ddd3e3]" />
+            <div className="absolute left-[12.5%] top-4 h-px bg-[#4f378a] transition-[width] duration-300" style={{ width: `${(currentStep / (CAMPAIGN_FORM_STEPS.length - 1)) * 75}%` }} />
+            <ol className="relative grid grid-cols-4 gap-1" aria-label="Campaign brief progress">
+              {CAMPAIGN_FORM_STEPS.map((step, index) => {
+                const isCurrent = index === currentStep
+                const isComplete = index < furthestStep && stepCompletion[index]
+                const isUnlocked = index <= furthestStep && stepCompletion.slice(0, index).every(Boolean)
+                return (
+                  <li key={step.id} className="min-w-0 text-center">
+                    <button
+                      type="button"
+                      onClick={() => goToStep(index)}
+                      disabled={!isUnlocked}
+                      aria-current={isCurrent ? 'step' : undefined}
+                      title={isComplete ? `${step.label} completed` : step.label}
+                      className="group w-full rounded-xl py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] disabled:cursor-not-allowed"
+                    >
+                      <span className={`mx-auto flex size-8 items-center justify-center rounded-full border text-xs font-bold transition-all ${isCurrent ? 'border-[#4f378a] bg-[#4f378a] text-white shadow-[0_5px_14px_rgba(79,55,138,0.24)]' : isComplete ? 'border-[#9fcd68] bg-[#e6fbc7] text-[#315c19] group-hover:-translate-y-0.5 group-hover:shadow-sm' : 'border-[#d8cfe0] bg-white text-[#8a7f90]'}`}>
+                        {isComplete && !isCurrent ? <Check className="size-3.5" strokeWidth={3} /> : index + 1}
+                      </span>
+                      <span className={`mt-1.5 block truncate text-[10px] font-bold transition-colors ${isCurrent ? 'text-[#4f378a]' : isComplete ? 'text-[#476b32] group-hover:text-[#315c19]' : 'text-[#8d8392]'}`}>{step.label}</span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ol>
+          </div>
+
+          <motion.div key={currentStepData.id} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="mt-6">
+            <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#78688a]">Step {currentStep + 1} of {CAMPAIGN_FORM_STEPS.length}</p>
+            <h1 className="mt-1.5 font-display text-[30px] leading-[1.08] tracking-[-0.7px] text-[#201a25]">{currentStepData.title}</h1>
+            <p className="mt-2 text-sm leading-5 text-[#746b79]">{currentStepData.description}</p>
+          </motion.div>
+
+          {currentStep === 0 ? <button type="button" onClick={fillWithTestData} className="mt-3 text-xs font-semibold text-[#4f378a] transition-colors hover:text-[#381e72] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] focus-visible:ring-offset-2">Fill with test data</button> : null}
         </div>
 
+        {currentStep === 0 ? <motion.div key="basics" initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.22 }}>
         <div>
           <FieldLabel htmlFor="brand-name">Brand name</FieldLabel>
           <input
@@ -920,8 +1074,10 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
             <FieldError message={errors.businessType} />
           </div>
         </div>
+        </motion.div> : null}
 
-        <div className="mt-5">
+        {currentStep === 1 ? <motion.div key="audience" initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.22 }}>
+        <div>
           <FieldLabel htmlFor="campaign-goal">Campaign goal</FieldLabel>
           <div className="relative">
             <select
@@ -968,8 +1124,10 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
             className={inputClass(Boolean(errors.pricing))}
           />
         </div>
+        </motion.div> : null}
 
-        <fieldset className="mt-5">
+        {currentStep === 2 ? <motion.div key="voice" initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.22 }}>
+        <fieldset>
           <legend className="mb-2 text-[12px] font-semibold uppercase tracking-[0.08em] text-[#5f5664]">Brand voice</legend>
           <div className="grid grid-cols-2 gap-2">
             {BRAND_VOICE_PRESETS.map((preset) => {
@@ -1096,8 +1254,10 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
             Turn this off if your image provider is rate-limited; copy, hashtags, QA, and scheduling will still run.
           </p>
         </div>
+        </motion.div> : null}
 
-        <fieldset className="mt-5">
+        {currentStep === 3 ? <motion.div key="channels" initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.22 }}>
+        <fieldset>
           <legend className="mb-2 text-[12px] font-semibold uppercase tracking-[0.08em] text-[#5f5664]">Publish on</legend>
           <div className="grid grid-cols-2 gap-2">
             {PLATFORM_OPTIONS.map(({ id, label }) => {
@@ -1150,28 +1310,81 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
             className="min-h-[64px] w-full resize-y rounded-xl border border-[#d8cfdc] bg-white px-3.5 py-3 text-sm leading-[1.55] text-[#201a25] outline-none transition placeholder:text-[#aaa1ae] focus:border-[#4f378a] focus:ring-3 focus:ring-[#4f378a]/10"
           />
         </div>
+        </motion.div> : null}
 
         <div className="mt-7 border-t border-[#e3dce5] pt-5">
-          <button
-            type="submit"
-            disabled={isGenerating}
-            className="group relative flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-[#381e72] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(56,30,114,0.22)] transition-all hover:bg-[#4f378a] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] focus-visible:ring-offset-2"
-          >
-            <span className="absolute inset-y-0 -left-10 w-8 -skew-x-12 bg-white/20 transition-transform duration-500 group-hover:translate-x-96" />
-            {isGenerating ? (
-              <Loader2 className="size-[17px] animate-spin text-[#d8ff9d]" />
-            ) : (
-              <Wand2 className="size-[17px] text-[#d8ff9d]" />
-            )}
-            {isGenerating ? 'Building your strategy…' : 'Build strategy'}
-          </button>
-          <p className="mt-2.5 text-center text-[11px] text-[#8b818f]">
-            Strategy first. Posts only start after you approve the plan.
-          </p>
+          <div className="flex gap-2.5">
+            <button
+              type="button"
+              onClick={() => setCurrentStep((step) => Math.max(0, step - 1))}
+              disabled={currentStep === 0}
+              className="flex h-12 min-w-[108px] items-center justify-center gap-1.5 rounded-xl border border-[#d8cfdc] bg-white px-4 text-sm font-semibold text-[#62586a] transition hover:border-[#b8a8c4] hover:bg-[#f7f2fa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] disabled:cursor-not-allowed disabled:opacity-35"
+            >
+              <ChevronRight className="size-4 rotate-180" /> Previous
+            </button>
+            <button
+              type="submit"
+              disabled={!currentStepComplete || isGenerating}
+              className="group relative flex h-12 min-w-0 flex-1 items-center justify-center gap-2 overflow-hidden rounded-xl bg-[#381e72] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(56,30,114,0.22)] transition-all hover:bg-[#4f378a] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] focus-visible:ring-offset-2"
+            >
+              <span className="absolute inset-y-0 -left-10 w-8 -skew-x-12 bg-white/20 transition-transform duration-500 group-hover:translate-x-96" />
+              {isLastStep ? (isGenerating ? <LoadingRing className="size-[17px] text-[#d8ff9d]" /> : <Wand2 className="size-[17px] text-[#d8ff9d]" />) : null}
+              {isLastStep ? (isGenerating ? 'Building…' : 'Build strategy') : <>Next <ChevronRight className="size-4" /></>}
+            </button>
+          </div>
+          {!currentStepComplete ? <p className="mt-2.5 text-center text-[11px] text-[#8b818f]">Complete the required fields above to continue.</p> : <p className="mt-2.5 text-center text-[11px] text-[#8b818f]">{isLastStep ? 'Strategy first. Posts begin only after your approval.' : 'Your progress is saved as you move between steps.'}</p>}
         </div>
         </fieldset>
       </form>
     </section>
+  )
+}
+
+function CampaignFormModal({ open, onClose, chatKey, ...formProps }) {
+  useEffect(() => {
+    if (!open) return undefined
+
+    const previousOverflow = document.body.style.overflow
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') onClose()
+    }
+
+    document.body.style.overflow = 'hidden'
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [onClose, open])
+
+  return (
+    <AnimatePresence>
+      {open ? (
+        <motion.div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-[#211928]/55 p-3 backdrop-blur-sm sm:p-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) onClose()
+          }}
+        >
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Campaign brief"
+            initial={{ opacity: 0, y: 18, scale: 0.985 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.99 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+            className="w-full max-w-3xl overflow-hidden rounded-[28px] border border-white/70 bg-[#fffaff] shadow-[0_30px_90px_rgba(31,20,40,0.28)]"
+          >
+            <CampaignForm key={chatKey} {...formProps} initiallyOpen isModal onRequestClose={onClose} />
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   )
 }
 
@@ -1911,11 +2124,9 @@ function StrategyReview({ strategy, strategyId, review, onConfirm, onRequestChan
         </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={onEdit} disabled={isSubmitting} className="h-11 rounded-xl border border-[#d8cbdc] bg-white px-4 text-sm font-semibold text-[#62556b] transition hover:border-[#a99eb4] disabled:opacity-50">Edit brief</button>
-          {regeneratableSection ? <button type="button" onClick={() => onRegenerateSection(regeneratableSection.section, reviewNote)} disabled={isSubmitting || reviewNote.trim().length < 3} title={reviewNote.trim().length < 3 ? 'Add at least three characters of feedback first.' : undefined} className="flex h-11 items-center gap-2 rounded-xl border border-[#9e89ba] bg-[#f2eafa] px-4 text-sm font-semibold text-[#381e72] transition hover:bg-[#e9def3] disabled:cursor-not-allowed disabled:opacity-50"><RefreshCw className="size-4" /> Regenerate {regeneratableSection.label}</button> : null}
-          <button type="button" onClick={() => onRequestChanges(reviewNote)} disabled={isSubmitting} className="h-11 rounded-xl border border-[#d8cbdc] bg-white px-4 text-sm font-semibold text-[#62556b] transition hover:border-[#a99eb4] disabled:opacity-50">Request changes</button>
-          <button type="button" onClick={() => onConfirm(reviewNote)} disabled={isSubmitting} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#381e72] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(56,30,114,0.2)] transition hover:bg-[#4f378a] disabled:cursor-wait disabled:opacity-60">
-            {isSubmitting ? <Loader2 className="size-4 animate-spin text-[#d8ff9d]" /> : <Wand2 className="size-4 text-[#d8ff9d]" />}
-            {isSubmitting ? 'Saving approval...' : 'Approve & create posts'}
+          <button type="button" onClick={onConfirm} disabled={isSubmitting} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#381e72] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(56,30,114,0.2)] transition hover:bg-[#4f378a] disabled:cursor-wait disabled:opacity-60">
+            {isSubmitting ? <LoadingRing className="size-4 text-[#d8ff9d]" /> : <Wand2 className="size-4 text-[#d8ff9d]" />}
+            {isSubmitting ? 'Starting content workflow...' : 'Approve & create posts'}
           </button>
         </div>
       </div>
@@ -1993,25 +2204,37 @@ function WorkflowProgress({ runState, generateImages, workflowKind = 'content' }
   const activeLabels = visibleSteps
     .filter(isStepActive)
     .map((step) => step.label)
+  const completedCount = visibleSteps.filter(isStepComplete).length
+  const progressPercent = visibleSteps.length ? Math.round((completedCount / visibleSteps.length) * 100) : 0
 
   return (
-    <section className="campaign-pulse rounded-[20px] border border-[#d9cfe0] bg-[#fffaff] p-5 shadow-[0_8px_24px_rgba(46,32,51,0.05)] sm:p-6">
-      <div className="flex items-start gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[#381e72] text-[#d8ff9d]">
-          <Loader2 className="size-4 animate-spin" />
-        </span>
-        <div className="min-w-0">
-            <p className="text-sm font-semibold text-[#201a25]">
-             {activeLabels.length > 0 ? activeLabels.join(' + ') : workflowKind === 'strategy' ? 'Starting strategy workflow' : 'Starting content workflow'}
-            </p>
-            <p className="mt-0.5 text-xs leading-5 text-[#746b79]">
-             {workflowKind === 'strategy' ? 'The strategy team is turning your brief into a plan you can approve.' : 'The content team is turning your approved strategy into publishable posts.'}
-            </p>
+    <section className="campaign-pulse overflow-hidden rounded-[22px] border border-[#d9cfe0] bg-[#fffaff] shadow-[0_10px_28px_rgba(46,32,51,0.06)]">
+      <div className="p-5 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#381e72] text-[#d8ff9d] shadow-[0_6px_16px_rgba(56,30,114,0.22)]">
+              <LoadingRing />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-[#201a25]">{workflowKind === 'strategy' ? 'Building your strategy' : 'Creating your campaign'}</p>
+              <p className="mt-1 text-xs leading-5 text-[#746b79]">
+                {activeLabels.length > 0 ? `Working now: ${activeLabels.join(', ')}` : 'Preparing the workflow…'}
+              </p>
+            </div>
+          </div>
+          <div className="shrink-0 text-left sm:text-right">
+            <p className="text-sm font-bold text-[#381e72]">{progressPercent}%</p>
+            <p className="mt-0.5 text-[11px] text-[#817687]">{completedCount} of {visibleSteps.length} complete</p>
+          </div>
+        </div>
+
+        <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-[#e9e1eb]" aria-hidden="true">
+          <motion.div className="h-full rounded-full bg-[#4f378a]" animate={{ width: `${progressPercent}%` }} transition={{ duration: 0.35, ease: 'easeOut' }} />
         </div>
       </div>
 
-      <ol className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        {visibleSteps.map((step) => {
+      <ol className="grid gap-px border-t border-[#e6dee8] bg-[#e6dee8] sm:grid-cols-2 lg:grid-cols-4">
+        {visibleSteps.map((step, index) => {
           const isComplete = isStepComplete(step)
           const isActive = isStepActive(step)
           const status = isComplete ? 'Complete' : isActive ? 'Working now' : 'Waiting'
@@ -2020,30 +2243,30 @@ function WorkflowProgress({ runState, generateImages, workflowKind = 'content' }
               key={step.id}
               tabIndex={0}
               aria-label={`${step.label}: ${status}. ${step.description}`}
-              whileHover={{ y: -2 }}
-              className={`group relative flex min-h-12 items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium outline-none transition-[border-color,background-color,box-shadow,color] focus-visible:ring-2 focus-visible:ring-[#4f378a] ${
+              title={step.description}
+              whileHover={{ y: -1 }}
+              className={`group relative flex min-h-[78px] items-start gap-3 p-4 outline-none transition-[background-color,box-shadow,color] focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#4f378a] ${
                 isComplete
-                  ? 'border-[#cfe6ad] bg-[#eff9df] text-[#315016]'
+                  ? 'bg-[#eff9df] text-[#315016]'
                   : isActive
-                    ? 'border-[#8d6bb4] bg-[#f2eafa] text-[#381e72] shadow-[0_7px_18px_rgba(79,55,138,0.14)] ring-1 ring-[#d2c0e5]'
-                    : 'border-[#e5dee7] bg-[#faf6fa] text-[#8b818f] hover:border-[#cfc2d5] hover:bg-white hover:text-[#625b71]'
+                    ? 'z-[1] bg-[#f2eafa] text-[#381e72] shadow-[inset_0_0_0_1px_#8d6bb4,0_6px_18px_rgba(79,55,138,0.11)]'
+                    : 'bg-[#faf7fa] text-[#8b818f] hover:bg-white hover:text-[#625b71]'
               }`}
             >
-              <span className={`flex size-6 shrink-0 items-center justify-center rounded-full ${isActive ? 'bg-[#381e72] text-[#d8ff9d]' : 'bg-white/80'}`}>
+              <span className={`flex size-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${isComplete ? 'bg-white/80 text-[#315016]' : isActive ? 'bg-[#381e72] text-[#d8ff9d]' : 'bg-white text-[#8b818f]'}`}>
                 {isComplete ? (
                   <Check className="size-3.5" strokeWidth={2.5} />
                 ) : isActive ? (
-                  <RefreshCw className="size-3.5 animate-spin" aria-hidden="true" />
+                  <LoadingRing className="size-3.5" />
                 ) : (
-                  <span className="size-1.5 rounded-full bg-current opacity-35" />
+                  String(index + 1).padStart(2, '0')
                 )}
               </span>
-              <span className="min-w-0 flex-1 leading-4">{step.label}</span>
-              {isActive ? <span className="size-1.5 shrink-0 animate-pulse rounded-full bg-[#6aa51f]" aria-hidden="true" /> : null}
-              <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 z-20 hidden w-56 -translate-x-1/2 rounded-xl bg-[#241936] px-3 py-2.5 text-left text-[11px] font-normal leading-4 text-white shadow-[0_10px_30px_rgba(36,25,54,0.24)] group-hover:block group-focus-visible:block">
-                <span className="block font-semibold text-[#d8ff9d]">{status}</span>
-                <span className="mt-0.5 block text-white/75">{step.description}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-xs font-bold leading-4">{step.label}</span>
+                <span className={`mt-1 block text-[10px] font-semibold uppercase tracking-[0.08em] ${isComplete ? 'text-[#5b7b43]' : isActive ? 'text-[#7454a0]' : 'text-[#a098a4]'}`}>{status}</span>
               </span>
+              {isActive ? <span className="mt-1 size-1.5 shrink-0 animate-pulse rounded-full bg-[#77a84d]" aria-hidden="true" /> : null}
             </motion.li>
           )
         })}
@@ -2161,6 +2384,8 @@ function ResultsPanel({
   strategyReview,
   onEditStrategy,
   onStrategyChange,
+  onStartCampaign,
+  canStartCampaign,
 }) {
   const [campaignCopied, setCampaignCopied] = useState(false)
   const selectedPlatforms = PLATFORM_OPTIONS.filter((platform) => values.platforms.includes(platform.id))
@@ -2372,8 +2597,17 @@ function ResultsPanel({
               <span className="flex size-14 items-center justify-center rounded-2xl bg-[#f3edf5] text-[#4f378a]">
                 <Sparkles className="size-6" />
               </span>
-              <p className="mt-4 font-display text-xl tracking-[-0.3px] text-[#201a25]">No campaign yet</p>
-              <p className="mt-1 max-w-md text-sm text-[#746b79]">Complete the brief and build a strategy. You will get a full review before the content workflow begins.</p>
+              <button
+                type="button"
+                onClick={onStartCampaign}
+                disabled={!canStartCampaign}
+                className="group mt-5 inline-flex min-h-12 items-center gap-2.5 rounded-xl bg-[#381e72] px-6 text-sm font-bold text-white shadow-[0_10px_24px_rgba(56,30,114,0.24)] transition hover:-translate-y-0.5 hover:bg-[#4f378a] hover:shadow-[0_15px_32px_rgba(56,30,114,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] focus-visible:ring-offset-2 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                <Wand2 className="size-[17px] text-[#d8ff9d]" />
+                Make your content
+                <ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+              </button>
+              <p className="mt-3 max-w-md text-sm leading-6 text-[#746b79]">{canStartCampaign ? 'Open the guided brief, complete each step, and review your strategy before content is created.' : 'Create or select a campaign chat to begin.'}</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -2424,6 +2658,7 @@ export function GeneratePage() {
   const [historyEntries, setHistoryEntries] = useState([])
   const [historyLoading, setHistoryLoading] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [briefOpen, setBriefOpen] = useState(false)
   const [mobileRenameOpen, setMobileRenameOpen] = useState(false)
   const [mobileProjectName, setMobileProjectName] = useState('')
   const [chatPendingDelete, setChatPendingDelete] = useState(null)
@@ -2438,6 +2673,10 @@ export function GeneratePage() {
   const restoredPhase = restoredState?.phase
   const restoredProjectId = restoredState?.activeProject
   const restoredChatId = restoredState?.activeChat
+  const closeCampaignBrief = useCallback(() => setBriefOpen(false), [])
+  const openCampaignBrief = useCallback(() => {
+    if (activeProject && activeChat) setBriefOpen(true)
+  }, [activeChat, activeProject])
 
   useEffect(() => () => abortRef.current?.abort(), [])
 
@@ -3133,6 +3372,7 @@ export function GeneratePage() {
     setPhase('idle')
     setRunState(null)
     setError('')
+    setBriefOpen(true)
     window.setTimeout(() => document.querySelector('#product')?.focus(), 50)
   }
 
@@ -3214,17 +3454,6 @@ export function GeneratePage() {
           isOpen={sidebarOpen}
           onToggle={() => setSidebarOpen((current) => !current)}
         />
-        {phase === 'idle' ? (
-          <CampaignForm
-            values={values}
-            setValues={setValues}
-            errors={errors}
-            onGenerate={handleGenerate}
-            onFillTestData={handleFillTestData}
-            isGenerating={isGenerating}
-            isLocked={!activeProject || !activeChat || phase === 'strategy' || phase === 'review' || phase === 'content'}
-          />
-        ) : null}
         <ResultsPanel
           campaign={campaign}
           setCampaign={setCampaign}
@@ -3242,11 +3471,25 @@ export function GeneratePage() {
           strategyReview={strategyReview}
           onEditStrategy={handleEditStrategy}
           onStrategyChange={setStrategy}
+          onStartCampaign={openCampaignBrief}
+          canStartCampaign={Boolean(activeProject && activeChat)}
         />
       </div>
+      <CampaignFormModal
+        open={briefOpen && phase === 'idle'}
+        onClose={closeCampaignBrief}
+        chatKey={activeChat || 'no-campaign-chat'}
+        values={values}
+        setValues={setValues}
+        errors={errors}
+        onGenerate={handleGenerate}
+        onFillTestData={handleFillTestData}
+        isGenerating={isGenerating}
+        isLocked={!activeProject || !activeChat}
+      />
       {isGenerating ? (
         <div className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full bg-[#381e72] px-4 py-2 text-xs font-semibold text-white shadow-lg">
-          <Loader2 className="size-3.5 animate-spin text-[#d8ff9d]" />
+          <LoadingRing className="size-3.5 text-[#d8ff9d]" />
            {phase === 'strategy' ? 'Building strategy…' : 'Creating posts…'}
           <button type="button" onClick={handleCancel} className="ml-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] hover:bg-white/25">
             Cancel

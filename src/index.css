@@ -6,71 +6,81 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(1 0 0);
+  --aether-accent: #4f378a;
+  --aether-on-accent: #ffffff;
+  --aether-canvas: color-mix(in srgb, var(--aether-accent) 5%, #fffaff);
+  --aether-surface: color-mix(in srgb, var(--aether-accent) 2%, #ffffff);
+  --aether-surface-muted: color-mix(in srgb, var(--aether-accent) 9%, #ffffff);
+  --aether-border: color-mix(in srgb, var(--aether-accent) 18%, #e8e0ea);
+  --background: var(--aether-canvas);
   --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
+  --card: var(--aether-surface);
   --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
+  --popover: var(--aether-surface);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
+  --primary: var(--aether-accent);
+  --primary-foreground: var(--aether-on-accent);
+  --secondary: var(--aether-surface-muted);
   --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
+  --muted: var(--aether-surface-muted);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
+  --accent: var(--aether-surface-muted);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: var(--aether-border);
+  --input: var(--aether-border);
+  --ring: var(--aether-accent);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
+  --sidebar: var(--aether-surface);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-primary: var(--aether-accent);
+  --sidebar-primary-foreground: var(--aether-on-accent);
+  --sidebar-accent: var(--aether-surface-muted);
   --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-border: var(--aether-border);
   --sidebar-ring: oklch(0.708 0 0);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  --aether-canvas: color-mix(in srgb, var(--aether-accent) 11%, #0d0b10);
+  --aether-surface: color-mix(in srgb, var(--aether-accent) 9%, #211b24);
+  --aether-surface-muted: color-mix(in srgb, var(--aether-accent) 16%, #29222d);
+  --aether-border: color-mix(in srgb, var(--aether-accent) 24%, #44394a);
+  --background: var(--aether-canvas);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
+  --card: var(--aether-surface);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --popover: var(--aether-surface);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
+  --primary: var(--aether-accent);
+  --primary-foreground: var(--aether-on-accent);
+  --secondary: var(--aether-surface-muted);
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
+  --muted: var(--aether-surface-muted);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
+  --accent: var(--aether-surface-muted);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --border: var(--aether-border);
+  --input: var(--aether-border);
+  --ring: var(--aether-accent);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
+  --sidebar: var(--aether-surface);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-primary: var(--aether-accent);
+  --sidebar-primary-foreground: var(--aether-on-accent);
+  --sidebar-accent: var(--aether-surface-muted);
   --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-border: var(--aether-border);
   --sidebar-ring: oklch(0.556 0 0);
 }
 
@@ -136,6 +146,362 @@
   button:disabled,
   [aria-disabled="true"] {
     cursor: not-allowed;
+  }
+}
+
+html[data-reduce-motion='true'] *,
+html[data-reduce-motion='true'] *::before,
+html[data-reduce-motion='true'] *::after {
+  scroll-behavior: auto !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* Bridge the original Aether violet utilities to the user's saved accent. */
+:where([class~="bg-[#4f378a]"], [class~="bg-[#381e72]"]) {
+  background-color: var(--aether-accent);
+}
+
+:where([class~="bg-[#f0e9f7]"]) {
+  background-color: color-mix(in srgb, var(--aether-accent) 12%, white);
+}
+
+:where([class~="text-[#4f378a]"], [class~="text-[#381e72]"]) {
+  color: var(--aether-accent);
+}
+
+:where([class~="border-[#4f378a]"], [class~="border-[#381e72]"]) {
+  border-color: var(--aether-accent);
+}
+
+:where([class~="bg-[#381e72]/10"]) {
+  background-color: color-mix(in srgb, var(--aether-accent) 10%, transparent);
+}
+
+:where([class~="bg-[#381e72]/15"]) {
+  background-color: color-mix(in srgb, var(--aether-accent) 15%, transparent);
+}
+
+:where([class~="bg-[#381e72]/20"]) {
+  background-color: color-mix(in srgb, var(--aether-accent) 20%, transparent);
+}
+
+:where([class~="bg-[#381e72]/70"]) {
+  background-color: color-mix(in srgb, var(--aether-accent) 70%, transparent);
+}
+
+:where([class~="border-[#381e72]/30"]) {
+  border-color: color-mix(in srgb, var(--aether-accent) 30%, transparent);
+}
+
+:where([class~="accent-[#4f378a]"]) {
+  accent-color: var(--aether-accent);
+}
+
+:where([class~="ring-[#4f378a]"], [class~="focus:ring-[#4f378a]"]:focus, [class~="focus-visible:ring-[#4f378a]"]:focus-visible) {
+  --tw-ring-color: var(--aether-accent);
+}
+
+:where([class~="hover:bg-[#4f378a]"]:hover, [class~="hover:bg-[#5d4597]"]:hover, [class~="hover:bg-[#381e72]"]:hover) {
+  background-color: color-mix(in srgb, var(--aether-accent) 88%, black);
+}
+
+:where([class~="hover:text-[#4f378a]"]:hover, [class~="hover:text-[#381e72]"]:hover) {
+  color: var(--aether-accent);
+}
+
+:where([class~="bg-[#4f378a]"][class~="text-white"], [class~="bg-[#381e72]"][class~="text-white"]) {
+  color: var(--aether-on-accent);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--aether-accent) 28%, transparent);
+}
+
+/* Compatibility layer for screens that predate the semantic theme tokens. */
+:where(
+  [class~="bg-[#fef7ff]"],
+  [class~="bg-[#f8f2f8]"],
+  [class~="bg-[#f8f2f9]"],
+  [class~="bg-[#f8f3f8]"],
+  [class~="bg-[#f8f3f9]"]
+) {
+  background-color: var(--aether-canvas);
+}
+
+:where(
+  [class~="bg-white"],
+  [class~="bg-[#fff]"],
+  [class~="bg-[#fffaff]"],
+  [class~="bg-[#faf6fb]"],
+  [class~="bg-[#fbf7fb]"],
+  [class~="bg-[#fdfaff]"],
+  [class~="bg-[#fbf8ff]"]
+) {
+  background-color: var(--aether-surface);
+}
+
+:where(
+  [class~="bg-[#fffaff]/70"],
+  [class~="bg-[#fffaff]/88"],
+  [class~="bg-[#fffaff]/90"],
+  [class~="bg-[#fffaff]/92"],
+  [class~="bg-[#fffaff]/95"],
+  [class~="bg-[#fef7ff]/80"],
+  [class~="bg-[#fef7ff]/95"]
+) {
+  background-color: color-mix(in srgb, var(--aether-surface) 92%, transparent);
+}
+
+:where(
+  [class~="bg-[#f7f1fa]"],
+  [class~="bg-[#f6f0f7]"],
+  [class~="bg-[#f5f1f7]"],
+  [class~="bg-[#faf7fb]"],
+  [class~="bg-[#f4eef6]"],
+  [class~="bg-[#f3edf5]"],
+  [class~="bg-[#f2ecf3]"],
+  [class~="bg-[#f1eaf4]"],
+  [class~="bg-[#f0e9f7]"],
+  [class~="bg-[#f0e9f4]"],
+  [class~="bg-[#eee7f1]"],
+  [class~="bg-[#eee7f6]"],
+  [class~="bg-[#eee5f7]"],
+  [class~="bg-[#e9dfef]"],
+  [class~="bg-[#e8def9]"],
+  [class~="bg-[#e8dff0]"]
+) {
+  background-color: var(--aether-surface-muted);
+}
+
+.settings-profile-summary {
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--aether-accent) 16%, var(--aether-surface)),
+    color-mix(in srgb, var(--aether-accent) 6%, var(--aether-surface))
+  );
+}
+
+.dark .settings-profile-summary :where([class~="text-[#46692e]"]) {
+  color: #b9df9d;
+}
+
+:where([class*="bg-[#dfcef1]/"], [class*="bg-[#f1cad5]/"]) {
+  background-color: color-mix(in srgb, var(--aether-accent) 15%, transparent);
+}
+
+/* Landing-page color roles derived from the saved appearance settings. */
+.hero-section-theme {
+  background-color: var(--aether-canvas);
+}
+
+.hero-announcement {
+  border-color: color-mix(in srgb, var(--aether-accent) 16%, transparent);
+  background-color: color-mix(in srgb, var(--aether-surface) 82%, transparent);
+}
+
+.hero-marketing-tag {
+  background-color: var(--aether-accent);
+  color: var(--aether-on-accent);
+  box-shadow: 0 12px 26px color-mix(in srgb, var(--aether-accent) 28%, transparent);
+  transition: background-color 180ms ease, box-shadow 180ms ease;
+}
+
+.hero-marketing-tag:hover {
+  background-color: color-mix(in srgb, var(--aether-accent) 86%, black);
+  box-shadow: 0 16px 34px color-mix(in srgb, var(--aether-accent) 38%, transparent);
+}
+
+.hero-primary-action {
+  background-color: var(--aether-accent);
+  color: var(--aether-on-accent);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--aether-accent) 24%, transparent);
+}
+
+.hero-primary-action:hover {
+  background-color: color-mix(in srgb, var(--aether-accent) 86%, black);
+}
+
+.hero-secondary-action {
+  border-color: color-mix(in srgb, var(--aether-accent) 24%, var(--aether-border));
+  background-color: color-mix(in srgb, var(--aether-surface) 80%, transparent);
+  color: var(--foreground);
+}
+
+.hero-secondary-action:hover {
+  border-color: color-mix(in srgb, var(--aether-accent) 55%, transparent);
+  background-color: var(--aether-surface);
+}
+
+.hero-trust-avatar {
+  border-color: var(--aether-canvas);
+  color: var(--aether-accent);
+}
+
+.hero-reading-veil {
+  background: radial-gradient(
+    ellipse 58% 62% at 50% 43%,
+    color-mix(in srgb, var(--aether-canvas) 86%, transparent) 0%,
+    color-mix(in srgb, var(--aether-canvas) 64%, transparent) 48%,
+    color-mix(in srgb, var(--aether-canvas) 9%, transparent) 100%
+  );
+}
+
+.hero-edge-veil {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--aether-canvas) 68%, transparent) 0%,
+    transparent 18%,
+    transparent 72%,
+    var(--aether-canvas) 100%
+  );
+}
+
+.hero-accent-glow {
+  background-color: color-mix(in srgb, var(--aether-accent) 16%, transparent);
+}
+
+.accent-panel {
+  background-color: var(--aether-accent);
+}
+
+.accent-panel-title {
+  color: var(--aether-on-accent);
+}
+
+.accent-panel-copy {
+  color: color-mix(in srgb, var(--aether-on-accent) 78%, transparent);
+}
+
+.accent-panel-primary {
+  background-color: var(--aether-on-accent);
+  color: var(--aether-accent);
+}
+
+.accent-panel-primary:hover {
+  background-color: color-mix(in srgb, var(--aether-on-accent) 88%, var(--aether-accent));
+}
+
+.accent-panel-secondary {
+  border-color: var(--aether-on-accent);
+  background-color: transparent;
+  color: var(--aether-on-accent);
+}
+
+.accent-panel-secondary:hover {
+  background-color: color-mix(in srgb, var(--aether-on-accent) 12%, transparent);
+}
+
+/* Sada's social hub follows the saved accent while keeping its layered depth. */
+.sada-hub-glow {
+  background-color: color-mix(in srgb, var(--aether-accent) 26%, transparent);
+}
+
+.sada-hub-ring {
+  border-color: color-mix(in srgb, var(--aether-accent) 48%, transparent);
+}
+
+.sada-hub-core {
+  border-color: color-mix(in srgb, var(--aether-on-accent) 42%, transparent);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--aether-accent) 76%, white),
+    color-mix(in srgb, var(--aether-accent) 86%, black)
+  );
+  color: var(--aether-on-accent);
+  box-shadow:
+    0 22px 55px color-mix(in srgb, var(--aether-accent) 34%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--aether-on-accent) 30%, transparent);
+  transition: border-color 180ms ease, background 180ms ease, color 180ms ease, box-shadow 180ms ease;
+}
+
+.sada-orbit-track-outer {
+  border-color: color-mix(in srgb, var(--aether-accent) 38%, transparent);
+  box-shadow: 0 0 70px color-mix(in srgb, var(--aether-accent) 10%, transparent);
+}
+
+.sada-orbit-track-middle {
+  border-color: color-mix(in srgb, var(--aether-accent) 30%, transparent);
+}
+
+.sada-orbit-track-inner {
+  border-color: color-mix(in srgb, var(--aether-accent) 13%, transparent);
+}
+
+.sada-orbit-field {
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--aether-accent) 10%, transparent) 0%,
+    color-mix(in srgb, var(--aether-accent) 3%, transparent) 40%,
+    transparent 72%
+  );
+}
+
+.sada-social-ambient {
+  background-color: color-mix(in srgb, var(--aether-accent) 7%, transparent);
+}
+
+.dark .hero-artwork-layer {
+  opacity: 0.16;
+  filter: saturate(0.72) brightness(0.72);
+}
+
+.dark :where(
+  [class~="text-[#1d1b20]"],
+  [class~="text-[#201a25]"],
+  [class~="text-[#241d29]"],
+  [class~="text-[#2b2230]"],
+  [class~="text-[#2f2735]"],
+  [class~="text-[#322a38]"],
+  [class~="text-[#332a38]"],
+  [class~="text-[#362d3b]"],
+  [class~="text-[#3a313f]"],
+  [class~="text-[#413647]"],
+  [class~="text-[#494551]"],
+  [class~="text-[#4e4453]"],
+  [class~="text-[#514a56]"],
+  [class~="text-[#514759]"]
+) {
+  color: #f8f0fa;
+}
+
+.dark :where(
+  [class~="text-[#5f5565]"],
+  [class~="text-[#625768]"],
+  [class~="text-[#625b71]"],
+  [class~="text-[#655b6a]"],
+  [class~="text-[#6a6170]"],
+  [class~="text-[#6e6374]"],
+  [class~="text-[#706576]"],
+  [class~="text-[#716777]"],
+  [class~="text-[#71677a]"],
+  [class~="text-[#746979]"],
+  [class~="text-[#766b7b]"],
+  [class~="text-[#796f7e]"],
+  [class~="text-[#7b7180]"],
+  [class~="text-[#817487]"]
+) {
+  color: #bfb3c5;
+}
+
+:where(
+  [class~="border-[#ded7e3]"],
+  [class~="border-[#e0d7e5]"],
+  [class~="border-[#e2d8e6]"],
+  [class~="border-[#e3d9e7]"],
+  [class~="border-[#e4dae8]"],
+  [class~="border-[#ece4ee]"],
+  [class~="border-[#d9cfe1]"],
+  [class~="border-[#d8ccdf]"],
+  [class~="border-[#ded3e4]"]
+) {
+  border-color: var(--aether-border);
+}
+
+@layer components {
+  .knowledge-input {
+    @apply min-h-11 w-full rounded-xl border border-[#d9cfe1] bg-white px-3 text-sm text-[#2f2735] outline-none transition placeholder:text-[#9a909f] focus:border-[#4f378a] focus:ring-2 focus:ring-[#4f378a]/15 disabled:cursor-not-allowed disabled:bg-[#f5f1f7];
   }
 }
 

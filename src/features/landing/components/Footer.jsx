@@ -24,10 +24,10 @@ export function Footer() {
           <div className="max-w-[320px]">
             <Link to="/" className="flex items-center gap-2">
               <span className="flex size-8 items-center justify-center rounded-lg bg-[#381e72] text-base font-bold text-white">
-                J
+                S
               </span>
               <span className="text-2xl font-bold tracking-tight text-[#1d1b20]">
-                Jasper <span className="text-[#4f378a]">AI</span>
+                Sada
               </span>
             </Link>
             <p className="mt-6 text-sm leading-relaxed text-[#494551]">
@@ -70,7 +70,7 @@ export function Footer() {
 
         <div className="mt-16 border-t border-[#cbc4d2]/50 pt-8">
           <p className="text-sm text-[#686177]">
-            &copy; {new Date().getFullYear()} Jasper AI. All rights reserved.
+            &copy; {new Date().getFullYear()} Sada. All rights reserved.
           </p>
         </div>
       </div>
