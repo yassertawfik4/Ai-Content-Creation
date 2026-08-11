@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { HeroBackground } from './HeroBackground'
 
@@ -24,7 +25,7 @@ const tagVariants = {
     scale: 0.78,
     y: 30,
   },
-  rest: { rotate: -2, scale: 1 },
+  rest: { opacity: 1, rotate: -2, scale: 1, y: 0 },
   show: {
     opacity: 1,
     rotate: -2,
@@ -40,8 +41,10 @@ const tagVariants = {
     },
   },
   hover: {
+    opacity: 1,
     rotate: 0,
     scale: 1.06,
+    y: 0,
     transition: {
       type: 'spring',
       stiffness: 260,
@@ -66,7 +69,7 @@ const glossVariants = {
 
 const letterVariants = {
   hidden: { opacity: 0, scale: 0.65, rotate: -12, y: 16 },
-  rest: { scale: 1, rotate: 0, y: 0 },
+  rest: { opacity: 1, scale: 1, rotate: 0, y: 0 },
   show: {
     opacity: 1,
     scale: 1,
@@ -75,6 +78,7 @@ const letterVariants = {
     transition: { type: 'spring', stiffness: 300, damping: 18 },
   },
   hover: {
+    opacity: 1,
     scale: [1, 0, 1],
     rotate: [0, 180, 360],
     y: [0, -6, 0],
@@ -84,13 +88,19 @@ const letterVariants = {
 
 function MarketingTag() {
   const prefersReducedMotion = useReducedMotion()
+  const [animationState, setAnimationState] = useState('show')
 
   return (
     <motion.span
       aria-label="marketing"
       initial={prefersReducedMotion ? false : 'hidden'}
-      animate={prefersReducedMotion ? 'rest' : 'show'}
-      whileHover={prefersReducedMotion ? 'rest' : 'hover'}
+      animate={prefersReducedMotion ? 'rest' : animationState}
+      onHoverStart={() => {
+        if (!prefersReducedMotion) setAnimationState('hover')
+      }}
+      onAnimationComplete={(definition) => {
+        if (definition === 'hover') setAnimationState('rest')
+      }}
       variants={tagVariants}
       className="hero-marketing-tag relative inline-block cursor-default px-4 py-1"
     >
