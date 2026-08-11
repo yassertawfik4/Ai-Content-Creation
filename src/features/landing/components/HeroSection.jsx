@@ -23,15 +23,13 @@ const tagVariants = {
     rotate: -8,
     scale: 0.78,
     y: 30,
-    backgroundColor: '#4f378a',
   },
-  rest: { rotate: -2, scale: 1, backgroundColor: '#4f378a' },
+  rest: { rotate: -2, scale: 1 },
   show: {
     opacity: 1,
     rotate: -2,
     scale: 1,
     y: 0,
-    backgroundColor: '#4f378a',
     transition: {
       type: 'spring',
       stiffness: 180,
@@ -44,7 +42,6 @@ const tagVariants = {
   hover: {
     rotate: 0,
     scale: 1.06,
-    backgroundColor: '#381e72',
     transition: {
       type: 'spring',
       stiffness: 260,
@@ -95,7 +92,7 @@ function MarketingTag() {
       animate={prefersReducedMotion ? 'rest' : 'show'}
       whileHover={prefersReducedMotion ? 'rest' : 'hover'}
       variants={tagVariants}
-      className="relative inline-block cursor-default px-4 py-1 text-white shadow-lg shadow-[#4f378a]/30"
+      className="hero-marketing-tag relative inline-block cursor-default px-4 py-1"
     >
       {/* Gloss sweep (clipped to the box, painted behind the letters) */}
       <span
@@ -126,7 +123,7 @@ export function HeroSection() {
   return (
     <section
       id="platform"
-      className="relative min-h-[760px] overflow-hidden bg-[#fef7ff] pt-[72px]"
+      className="hero-section-theme relative min-h-[760px] overflow-hidden bg-[#fef7ff] pt-[72px]"
     >
       {/* Full-bleed campaign artwork with a contrast-preserving reading veil. */}
       <HeroBackground />
@@ -140,7 +137,7 @@ export function HeroSection() {
         {/* Badge */}
         <motion.div
           variants={item}
-          className="mb-10 inline-flex items-center gap-3 rounded-full border border-white/70 bg-white/45 px-4 py-2 shadow-[0_12px_40px_rgba(56,30,114,0.06)] backdrop-blur-md"
+          className="hero-announcement mb-10 inline-flex items-center gap-3 rounded-full border px-4 py-2 shadow-[0_12px_40px_rgba(56,30,114,0.06)] backdrop-blur-md"
         >
           <span className="rounded-full bg-[#381e72] px-3 py-1 text-xs font-medium tracking-wide text-white">
             New
@@ -175,13 +172,13 @@ export function HeroSection() {
         >
           <a
             href="#pipeline"
-            className="rounded-md bg-[#381e72] px-12 py-4 text-sm font-semibold text-white shadow-lg shadow-[#381e72]/20 transition-all hover:bg-[#4f378a]"
+            className="hero-primary-action rounded-md px-12 py-4 text-sm font-semibold transition-all hover:-translate-y-0.5"
           >
             Get A Demo
           </a>
           <a
             href="/register"
-            className="rounded-md border border-[#7a7582]/30 bg-white/60 px-12 py-4 text-sm font-semibold text-[#1d1b20] shadow-sm backdrop-blur-md transition-all hover:border-[#4f378a]/40 hover:bg-white"
+            className="hero-secondary-action rounded-md border px-12 py-4 text-sm font-semibold shadow-sm backdrop-blur-md transition-all hover:-translate-y-0.5"
           >
             Start Free Trial
           </a>
@@ -200,7 +197,7 @@ export function HeroSection() {
             ].map((bg, i) => (
               <span
                 key={i}
-                className={`flex size-10 items-center justify-center rounded-full border-2 border-[#fef7ff] ${bg} text-xs font-bold text-[#381e72]`}
+                className={`hero-trust-avatar flex size-10 items-center justify-center rounded-full border-2 ${bg} text-xs font-bold`}
               >
                 {String.fromCharCode(65 + i)}
               </span>

@@ -108,7 +108,7 @@ export function MarketingTeamSection() {
               Meet Your New Marketing Team
             </h2>
             <p className="mt-4 text-base leading-relaxed text-[#494551]">
-              Three specialized agents, one seamless workflow. Jasper brings
+              Three specialized agents, one seamless workflow. Sada brings
               high-intelligence automation to every stage of your campaign
               lifecycle.
             </p>

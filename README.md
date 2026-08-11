@@ -1,4 +1,4 @@
-# AetherFlow AI frontend
+# Sada frontend
 
 React/Vite frontend for the authenticated marketing application. The browser
 talks to the sibling Nest backend, and backend workers call Mastra.

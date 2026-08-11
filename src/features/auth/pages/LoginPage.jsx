@@ -27,7 +27,7 @@ export function LoginPage() {
               <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#4f378a] shadow-lg shadow-black/10">
                 <img src={brandMark} alt="" className="size-[19px]" />
               </span>
-              <span className="pl-2 text-[22px] font-medium leading-7">AetherFlow AI</span>
+              <span className="pl-2 text-[22px] font-medium leading-7">Sada</span>
             </div>
 
             <div className="pt-5 sm:pt-7">
@@ -53,7 +53,7 @@ export function LoginPage() {
           </p>
 
           <p className="text-center text-[11px] leading-[17.88px] text-[#494551]/60">
-            By continuing, you agree to AetherFlow AI&apos;s{' '}
+            By continuing, you agree to Sada&apos;s{' '}
             <a href="#terms" className="underline underline-offset-2">
               Terms of Service
             </a>{' '}

@@ -83,6 +83,20 @@ export function signOut() {
   return authFetch('/auth/sign-out', { method: 'POST' })
 }
 
+export function updateUser({ name }) {
+  return authFetch('/auth/update-user', {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+  })
+}
+
+export function changePassword({ currentPassword, newPassword, revokeOtherSessions }) {
+  return authFetch('/auth/change-password', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword, newPassword, revokeOtherSessions }),
+  })
+}
+
 export function getSession({ disableCookieCache, disableRefresh } = {}) {
   const params = new URLSearchParams()
   if (disableCookieCache) params.set('disableCookieCache', 'true')

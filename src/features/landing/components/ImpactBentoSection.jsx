@@ -27,7 +27,7 @@ export function ImpactBentoSection() {
               Measure the impact.
             </h2>
             <p className="max-w-[512px] text-base leading-relaxed text-[#f5eff6]/80">
-              Jasper doesn't just create content; it builds connected pipelines
+              Sada doesn't just create content; it builds connected pipelines
               that turn your marketing strategy into an automated engine of
               growth.
             </p>
