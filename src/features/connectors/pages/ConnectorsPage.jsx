@@ -122,7 +122,7 @@ export function ConnectorsPage() {
                   <ArrowDown className="size-4" />
                 </a>
                 <Link
-                  to="/register"
+                  to="/publishing"
                   className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#a996c2]/55 bg-white/55 px-7 text-sm font-semibold text-[#381e72] backdrop-blur-md transition-colors duration-200 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] focus-visible:ring-offset-2"
                 >
                   Start connecting
@@ -266,7 +266,7 @@ export function ConnectorsPage() {
               </h2>
             </div>
             <Link
-              to="/register"
+              to="/publishing"
               className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-7 text-sm font-semibold text-[#381e72] transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#381e72]"
             >
               Connect your first channel

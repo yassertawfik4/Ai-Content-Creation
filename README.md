@@ -1,31 +1,31 @@
 # AetherFlow AI frontend
 
-React/Vite frontend for the marketing strategy and content workflows in the
-sibling `../marketing-workflow-demo` Mastra service.
+React/Vite frontend for the authenticated marketing application. The browser
+talks to the sibling Nest backend, and backend workers call Mastra.
 
 ## Run the connected generate flow
 
-Start the marketing workflow API:
+Start the connected local stack from the workspace root:
 
 ```bash
-cd ../marketing-workflow-demo
-npm run server
+./scripts/run-local.sh --build
 ```
 
-Then start this frontend:
+Or start only this frontend when the backend stack is already running:
 
 ```bash
 cp .env.example .env
 npm run dev
 ```
 
-Open `/generate`. The default environment value connects to:
+Open `/generate`. The default environment value connects to the Vite proxy for
+the Nest API:
 
 ```env
-VITE_API_BASE_URL=http://localhost:4112/api
+VITE_API_BASE_URL=/api
 ```
 
-Replace that value in `.env` when the campaign API is deployed elsewhere. Vite
+Replace that value in `.env` when the Nest API is deployed elsewhere. Vite
 environment values are bundled into the browser, so do not place private API
 keys in this frontend file.
 
