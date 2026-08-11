@@ -528,7 +528,7 @@ function ProjectSidebar({
         </button>
       </div>
 
-      <div className="mt-2 min-h-0 flex-1 space-y-2 overflow-y-auto px-0.5 pb-3">
+      <div className="mt-2 min-h-0 flex-1 space-y-1 overflow-y-auto px-0.5 pb-3 pr-1 [scrollbar-gutter:stable]">
         {projects.map((project) => {
           const isActive = project.id === activeProject
           const isExpanded = expandedProjectIds.includes(project.id)
@@ -536,20 +536,20 @@ function ProjectSidebar({
           const projectChats = isActive ? chats : (chatsByProjectId[project.id] ?? [])
           return (
             <div key={project.id} className="group/project">
-              <div className={`relative flex min-h-13 items-center overflow-visible rounded-xl transition-colors ${isActive ? 'bg-[#e9dfef]' : 'hover:bg-[#eee7f1]'}`}>
-                {isActive ? <span className="absolute inset-y-2.5 left-0 w-0.5 rounded-r-full bg-[#6b4c9a]" aria-hidden="true" /> : null}
+              <div className={`relative flex min-h-11 items-center overflow-visible rounded-lg transition-colors ${isActive ? 'bg-[#e9dfef]' : 'hover:bg-[#eee7f1]'}`}>
+                {isActive ? <span className="absolute inset-y-2 left-0 w-0.5 rounded-r-full bg-[#6b4c9a]" aria-hidden="true" /> : null}
                 <button
                   type="button"
                   onClick={() => toggleProject(project)}
                   aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${project.name}`}
                   aria-expanded={isExpanded}
-                  className="flex size-11 shrink-0 items-center justify-center rounded-xl text-[#817687] transition-colors hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                  className="flex size-9 shrink-0 items-center justify-center rounded-lg text-[#817687] transition-colors hover:bg-[#e3d8ea] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
                 >
                   <ChevronRight className={`size-4 transition-transform duration-200 ${isExpanded ? 'rotate-90 text-[#4f378a]' : ''}`} />
                 </button>
 
                 {editingProjectId === project.id ? (
-                  <div className="flex min-w-0 flex-1 items-center py-2 pr-12">
+                  <div className="flex min-w-0 flex-1 items-center py-1 pr-10">
                     <input
                       autoFocus
                       value={projectNameDraft}
@@ -570,7 +570,7 @@ function ProjectSidebar({
                     />
                   </div>
                 ) : (
-                  <button type="button" onClick={() => selectProject(project)} aria-current={isActive ? 'page' : undefined} className="flex min-w-0 flex-1 items-center gap-2.5 self-stretch pr-11 text-left focus-visible:rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
+                  <button type="button" onClick={() => selectProject(project)} aria-current={isActive ? 'page' : undefined} className="flex min-w-0 flex-1 items-center gap-2 self-stretch pr-10 text-left focus-visible:rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
                     <span className="size-2 shrink-0 rounded-full ring-2 ring-[#dcd0e3]" style={{ backgroundColor: project.color }} />
                     <span className={`min-w-0 flex-1 truncate text-[13px] ${isActive ? 'font-semibold text-[#281d2f]' : 'font-medium text-[#514a56]'}`} title={project.name}>
                       {project.name}
@@ -578,7 +578,7 @@ function ProjectSidebar({
                   </button>
                 )}
 
-                <div ref={openProjectMenuId === project.id ? projectMenuRef : undefined} className={`absolute right-1 top-1 z-30 transition-opacity ${isActive || openProjectMenuId === project.id ? 'opacity-100' : 'opacity-0 group-hover/project:opacity-100 group-focus-within/project:opacity-100'}`}>
+                <div ref={openProjectMenuId === project.id ? projectMenuRef : undefined} className={`absolute right-0.5 top-1/2 z-30 -translate-y-1/2 transition-opacity ${isActive || openProjectMenuId === project.id ? 'opacity-100' : 'opacity-0 group-hover/project:opacity-100 group-focus-within/project:opacity-100'}`}>
                   <button
                     type="button"
                     onClick={() => {
@@ -588,7 +588,7 @@ function ProjectSidebar({
                     aria-label={`More actions for ${project.name}`}
                     aria-haspopup="menu"
                     aria-expanded={openProjectMenuId === project.id}
-                    className="flex size-11 items-center justify-center rounded-xl text-[#716777] transition-colors hover:bg-[#ddd0e8] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                    className="flex size-9 items-center justify-center rounded-lg text-[#716777] transition-colors hover:bg-[#ddd0e8] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
                   >
                     <MoreVertical className="size-4" />
                   </button>
@@ -602,22 +602,22 @@ function ProjectSidebar({
               </div>
 
               {isExpanded ? (
-                <div className="relative ml-[22px] mt-2 border-l border-[#cfc1d8] pb-1 pl-3">
-                  <div className="flex min-h-10 items-center justify-between pl-2">
+                <div className="relative ml-[18px] mt-1 border-l border-[#cfc1d8] pb-1 pl-2.5">
+                  <div className="flex min-h-8 items-center justify-between pl-2">
                     <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#807486]">Chats</p>
-                    <button type="button" onClick={() => createChatInProject(project.id)} aria-label={`Create chat in ${project.name}`} className="flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-[11px] font-semibold text-[#59416f] transition-colors hover:bg-[#e9dfef] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"><Plus className="size-3.5" /> New chat</button>
+                    <button type="button" onClick={() => createChatInProject(project.id)} aria-label={`Create chat in ${project.name}`} className="flex min-h-8 items-center gap-1 rounded-lg px-2 text-[11px] font-semibold text-[#59416f] transition-colors hover:bg-[#e9dfef] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"><Plus className="size-3.5" /> New chat</button>
                   </div>
-                  <div className="space-y-1 pb-1">
+                  <div className="space-y-0.5 pb-0.5">
                     {projectChats.map((chat) => {
                       const selected = isActive && chat.id === activeChat
                       return (
                         <div
                           key={chat.id}
-                          className={`group/chat relative rounded-xl transition-colors duration-200 ${selected ? 'bg-[#e9dfef] text-[#281d2f]' : 'text-[#625b71] hover:bg-[#eee7f1] hover:text-[#201a25]'}`}
+                          className={`group/chat relative rounded-lg transition-colors duration-200 ${selected ? 'bg-[#e9dfef] text-[#281d2f]' : 'text-[#625b71] hover:bg-[#eee7f1] hover:text-[#201a25]'}`}
                         >
-                          {selected ? <span className="absolute inset-y-2.5 left-0 w-0.5 rounded-r-full bg-[#6b4c9a]" aria-hidden="true" /> : null}
+                          {selected ? <span className="absolute inset-y-2 left-0 w-0.5 rounded-r-full bg-[#6b4c9a]" aria-hidden="true" /> : null}
                           {editingChatId === chat.id ? (
-                            <div className="flex min-h-12 items-center gap-2.5 px-3 pr-2">
+                            <div className="flex min-h-10 items-center gap-2 px-2.5 pr-1.5">
                               <MessageSquare className={`size-4 shrink-0 ${selected ? 'text-[#4f378a]' : 'text-[#8d7c98]'}`} />
                               <input
                                 autoFocus
@@ -639,13 +639,13 @@ function ProjectSidebar({
                               />
                             </div>
                           ) : (
-                            <button type="button" onClick={() => selectChat(chat.id, project.id)} aria-current={selected ? 'page' : undefined} className="flex min-h-12 w-full items-center gap-2.5 rounded-xl px-3 pr-12 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
+                            <button type="button" onClick={() => selectChat(chat.id, project.id)} aria-current={selected ? 'page' : undefined} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-2.5 pr-10 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
                               <MessageSquare className={`size-4 shrink-0 ${selected ? 'text-[#4f378a]' : 'text-[#8d7c98]'}`} />
                               <span className="min-w-0 flex-1 truncate text-[13px] font-semibold" title={chat.title}>{chat.title}</span>
                             </button>
                           )}
                           {editingChatId !== chat.id ? (
-                            <div ref={openChatMenuId === chat.id ? chatMenuRef : undefined} className={`absolute right-1.5 top-1/2 z-40 -translate-y-1/2 transition-opacity ${selected || openChatMenuId === chat.id ? 'opacity-100' : 'opacity-0 group-hover/chat:opacity-100 group-focus-within/chat:opacity-100'}`}>
+                            <div ref={openChatMenuId === chat.id ? chatMenuRef : undefined} className={`absolute right-0.5 top-1/2 z-40 -translate-y-1/2 transition-opacity ${selected || openChatMenuId === chat.id ? 'opacity-100' : 'opacity-0 group-hover/chat:opacity-100 group-focus-within/chat:opacity-100'}`}>
                               <button
                                 type="button"
                                 onClick={() => {
@@ -655,7 +655,7 @@ function ProjectSidebar({
                                 aria-label={`More actions for ${chat.title}`}
                                 aria-haspopup="menu"
                                 aria-expanded={openChatMenuId === chat.id}
-                                className="flex size-11 items-center justify-center rounded-xl text-[#75667f] transition-colors hover:bg-[#d9cce2] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                                className="flex size-9 items-center justify-center rounded-lg text-[#75667f] transition-colors hover:bg-[#d9cce2] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
                               >
                                 <MoreVertical className="size-4" />
                               </button>
@@ -674,7 +674,7 @@ function ProjectSidebar({
                       <button
                         type="button"
                         onClick={() => createChatInProject(project.id)}
-                        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[#cbbdd4] bg-[#eee7f1] px-3 text-xs font-semibold text-[#59416f] transition-colors hover:border-[#a995b7] hover:bg-[#e9dfef] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                        className="flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#cbbdd4] bg-[#eee7f1] px-3 text-xs font-semibold text-[#59416f] transition-colors hover:border-[#a995b7] hover:bg-[#e9dfef] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
                       >
                         <Plus className="size-3.5" /> Start the first chat
                       </button>
