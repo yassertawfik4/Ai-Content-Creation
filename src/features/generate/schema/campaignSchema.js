@@ -42,6 +42,17 @@ export const campaignBriefSchema = z.object({
   constraints: z.string().optional().default(''),
 })
 
+export const contentWorkflowInputSchema = z.object({
+  brandName: z.string().trim().min(1, 'Brand name is required'),
+  product: z.string().trim().min(1, 'Product or campaign is required'),
+  targetAudience: z.string().trim().min(1, 'Audience is required'),
+  platforms: z.array(platformEnum).min(1, 'Select at least one platform'),
+  duration: z.string().trim().min(1, 'Duration is required'),
+  postsPerWeek: z.number().int().positive().max(20),
+  generateImages: z.boolean().optional().default(true),
+  requireApproval: z.boolean().optional().default(false),
+})
+
 export const campaignOutputSchema = z.object({
   strategy: z.object({
     coreNarrative: z.string(),

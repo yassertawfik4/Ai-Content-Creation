@@ -14,19 +14,28 @@ import {
   CircleAlert,
   Clock3,
   Copy,
+  DollarSign,
+  ExternalLink,
   Folder,
+  Globe2,
   Hash,
   HelpCircle,
   History,
   Image as ImageIcon,
   Lightbulb,
   Layers3,
+  ListChecks,
   Loader2,
   LogOut,
+  Map as MapIcon,
+  Megaphone,
   MessageSquare,
-  MoreVertical,
+  MessageCircleMore,
+  MoreHorizontal,
   MousePointerClick,
   Music2,
+  PackageSearch,
+  Palette,
   PanelLeftClose,
   PanelLeftOpen,
   Pencil,
@@ -36,9 +45,12 @@ import {
   Settings,
   ShieldCheck,
   Sparkles,
+  Tag,
+  Target,
   Trash2,
   Users,
   Video,
+  Volume2,
   Wand2,
   X,
 } from 'lucide-react'
@@ -56,6 +68,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import {
   campaignOutputSchema,
+  contentWorkflowInputSchema,
   marketingStrategyInputSchema,
   marketingStrategyOutputSchema,
   BRAND_VOICE_PRESETS,
@@ -64,6 +77,8 @@ import {
   PLATFORM_OPTIONS,
 } from '../schema/campaignSchema'
 import {
+  cancelContent,
+  cancelStrategy,
   createChat,
   createProject,
   deleteChat,
@@ -82,6 +97,9 @@ import {
   waitForContent,
   waitForStrategy,
 } from '@/lib/campaignApi'
+import { ProjectIcon, forgetProjectAppearance, saveProjectAppearance } from '@/lib/projectAppearance'
+import ProjectAppearanceModal from '../components/ProjectAppearanceModal'
+import { PlatformLogo, getPlatformBrandColor, hasPlatformLogo } from '@/lib/platformBrands'
 
 const PLATFORM_ICONS = {
   instagram: Camera,
@@ -131,6 +149,19 @@ const STRATEGY_STEPS = [
 ]
 
 const EMPTY_PROJECT = { id: '', name: 'Campaign workspace', color: '#d0bcff', historyCount: 0 }
+
+function getEvidenceDomain(source) {
+  const publisher = String(source?.publisher ?? '')
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .split('/')[0]
+
+  try {
+    return new URL(source?.url).hostname.replace(/^www\./, '') || publisher || 'Source'
+  } catch {
+    return publisher || 'Source'
+  }
+}
 
 function BrandMark() {
   return (
@@ -318,6 +349,7 @@ function ProjectSidebar({
   onSelect,
   onNewProject,
   onRenameProject,
+  onEditProject,
   onDeleteProject,
   onSelectChat,
   onRenameChat,
@@ -398,6 +430,14 @@ function ProjectSidebar({
     }
   }
 
+  const openProjectSection = (project) => {
+    if (project.id === activeProject) {
+      toggleProject(project)
+      return
+    }
+    selectProject(project)
+  }
+
   const createProjectFromSidebar = async () => {
     cacheActiveChats()
     keepActiveProjectOpen()
@@ -475,13 +515,13 @@ function ProjectSidebar({
 
   if (!isOpen) {
     return (
-      <aside className="hidden w-[52px] shrink-0 flex-col items-center border-r border-[#ded7e3] bg-[#f6f0f7] pt-2 lg:flex">
+      <aside className="hidden w-[52px] shrink-0 flex-col items-center border-r border-[#ecebef] bg-white pt-2 lg:flex">
         <button
           type="button"
           onClick={onToggle}
           aria-label="Open projects sidebar"
           title="Open projects sidebar"
-          className="flex size-11 items-center justify-center rounded-xl text-[#625b71] transition-colors hover:bg-white hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+          className="flex size-10 items-center justify-center rounded-lg text-[#6b6577] transition-colors hover:bg-[#f4f3f6] hover:text-[#201a25] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
         >
           <PanelLeftOpen className="size-[18px]" />
         </button>
@@ -490,222 +530,219 @@ function ProjectSidebar({
   }
 
   return (
-    <aside className="hidden w-[260px] shrink-0 flex-col border-r border-[#ded7e3] bg-[#f6f0f7] p-3 lg:flex">
-      <div className="flex h-11 items-center justify-end">
+    <aside className="hidden w-[268px] shrink-0 flex-col border-r border-[#ecebef] bg-white px-2 pb-3 pt-2 lg:flex">
+      <div className="flex h-10 items-center justify-end">
         <button
           type="button"
           onClick={onToggle}
           aria-label="Close projects sidebar"
           title="Close projects sidebar"
-          className="flex size-11 items-center justify-center rounded-xl text-[#625b71] transition-colors hover:bg-white hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+          className="flex size-10 items-center justify-center rounded-lg text-[#6b6577] transition-colors hover:bg-[#f4f3f6] hover:text-[#201a25] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
         >
           <PanelLeftClose className="size-[18px]" />
         </button>
       </div>
 
-      <nav className="mt-1 space-y-1" aria-label="Workspace navigation">
-        <button className="flex h-10 w-full items-center gap-3 rounded-xl bg-white/70 px-3 text-sm font-medium text-[#381e72] ring-1 ring-[#e2d9e6]" type="button">
-          <Folder className="size-[18px]" /> Projects
+      <nav className="mt-1 space-y-0.5" aria-label="Workspace navigation">
+        <button className="flex h-9 w-full items-center gap-2.5 rounded-lg bg-[#f4f2f7] px-2.5 text-[13px] font-semibold text-[#201a25]" type="button">
+          <Folder className="size-[17px] text-[#4f378a]" /> Projects
         </button>
-        <button onClick={onOpenHistory} className={`flex h-10 w-full items-center gap-3 rounded-xl px-3 text-sm transition-colors ${historyOpen ? 'bg-white text-[#381e72] ring-1 ring-[#e2d9e6]' : 'text-[#625b71] hover:bg-white/70 hover:text-[#201a25]'}`} type="button">
-          <History className="size-[18px]" /> Chat history
+        <button onClick={onOpenHistory} className={`flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-[13px] transition-colors ${historyOpen ? 'bg-[#f4f2f7] font-semibold text-[#201a25]' : 'font-medium text-[#4a4453] hover:bg-[#f7f6f9]'}`} type="button">
+          <History className="size-[17px] text-[#8b8494]" /> Chat history
         </button>
       </nav>
 
-      <div className="mt-6 flex min-h-10 items-center justify-between px-2">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#716777]">Your projects</p>
-          <p className="mt-0.5 text-[11px] text-[#948a98]">{projects.length} {projects.length === 1 ? 'workspace' : 'workspaces'}</p>
-        </div>
+      <div className="mt-5 flex min-h-8 items-center justify-between pl-2.5 pr-1">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9a94a3]">Your projects</p>
         <button
           type="button"
           onClick={createProjectFromSidebar}
           aria-label="Create new project"
           title="Create new project"
-          className="flex size-10 items-center justify-center rounded-xl bg-[#e8dff0] text-[#4f378a] transition-colors hover:bg-[#ddd0e8] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+          className="flex size-7 items-center justify-center rounded-md text-[#6b6577] transition-colors hover:bg-[#f4f2f7] hover:text-[#4f378a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
         >
           <Plus className="size-4" />
         </button>
       </div>
 
-      <div className="mt-2 min-h-0 flex-1 space-y-1 overflow-y-auto px-0.5 pb-3 pr-1 [scrollbar-gutter:stable]">
+      <div className="mt-1 min-h-0 flex-1 overflow-y-auto pb-3 pr-0.5 [scrollbar-gutter:stable]">
         {projects.map((project) => {
           const isActive = project.id === activeProject
           const isExpanded = expandedProjectIds.includes(project.id)
             || (isActive && !collapsedProjectIds.includes(project.id))
           const projectChats = isActive ? chats : (chatsByProjectId[project.id] ?? [])
           return (
-            <div key={project.id} className="group/project">
-              <div className={`relative flex min-h-11 items-center overflow-visible rounded-lg transition-colors ${isActive ? 'bg-[#e9dfef]' : 'hover:bg-[#eee7f1]'}`}>
-                {isActive ? <span className="absolute inset-y-2 left-0 w-0.5 rounded-r-full bg-[#6b4c9a]" aria-hidden="true" /> : null}
-                <button
-                  type="button"
-                  onClick={() => toggleProject(project)}
-                  aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${project.name}`}
-                  aria-expanded={isExpanded}
-                  className="flex size-9 shrink-0 items-center justify-center rounded-lg text-[#817687] transition-colors hover:bg-[#e3d8ea] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
-                >
-                  <ChevronRight className={`size-4 transition-transform duration-200 ${isExpanded ? 'rotate-90 text-[#4f378a]' : ''}`} />
-                </button>
-
+            <div key={project.id} className="group/project mt-3 first:mt-0">
+              <div className="relative flex min-h-8 items-center gap-0.5 rounded-md pl-2.5 pr-0.5">
                 {editingProjectId === project.id ? (
-                  <div className="flex min-w-0 flex-1 items-center py-1 pr-10">
-                    <input
-                      autoFocus
-                      value={projectNameDraft}
-                      onChange={(event) => setProjectNameDraft(event.target.value)}
-                      onFocus={(event) => event.currentTarget.select()}
-                      onBlur={() => void commitRename(project)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') event.currentTarget.blur()
-                        if (event.key === 'Escape') {
-                          cancelRenameRef.current = true
-                          setEditingProjectId('')
-                          event.currentTarget.blur()
-                        }
-                      }}
-                      maxLength={80}
-                      aria-label={`New name for ${project.name}`}
-                      className="h-9 w-full rounded-lg border border-[#8e70b2] bg-[#f7f1fa] px-2.5 text-sm font-semibold text-[#201a25] outline-none ring-2 ring-[#ddd0ef] selection:bg-[#d9c8f4]"
-                    />
-                  </div>
+                  <input
+                    autoFocus
+                    value={projectNameDraft}
+                    onChange={(event) => setProjectNameDraft(event.target.value)}
+                    onFocus={(event) => event.currentTarget.select()}
+                    onBlur={() => void commitRename(project)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') event.currentTarget.blur()
+                      if (event.key === 'Escape') {
+                        cancelRenameRef.current = true
+                        setEditingProjectId('')
+                        event.currentTarget.blur()
+                      }
+                    }}
+                    maxLength={80}
+                    aria-label={`New name for ${project.name}`}
+                    className="h-8 min-w-0 flex-1 rounded-md border border-[#c8bcd8] bg-white px-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#201a25] outline-none ring-2 ring-[#ece4f5] selection:bg-[#e2d6f4]"
+                  />
                 ) : (
-                  <button type="button" onClick={() => selectProject(project)} aria-current={isActive ? 'page' : undefined} className="flex min-w-0 flex-1 items-center gap-2 self-stretch pr-10 text-left focus-visible:rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
-                    <span className="size-2 shrink-0 rounded-full ring-2 ring-[#dcd0e3]" style={{ backgroundColor: project.color }} />
-                    <span className={`min-w-0 flex-1 truncate text-[13px] ${isActive ? 'font-semibold text-[#281d2f]' : 'font-medium text-[#514a56]'}`} title={project.name}>
+                  <button
+                    type="button"
+                    onClick={() => openProjectSection(project)}
+                    aria-expanded={isExpanded}
+                    aria-current={isActive ? 'true' : undefined}
+                    title={project.name}
+                    className="flex min-w-0 flex-1 items-center gap-1.5 self-stretch rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                  >
+                    <ProjectIcon iconId={project.iconId} className="size-[15px] shrink-0" style={{ color: project.color }} aria-hidden="true" />
+                    <span className={`min-w-0 truncate text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors ${isActive ? 'text-[#4f378a]' : 'text-[#9a94a3] group-hover/project:text-[#6b6577]'}`}>
                       {project.name}
                     </span>
+                    <ChevronDown className={`size-3 shrink-0 text-[#b8b2c0] transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`} aria-hidden="true" />
                   </button>
                 )}
 
-                <div ref={openProjectMenuId === project.id ? projectMenuRef : undefined} className={`absolute right-0.5 top-1/2 z-30 -translate-y-1/2 transition-opacity ${isActive || openProjectMenuId === project.id ? 'opacity-100' : 'opacity-0 group-hover/project:opacity-100 group-focus-within/project:opacity-100'}`}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOpenChatMenuId('')
-                      setOpenProjectMenuId((current) => current === project.id ? '' : project.id)
-                    }}
-                    aria-label={`More actions for ${project.name}`}
-                    aria-haspopup="menu"
-                    aria-expanded={openProjectMenuId === project.id}
-                    className="flex size-9 items-center justify-center rounded-lg text-[#716777] transition-colors hover:bg-[#ddd0e8] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
-                  >
-                    <MoreVertical className="size-4" />
-                  </button>
-                  {openProjectMenuId === project.id ? (
-                    <div role="menu" aria-label={`Actions for ${project.name}`} className="absolute right-0 top-[calc(100%+4px)] w-40 overflow-hidden rounded-xl border border-[#d8ccdf] bg-[#f8f3f9] p-1.5 shadow-[0_12px_28px_rgba(45,31,52,0.16)]">
-                      <button type="button" role="menuitem" onClick={() => beginRename(project)} className="flex min-h-10 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-xs font-semibold text-[#514a56] transition-colors hover:bg-[#e9dfef] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"><Pencil className="size-3.5" /> Rename project</button>
-                      <button type="button" role="menuitem" onClick={() => { setOpenProjectMenuId(''); onDeleteProject(project) }} className="flex min-h-10 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-xs font-semibold text-[#9f2949] transition-colors hover:bg-[#f4dfe5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ad3150]"><Trash2 className="size-3.5" /> Delete project</button>
+                {editingProjectId !== project.id ? (
+                  <div className={`flex shrink-0 items-center transition-opacity ${openProjectMenuId === project.id ? 'opacity-100' : 'opacity-0 group-hover/project:opacity-100 group-focus-within/project:opacity-100'}`}>
+                    <button
+                      type="button"
+                      onClick={() => createChatInProject(project.id)}
+                      aria-label={`Create chat in ${project.name}`}
+                      title="New chat"
+                      className="flex size-7 items-center justify-center rounded-md text-[#6b6577] transition-colors hover:bg-[#f4f2f7] hover:text-[#4f378a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                    >
+                      <Plus className="size-3.5" />
+                    </button>
+                    <div ref={openProjectMenuId === project.id ? projectMenuRef : undefined} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOpenChatMenuId('')
+                          setOpenProjectMenuId((current) => current === project.id ? '' : project.id)
+                        }}
+                        aria-label={`More actions for ${project.name}`}
+                        aria-haspopup="menu"
+                        aria-expanded={openProjectMenuId === project.id}
+                        className="flex size-7 items-center justify-center rounded-md text-[#6b6577] transition-colors hover:bg-[#f4f2f7] hover:text-[#201a25] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                      >
+                        <MoreHorizontal className="size-4" />
+                      </button>
+                      {openProjectMenuId === project.id ? (
+                        <div role="menu" aria-label={`Actions for ${project.name}`} className="absolute right-0 top-[calc(100%+4px)] z-30 w-40 overflow-hidden rounded-xl border border-[#e7e4ec] bg-white p-1 shadow-[0_10px_30px_rgba(32,26,37,0.12)]">
+                          <button type="button" role="menuitem" onClick={() => beginRename(project)} className="flex min-h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-xs font-medium text-[#4a4453] transition-colors hover:bg-[#f4f2f7] hover:text-[#201a25] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"><Pencil className="size-3.5" /> Rename project</button>
+                          <button type="button" role="menuitem" onClick={() => { setOpenProjectMenuId(''); onEditProject(project) }} className="flex min-h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-xs font-medium text-[#4a4453] transition-colors hover:bg-[#f4f2f7] hover:text-[#201a25] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"><Palette className="size-3.5" /> Icon &amp; colour</button>
+                          <button type="button" role="menuitem" onClick={() => { setOpenProjectMenuId(''); onDeleteProject(project) }} className="flex min-h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-xs font-medium text-[#ad3150] transition-colors hover:bg-[#fdf0f3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ad3150]"><Trash2 className="size-3.5" /> Delete project</button>
+                        </div>
+                      ) : null}
                     </div>
-                  ) : null}
-                </div>
+                  </div>
+                ) : null}
               </div>
 
               {isExpanded ? (
-                <div className="relative ml-[18px] mt-1 border-l border-[#cfc1d8] pb-1 pl-2.5">
-                  <div className="flex min-h-8 items-center justify-between pl-2">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#807486]">Chats</p>
-                    <button type="button" onClick={() => createChatInProject(project.id)} aria-label={`Create chat in ${project.name}`} className="flex min-h-8 items-center gap-1 rounded-lg px-2 text-[11px] font-semibold text-[#59416f] transition-colors hover:bg-[#e9dfef] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"><Plus className="size-3.5" /> New chat</button>
-                  </div>
-                  <div className="space-y-0.5 pb-0.5">
-                    {projectChats.map((chat) => {
-                      const selected = isActive && chat.id === activeChat
-                      return (
-                        <div
-                          key={chat.id}
-                          className={`group/chat relative rounded-lg transition-colors duration-200 ${selected ? 'bg-[#e9dfef] text-[#281d2f]' : 'text-[#625b71] hover:bg-[#eee7f1] hover:text-[#201a25]'}`}
-                        >
-                          {selected ? <span className="absolute inset-y-2 left-0 w-0.5 rounded-r-full bg-[#6b4c9a]" aria-hidden="true" /> : null}
-                          {editingChatId === chat.id ? (
-                            <div className="flex min-h-10 items-center gap-2 px-2.5 pr-1.5">
-                              <MessageSquare className={`size-4 shrink-0 ${selected ? 'text-[#4f378a]' : 'text-[#8d7c98]'}`} />
-                              <input
-                                autoFocus
-                                value={chatTitleDraft}
-                                onChange={(event) => setChatTitleDraft(event.target.value)}
-                                onFocus={(event) => event.currentTarget.select()}
-                                onBlur={() => void commitChatRename(chat, project.id)}
-                                onKeyDown={(event) => {
-                                  if (event.key === 'Enter') event.currentTarget.blur()
-                                  if (event.key === 'Escape') {
-                                    cancelChatRenameRef.current = true
-                                    setEditingChatId('')
-                                    event.currentTarget.blur()
-                                  }
-                                }}
-                                maxLength={120}
-                                aria-label={`New name for ${chat.title}`}
-                                className="h-9 min-w-0 flex-1 rounded-lg border border-[#8e70b2] bg-[#f7f1fa] px-2.5 text-[13px] font-semibold text-[#201a25] outline-none ring-2 ring-[#ddd0ef]"
-                              />
-                            </div>
-                          ) : (
-                            <button type="button" onClick={() => selectChat(chat.id, project.id)} aria-current={selected ? 'page' : undefined} className="flex min-h-10 w-full items-center gap-2 rounded-lg px-2.5 pr-10 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
-                              <MessageSquare className={`size-4 shrink-0 ${selected ? 'text-[#4f378a]' : 'text-[#8d7c98]'}`} />
-                              <span className="min-w-0 flex-1 truncate text-[13px] font-semibold" title={chat.title}>{chat.title}</span>
-                            </button>
-                          )}
-                          {editingChatId !== chat.id ? (
-                            <div ref={openChatMenuId === chat.id ? chatMenuRef : undefined} className={`absolute right-0.5 top-1/2 z-40 -translate-y-1/2 transition-opacity ${selected || openChatMenuId === chat.id ? 'opacity-100' : 'opacity-0 group-hover/chat:opacity-100 group-focus-within/chat:opacity-100'}`}>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setOpenProjectMenuId('')
-                                  setOpenChatMenuId((current) => current === chat.id ? '' : chat.id)
-                                }}
-                                aria-label={`More actions for ${chat.title}`}
-                                aria-haspopup="menu"
-                                aria-expanded={openChatMenuId === chat.id}
-                                className="flex size-9 items-center justify-center rounded-lg text-[#75667f] transition-colors hover:bg-[#d9cce2] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
-                              >
-                                <MoreVertical className="size-4" />
-                              </button>
-                              {openChatMenuId === chat.id ? (
-                                <div role="menu" aria-label={`Actions for ${chat.title}`} className="absolute right-0 top-[calc(100%+4px)] w-40 overflow-hidden rounded-xl border border-[#d8ccdf] bg-[#f8f3f9] p-1.5 shadow-[0_12px_28px_rgba(45,31,52,0.16)]">
-                                  <button type="button" role="menuitem" onClick={() => beginChatRename(chat)} className="flex min-h-10 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-xs font-semibold text-[#514a56] transition-colors hover:bg-[#e9dfef] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"><Pencil className="size-3.5" /> Rename chat</button>
-                                  <button type="button" role="menuitem" onClick={() => { setOpenChatMenuId(''); requestDeleteChat(chat, project.id) }} className="flex min-h-10 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-xs font-semibold text-[#9f2949] transition-colors hover:bg-[#f4dfe5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ad3150]"><Trash2 className="size-3.5" /> Delete chat</button>
-                                </div>
-                              ) : null}
-                            </div>
-                          ) : null}
-                        </div>
-                      )
-                    })}
-                    {projectChats.length === 0 ? (
-                      <button
-                        type="button"
-                        onClick={() => createChatInProject(project.id)}
-                        className="flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[#cbbdd4] bg-[#eee7f1] px-3 text-xs font-semibold text-[#59416f] transition-colors hover:border-[#a995b7] hover:bg-[#e9dfef] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                <div className="mt-0.5 space-y-px">
+                  {projectChats.map((chat) => {
+                    const selected = isActive && chat.id === activeChat
+                    return (
+                      <div
+                        key={chat.id}
+                        className={`group/chat relative rounded-lg transition-colors ${selected ? 'bg-[#f1eef6]' : 'hover:bg-[#f7f6f9]'}`}
                       >
-                        <Plus className="size-3.5" /> Start the first chat
-                      </button>
-                    ) : null}
-                  </div>
+                        {editingChatId === chat.id ? (
+                          <div className="flex min-h-9 items-center px-1.5">
+                            <input
+                              autoFocus
+                              value={chatTitleDraft}
+                              onChange={(event) => setChatTitleDraft(event.target.value)}
+                              onFocus={(event) => event.currentTarget.select()}
+                              onBlur={() => void commitChatRename(chat, project.id)}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter') event.currentTarget.blur()
+                                if (event.key === 'Escape') {
+                                  cancelChatRenameRef.current = true
+                                  setEditingChatId('')
+                                  event.currentTarget.blur()
+                                }
+                              }}
+                              maxLength={120}
+                              aria-label={`New name for ${chat.title}`}
+                              className="h-8 min-w-0 flex-1 rounded-md border border-[#c8bcd8] bg-white px-2 text-[13px] font-medium text-[#201a25] outline-none ring-2 ring-[#ece4f5]"
+                            />
+                          </div>
+                        ) : (
+                          <button type="button" onClick={() => selectChat(chat.id, project.id)} aria-current={selected ? 'page' : undefined} className="flex min-h-9 w-full items-center rounded-lg pl-2.5 pr-9 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
+                            <span className={`min-w-0 flex-1 truncate text-[13px] ${selected ? 'font-semibold text-[#201a25]' : 'font-medium text-[#4a4453]'}`} title={chat.title}>{chat.title}</span>
+                          </button>
+                        )}
+                        {editingChatId !== chat.id ? (
+                          <div ref={openChatMenuId === chat.id ? chatMenuRef : undefined} className={`absolute right-1 top-1/2 z-20 -translate-y-1/2 transition-opacity ${openChatMenuId === chat.id ? 'opacity-100' : 'opacity-0 group-hover/chat:opacity-100 group-focus-within/chat:opacity-100'}`}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOpenProjectMenuId('')
+                                setOpenChatMenuId((current) => current === chat.id ? '' : chat.id)
+                              }}
+                              aria-label={`More actions for ${chat.title}`}
+                              aria-haspopup="menu"
+                              aria-expanded={openChatMenuId === chat.id}
+                              className="flex size-7 items-center justify-center rounded-md text-[#6b6577] transition-colors hover:bg-[#eae7f0] hover:text-[#201a25] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                            >
+                              <MoreHorizontal className="size-4" />
+                            </button>
+                            {openChatMenuId === chat.id ? (
+                              <div role="menu" aria-label={`Actions for ${chat.title}`} className="absolute right-0 top-[calc(100%+4px)] z-40 w-40 overflow-hidden rounded-xl border border-[#e7e4ec] bg-white p-1 shadow-[0_10px_30px_rgba(32,26,37,0.12)]">
+                                <button type="button" role="menuitem" onClick={() => beginChatRename(chat)} className="flex min-h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-xs font-medium text-[#4a4453] transition-colors hover:bg-[#f4f2f7] hover:text-[#201a25] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"><Pencil className="size-3.5" /> Rename chat</button>
+                                <button type="button" role="menuitem" onClick={() => { setOpenChatMenuId(''); requestDeleteChat(chat, project.id) }} className="flex min-h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-xs font-medium text-[#ad3150] transition-colors hover:bg-[#fdf0f3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ad3150]"><Trash2 className="size-3.5" /> Delete chat</button>
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </div>
+                    )
+                  })}
+                  {projectChats.length === 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => createChatInProject(project.id)}
+                      className="flex min-h-9 w-full items-center gap-2 rounded-lg pl-2.5 pr-2 text-left text-[13px] font-medium text-[#9a94a3] transition-colors hover:bg-[#f7f6f9] hover:text-[#4f378a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                    >
+                      <Plus className="size-3.5 shrink-0" /> Start the first chat
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
             </div>
           )
         })}
         {projects.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[#cfc1d8] bg-[#eee7f1] px-4 py-5 text-center">
-            <Folder className="mx-auto size-5 text-[#7b6b84]" />
-            <p className="mt-2 text-xs font-semibold text-[#514a56]">No projects yet</p>
-            <button type="button" onClick={createProjectFromSidebar} className="mt-2 text-xs font-semibold text-[#4f378a] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">Create your first project</button>
+          <div className="px-2.5 py-6 text-center">
+            <Folder className="mx-auto size-5 text-[#b8b2c0]" />
+            <p className="mt-2 text-xs font-medium text-[#6b6577]">No projects yet</p>
+            <button type="button" onClick={createProjectFromSidebar} className="mt-1.5 text-xs font-semibold text-[#4f378a] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">Create your first project</button>
           </div>
         ) : null}
       </div>
 
-      <div className="mt-auto rounded-2xl border border-[#ded3e4] bg-[#fffaff] p-3.5">
-        <div className="flex items-center gap-2 text-xs font-semibold text-[#381e72]">
-          <span className="flex size-6 items-center justify-center rounded-full bg-[#e6fbc7]">
-            <Sparkles className="size-3.5" />
+      <div className="mt-auto border-t border-[#f0eef2] px-2.5 pt-3">
+        <div className="flex items-center gap-2 text-xs font-semibold text-[#201a25]">
+          <span className="flex size-5 items-center justify-center rounded-full bg-[#eee9f6] text-[#4f378a]">
+            <Sparkles className="size-3" />
           </span>
           Pro workspace
         </div>
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#e9e1eb]">
+        <div className="mt-2.5 h-1 overflow-hidden rounded-full bg-[#f0eef2]">
           <div className="h-full w-[64%] rounded-full bg-[#4f378a]" />
         </div>
-        <p className="mt-2 text-[11px] leading-4 text-[#746b79]">6,420 of 10,000 words used</p>
-        <button type="button" className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-[#4f378a] hover:underline">
+        <p className="mt-2 text-[11px] leading-4 text-[#9a94a3]">6,420 of 10,000 words used</p>
+        <button type="button" className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-[#4f378a] hover:underline">
           <Settings className="size-3.5" /> Manage plan
         </button>
       </div>
@@ -869,6 +906,38 @@ function buildStrategyBrief(values) {
       maxPersonas: 3,
       primaryGoal: STRATEGY_GOALS[values.campaignGoal] ?? 'balanced',
     },
+  }
+}
+
+function firstNonBlankString(...candidates) {
+  return candidates.find((value) => typeof value === 'string' && value.trim())?.trim() ?? ''
+}
+
+function buildContentWorkflowInput(values, strategy, projectName) {
+  const strategyProduct = strategy?.product
+  const campaignStrategy = strategy?.campaignStrategy
+
+  return {
+    brandName: firstNonBlankString(values?.brandName, strategyProduct?.name, projectName),
+    product: firstNonBlankString(
+      values?.product,
+      strategyProduct?.valueProposition,
+      strategyProduct?.name,
+      campaignStrategy?.summary,
+    ),
+    targetAudience: firstNonBlankString(
+      values?.targetAudience,
+      campaignStrategy?.audienceStrategy?.primaryAudience,
+    ),
+    platforms: Array.isArray(values?.platforms) && values.platforms.length
+      ? values.platforms
+      : EMPTY_VALUES.platforms,
+    duration: firstNonBlankString(values?.duration, EMPTY_VALUES.duration),
+    postsPerWeek: Number.isInteger(values?.postsPerWeek) && values.postsPerWeek > 0
+      ? values.postsPerWeek
+      : EMPTY_VALUES.postsPerWeek,
+    generateImages: values?.generateImages !== false,
+    requireApproval: false,
   }
 }
 
@@ -1540,68 +1609,75 @@ function StrategySummary({ strategy }) {
   const tones = strategy.tonePerPlatform ? Object.entries(strategy.tonePerPlatform) : []
 
   return (
-    <section id="campaign-strategy" className="overflow-hidden rounded-[24px] border border-[#d8cedc] bg-[#fffaff] shadow-[0_14px_35px_rgba(46,32,51,0.06)]">
-      <div className="border-b border-[#e6dee8] px-5 py-5 sm:px-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#e6fbc7] text-[#315016]">
-              <Lightbulb className="size-[18px]" />
-            </span>
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#716777]">Campaign strategy</p>
-              <h3 className="font-display text-[22px] leading-tight tracking-[-0.35px] text-[#201a25]">The idea behind the work</h3>
-            </div>
-          </div>
-          <span className="hidden rounded-full border border-[#d8cbe0] bg-[#faf6fb] px-3 py-1.5 text-xs font-semibold text-[#594a63] sm:inline-flex">
-            {strategy.contentPillars?.length ?? 0} pillars
+    <section id="campaign-strategy" className="overflow-hidden rounded-[24px] border border-[#e6dee8] bg-[#fffaff] shadow-[0_14px_35px_rgba(46,32,51,0.05)]">
+      <div className="px-6 pt-6 sm:px-8">
+        <div className="flex items-center gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#e6fbc7] text-[#315016]">
+            <Lightbulb className="size-[17px]" />
           </span>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8b8090]">Campaign strategy</p>
+            <h3 className="font-display text-[21px] leading-tight tracking-[-0.35px] text-[#201a25]">The idea behind the work</h3>
+          </div>
         </div>
-        <blockquote className="mt-5 border-l-2 border-[#7ba63b] pl-4 font-display text-xl leading-[1.45] tracking-[-0.2px] text-[#34283a] sm:text-[23px]">
+        <p className="mt-5 font-display text-[21px] leading-[1.5] tracking-[-0.2px] text-[#34283a] sm:text-[23px]">
           {strategy.coreNarrative}
-        </blockquote>
+        </p>
       </div>
 
       {Array.isArray(strategy.contentPillars) && strategy.contentPillars.length > 0 ? (
-        <div className="px-5 py-5 sm:px-6">
-          <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.15em] text-[#817486]">Content pillars</p>
-          <ol className="grid gap-3 sm:grid-cols-2">
-          {strategy.contentPillars.map((pillar, index) => (
-            <li key={`${pillar.name}-${index}`} className="group rounded-2xl border border-[#e7dfe9] bg-[#f8f3f8] p-4 transition-colors hover:border-[#cdbed4] hover:bg-[#faf7fb]">
-              <div className="flex items-start gap-3">
-                <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-[#d7c9de] bg-white text-[11px] font-bold tabular-nums text-[#4f378a]">
+        <div className="mt-7 border-t border-[#efe9f0] px-6 py-6 sm:px-8">
+          <h4 className="text-sm font-semibold text-[#201a25]">Content pillars</h4>
+          <ol className="mt-4 grid gap-x-10 gap-y-6 sm:grid-cols-2">
+            {strategy.contentPillars.map((pillar, index) => (
+              <li key={`${pillar.name}-${index}`} className="flex gap-3">
+                <span className="pt-px text-[12px] font-semibold tabular-nums text-[#b3a6bb]">
                   {String(index + 1).padStart(2, '0')}
                 </span>
-                <div>
-                  <p className="text-sm font-semibold text-[#201a25]">{pillar.name}</p>
-                  <p className="mt-1 text-xs leading-5 text-[#6f6475]">{pillar.description}</p>
+                <div className="min-w-0">
+                  <p className="text-[14px] font-semibold leading-snug text-[#201a25]">{pillar.name}</p>
+                  <p className="mt-1 text-[13px] leading-[1.6] text-[#6f6475]">{pillar.description}</p>
                 </div>
-              </div>
-            </li>
-          ))}
+              </li>
+            ))}
           </ol>
         </div>
       ) : null}
 
       {tones.length > 0 ? (
-        <div className="border-t border-[#e6dee8] bg-[#fbf8fb] px-5 py-4 sm:px-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <p className="shrink-0 text-[11px] font-bold uppercase tracking-[0.15em] text-[#817486]">Voice by channel</p>
-            <div className="flex flex-wrap gap-2">
-          {tones.map(([platform, tone]) => {
-            const label = PLATFORM_OPTIONS.find((option) => option.id === platform)?.label ?? platform
-            return (
-              <span key={platform} className="rounded-full border border-[#ded4e2] bg-white px-3 py-1.5 text-xs text-[#5d5462]">
-                <span className="font-semibold text-[#4f378a]">{label}:</span> {tone}
-              </span>
-            )
-          })}
-            </div>
-          </div>
+        <div className="border-t border-[#efe9f0] px-6 py-6 sm:px-8">
+          <h4 className="text-sm font-semibold text-[#201a25]">Voice by channel</h4>
+          <dl className="mt-4 grid gap-x-10 gap-y-5 sm:grid-cols-2">
+            {tones.map(([platform, tone]) => {
+              const label = PLATFORM_OPTIONS.find((option) => option.id === platform)?.label ?? platform
+              const brand = getPlatformBrandColor(platform)
+              return (
+                <div key={platform} className="flex gap-3">
+                  <span
+                    aria-hidden="true"
+                    className="mt-px flex size-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold uppercase"
+                    style={{ backgroundColor: `${brand}14`, color: brand }}
+                  >
+                    {hasPlatformLogo(platform)
+                      ? <PlatformLogo platform={platform} className="size-[15px]" />
+                      : label.slice(0, 1)}
+                  </span>
+                  <div className="min-w-0">
+                    <dt className="text-[13px] font-semibold leading-snug text-[#201a25]">{label}</dt>
+                    <dd className="mt-0.5 text-[13px] leading-[1.6] text-[#6f6475]">{tone}</dd>
+                  </div>
+                </div>
+              )
+            })}
+          </dl>
         </div>
       ) : null}
 
       {strategy.rationale ? (
-        <p className="border-t border-[#e6dee8] px-5 py-4 text-xs italic leading-5 text-[#796e7f] sm:px-6">{strategy.rationale}</p>
+        <div className="border-t border-[#efe9f0] bg-[#faf7fb] px-6 py-5 sm:px-8">
+          <h4 className="text-sm font-semibold text-[#201a25]">Why this works</h4>
+          <p className="mt-1.5 text-[13px] leading-[1.6] text-[#6f6475]">{strategy.rationale}</p>
+        </div>
       ) : null}
     </section>
   )
@@ -1626,77 +1702,78 @@ function StrategyOverview({ strategy }) {
     <motion.section
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="strategy-review overflow-hidden rounded-[24px] border border-[#cfc1dc] bg-[#fffaff] shadow-[0_18px_45px_rgba(46,32,51,0.09)]"
+      className="strategy-agent-panel overflow-hidden rounded-[22px] border shadow-[0_12px_32px_rgba(46,32,51,0.06)]"
     >
-      <div className="relative overflow-hidden border-b border-[#e5dce7] bg-[#2b174f] px-5 py-6 text-white sm:px-7 sm:py-7">
-        <div className="absolute -right-10 -top-20 size-64 rounded-full border border-[#d8ff9d]/20 bg-[#d8ff9d]/10 blur-[1px]" />
-        <div className="absolute -bottom-28 right-24 size-52 rounded-full border border-white/10" />
+      <div className="strategy-overview-hero relative overflow-hidden border-b px-5 py-6 sm:px-7 sm:py-7">
+        <div className="strategy-hero-orb absolute -right-10 -top-20 size-64 rounded-full border blur-[1px]" />
+        <div className="strategy-hero-ring absolute -bottom-28 right-24 size-52 rounded-full border" />
         <div className="relative flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-2xl">
-            <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.17em] text-[#d8ff9d]">
+            <div className="strategy-agent-eyebrow mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.17em]">
               <Sparkles className="size-3.5" /> Strategy ready for review
             </div>
-            <h3 className="font-display text-[32px] leading-[1.02] tracking-[-0.8px] sm:text-[40px]">A point of view worth building from.</h3>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-white/70">{campaign.summary}</p>
+            <h3 className="strategy-agent-title font-display text-[32px] leading-[1.02] tracking-[-0.8px] sm:text-[40px]">A point of view worth building from.</h3>
+            <p className="strategy-agent-description mt-3 max-w-xl text-sm leading-6">{campaign.summary}</p>
           </div>
-          <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm">
-            <div className="flex size-12 items-center justify-center rounded-full border border-[#d8ff9d]/50 bg-[#d8ff9d] text-lg font-bold text-[#2b174f]">
+          <div className="strategy-quality-score flex shrink-0 items-center gap-3 rounded-2xl border px-4 py-3 backdrop-blur-sm">
+            <div className="strategy-score-value flex size-12 items-center justify-center rounded-full border text-lg font-bold">
               {quality.score ?? '--'}
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/55">Plan quality</p>
-              <p className="mt-0.5 text-sm font-semibold capitalize text-white">{String(quality.status ?? 'review')}</p>
+              <p className="strategy-agent-description text-[10px] font-bold uppercase tracking-[0.14em]">Plan quality</p>
+              <p className="strategy-agent-title mt-0.5 text-sm font-semibold capitalize">{String(quality.status ?? 'review')}</p>
             </div>
           </div>
         </div>
       </div>
 
       <div className="space-y-5 p-5 sm:p-7">
-        <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
-          <div className="rounded-2xl border border-[#e5dce7] bg-[#fbf7fb] p-5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#84788c]">Positioning statement</p>
-            <p className="mt-3 font-display text-[22px] leading-[1.25] tracking-[-0.3px] text-[#2b174f]">{stp.positioning?.positioningStatement}</p>
-            <p className="mt-4 text-sm leading-6 text-[#6d6275]">{stp.positioning?.brandPromise}</p>
+        <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+          <div className="strategy-overview-card rounded-2xl border p-5">
+            <div className="flex items-center gap-2 text-primary"><Target className="size-4" aria-hidden="true" /><p className="text-[10px] font-bold uppercase tracking-[0.16em]">Positioning statement</p></div>
+            <p className="mt-3 font-display text-[22px] leading-[1.3] tracking-[-0.3px] text-foreground">{stp.positioning?.positioningStatement}</p>
+            <p className="mt-4 text-sm leading-6 text-muted-foreground">{stp.positioning?.brandPromise}</p>
           </div>
-          <div className="rounded-2xl border border-[#e5dce7] bg-white p-5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#84788c]">Product angle</p>
-            <p className="mt-2 text-lg font-semibold text-[#201a25]">{product.name}</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[#907f9a]">{product.type} · {product.industry}</p>
-            <p className="mt-4 text-sm leading-6 text-[#6d6275]">{product.valueProposition}</p>
+          <div className="strategy-overview-card rounded-2xl border p-5">
+            <div className="flex items-center gap-2 text-primary"><PackageSearch className="size-4" aria-hidden="true" /><p className="text-[10px] font-bold uppercase tracking-[0.16em]">Product angle</p></div>
+            <p className="mt-2 text-lg font-semibold text-foreground">{product.name}</p>
+            <p className="mt-1 text-xs uppercase tracking-[0.12em] text-muted-foreground">{product.type} · {product.industry}</p>
+            <p className="mt-4 text-sm leading-6 text-muted-foreground">{product.valueProposition}</p>
           </div>
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-2xl border border-[#e5dce7] bg-white p-5">
+        <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="strategy-overview-card rounded-2xl border p-5">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#84788c]">Who we are targeting</p>
-              <Users className="size-4 text-[#4f378a]" />
+              <div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">Priority audiences</p><p className="mt-1 text-xs text-muted-foreground">Ordered by strategic fit</p></div>
+              <span className="strategy-subsection-icon flex size-9 items-center justify-center rounded-xl"><Users className="size-4" aria-hidden="true" /></span>
             </div>
-            <div className="mt-4 space-y-3">
-              {targetedSegments.map((segment) => (
-                <div key={segment.segmentId} className="flex items-start gap-3 rounded-xl bg-[#f7f1f8] p-3">
-                  <span className="mt-0.5 rounded-full bg-[#e6fbc7] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[#315016]">{segment.priority}</span>
-                  <div>
-                    <p className="text-sm font-semibold text-[#201a25]">{segmentNames.get(segment.segmentId) ?? segment.segmentId}</p>
-                    <p className="mt-1 text-xs leading-5 text-[#766b7d]">{segment.justification}</p>
+            <div className="mt-4 divide-y divide-border">
+              {targetedSegments.map((segment, index) => (
+                <div key={segment.segmentId} className="flex items-start gap-3 py-3 first:pt-0 last:pb-0">
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold tabular-nums text-primary">{index + 1}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2"><p className="text-sm font-semibold text-foreground">{segmentNames.get(segment.segmentId) ?? segment.segmentId}</p><span className="strategy-soft-badge rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em]">{segment.priority}</span></div>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">{segment.justification}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-          <div className="rounded-2xl border border-[#e5dce7] bg-white p-5">
+          <div className="strategy-overview-card rounded-2xl border p-5">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#84788c]">Channel mix</p>
-              <BarChart3 className="size-4 text-[#4f378a]" />
+              <div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">Channel mix</p><p className="mt-1 text-xs text-muted-foreground">Recommended effort split</p></div>
+              <span className="strategy-subsection-icon flex size-9 items-center justify-center rounded-xl"><BarChart3 className="size-4" aria-hidden="true" /></span>
             </div>
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <div className="mt-4 grid gap-x-5 gap-y-4 sm:grid-cols-2">
               {channels.map((channel) => (
-                <div key={channel.channel} className="rounded-xl border border-[#ece4ee] p-3">
+                <div key={channel.channel}>
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold capitalize text-[#201a25]">{channel.channel}</p>
-                    <span className="text-xs font-bold text-[#4f378a]">{channel.estimatedShare}%</span>
+                    <p className="text-sm font-semibold capitalize text-foreground">{channel.channel}</p>
+                    <span className="text-xs font-bold tabular-nums text-primary">{channel.estimatedShare}%</span>
                   </div>
-                  <p className="mt-1 text-xs leading-5 text-[#766b7d]">{channel.primaryFunnelStage} · {channel.expectedKpis?.[0]}</p>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"><span className="block h-full rounded-full bg-primary" style={{ width: `${Math.max(4, Math.min(100, Number(channel.estimatedShare) || 0))}%` }} /></div>
+                  <p className="mt-2 text-xs leading-5 text-muted-foreground">{channel.primaryFunnelStage} · {channel.expectedKpis?.[0]}</p>
                 </div>
               ))}
             </div>
@@ -1706,24 +1783,24 @@ function StrategyOverview({ strategy }) {
         <div>
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#84788c]">Campaign concepts</p>
-              <p className="mt-1 text-sm text-[#6d6275]">The workflow recommends these first moves.</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">Campaign concepts</p>
+              <p className="mt-1 text-sm text-muted-foreground">The workflow recommends these first moves.</p>
             </div>
-            <span className="rounded-full bg-[#f2eafa] px-2.5 py-1 text-[11px] font-semibold text-[#4f378a]">{recommendations.length} concepts</span>
+            <span className="strategy-soft-badge rounded-full px-2.5 py-1 text-[11px] font-semibold">{recommendations.length} concepts</span>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {recommendations.map((recommendation) => (
-              <article key={recommendation.id} className="rounded-2xl border border-[#e5dce7] bg-[#fbf7fb] p-4">
+              <article key={recommendation.id} className="strategy-mini-card rounded-2xl border p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-sm font-semibold text-[#201a25]">{recommendation.name}</p>
-                    <p className="mt-1 text-[11px] uppercase tracking-[0.1em] text-[#907f9a]">{recommendation.type} · {recommendation.duration}</p>
+                    <p className="text-sm font-semibold text-foreground">{recommendation.name}</p>
+                    <p className="mt-1 text-[11px] uppercase tracking-[0.1em] text-muted-foreground">{recommendation.type} · {recommendation.duration}</p>
                   </div>
-                  <span className="rounded-full border border-[#d8cbe0] px-2 py-1 text-[10px] font-semibold capitalize text-[#5d5068]">{recommendation.estimatedImpact} impact</span>
+                  <span className="strategy-soft-badge rounded-full px-2 py-1 text-[10px] font-semibold capitalize">{recommendation.estimatedImpact} impact</span>
                 </div>
-                <p className="mt-3 text-xs leading-5 text-[#6d6275]">{recommendation.objective}</p>
+                <p className="mt-3 text-xs leading-5 text-muted-foreground">{recommendation.objective}</p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
-                  {recommendation.channels?.map((channel) => <span key={channel} className="rounded-full bg-white px-2 py-1 text-[10px] font-medium capitalize text-[#685b72]">{channel}</span>)}
+                  {recommendation.channels?.map((channel) => <span key={channel} className="rounded-full border border-border bg-card px-2 py-1 text-[10px] font-medium capitalize text-muted-foreground">{channel}</span>)}
                 </div>
               </article>
             ))}
@@ -1731,36 +1808,33 @@ function StrategyOverview({ strategy }) {
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-[#e5dce7] bg-[#f8f3f8] p-4">
-            <p className="text-2xl font-semibold text-[#2b174f]">{personas.length}</p>
-            <p className="mt-1 text-xs text-[#766b7d]">buyer personas mapped</p>
+          <div className="strategy-mini-card flex items-center gap-3 rounded-2xl border p-4">
+            <span className="strategy-subsection-icon flex size-9 items-center justify-center rounded-xl"><Users className="size-4" /></span><div><p className="text-2xl font-semibold text-foreground">{personas.length}</p><p className="mt-0.5 text-xs text-muted-foreground">buyer personas</p></div>
           </div>
-          <div className="rounded-2xl border border-[#e5dce7] bg-[#f8f3f8] p-4">
-            <p className="text-2xl font-semibold text-[#2b174f]">{objectives.length}</p>
-            <p className="mt-1 text-xs text-[#766b7d]">SMART objectives</p>
+          <div className="strategy-mini-card flex items-center gap-3 rounded-2xl border p-4">
+            <span className="strategy-subsection-icon flex size-9 items-center justify-center rounded-xl"><Target className="size-4" /></span><div><p className="text-2xl font-semibold text-foreground">{objectives.length}</p><p className="mt-0.5 text-xs text-muted-foreground">SMART objectives</p></div>
           </div>
-          <div className="rounded-2xl border border-[#e5dce7] bg-[#f8f3f8] p-4">
-            <p className="text-2xl font-semibold text-[#2b174f]">{campaign.kpis?.length ?? 0}</p>
-            <p className="mt-1 text-xs text-[#766b7d]">primary KPIs to watch</p>
+          <div className="strategy-mini-card flex items-center gap-3 rounded-2xl border p-4">
+            <span className="strategy-subsection-icon flex size-9 items-center justify-center rounded-xl"><BarChart3 className="size-4" /></span><div><p className="text-2xl font-semibold text-foreground">{campaign.kpis?.length ?? 0}</p><p className="mt-0.5 text-xs text-muted-foreground">primary KPIs</p></div>
           </div>
         </div>
 
-        <details className="group rounded-2xl border border-[#e5dce7] bg-white">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-sm font-semibold text-[#3d2b4b] [&::-webkit-details-marker]:hidden">
+        <details className="strategy-expandable group rounded-2xl border">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-sm font-semibold text-foreground [&::-webkit-details-marker]:hidden">
             Explore assumptions, objectives, and guardrails
-            <ChevronDown className="size-4 text-[#84788c] transition-transform group-open:rotate-180" />
+            <ChevronDown className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
           </summary>
-          <div className="grid gap-5 border-t border-[#eee7ef] px-4 py-4 md:grid-cols-2">
+          <div className="grid gap-5 border-t border-border px-4 py-4 md:grid-cols-2">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#84788c]">Key messages</p>
-              <ul className="mt-2 space-y-1.5 text-xs leading-5 text-[#6d6275]">
-                {(campaign.creativeDirection?.keyMessages ?? []).map((message) => <li key={message} className="flex gap-2"><span className="text-[#4f378a]">•</span>{message}</li>)}
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary">Key messages</p>
+              <ul className="mt-2 space-y-1.5 text-xs leading-5 text-muted-foreground">
+                {(campaign.creativeDirection?.keyMessages ?? []).map((message) => <li key={message} className="flex gap-2"><Check className="mt-0.5 size-3.5 shrink-0 text-primary" />{message}</li>)}
               </ul>
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#84788c]">Next decisions</p>
-              <ul className="mt-2 space-y-1.5 text-xs leading-5 text-[#6d6275]">
-                {(quality.nextDecisions ?? []).map((decision) => <li key={decision} className="flex gap-2"><span className="text-[#4f378a]">•</span>{decision}</li>)}
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary">Next decisions</p>
+              <ul className="mt-2 space-y-1.5 text-xs leading-5 text-muted-foreground">
+                {(quality.nextDecisions ?? []).map((decision) => <li key={decision} className="flex gap-2"><ChevronRight className="mt-0.5 size-3.5 shrink-0 text-primary" />{decision}</li>)}
               </ul>
             </div>
           </div>
@@ -1772,14 +1846,14 @@ function StrategyOverview({ strategy }) {
 }
 
 const STRATEGY_AGENT_TABS = [
-  { id: 'overview', label: 'Overview', icon: Sparkles },
-  { id: 'product', label: 'Product analysis', icon: Lightbulb },
-  { id: 'stp', label: 'STP strategy', icon: BarChart3 },
-  { id: 'personas', label: 'Buyer personas', icon: Users },
-  { id: 'journey', label: 'Buyer journey', icon: MessageSquare },
-  { id: 'objectives', label: 'SMART objectives', icon: Check },
-  { id: 'campaign', label: 'Campaign planner', icon: Wand2 },
-  { id: 'quality', label: 'Quality gate', icon: CircleAlert },
+  { id: 'overview', label: 'Overview', shortLabel: 'Start here', description: 'Strategy at a glance', icon: Sparkles },
+  { id: 'product', label: 'Product analysis', shortLabel: 'Product', description: 'Offer and value', icon: PackageSearch },
+  { id: 'stp', label: 'STP strategy', shortLabel: 'Positioning', description: 'Audience and market fit', icon: Target },
+  { id: 'personas', label: 'Buyer personas', shortLabel: 'Personas', description: 'People and motivations', icon: Users },
+  { id: 'journey', label: 'Buyer journey', shortLabel: 'Journey', description: 'Needs by funnel stage', icon: MapIcon },
+  { id: 'objectives', label: 'SMART objectives', shortLabel: 'Objectives', description: 'Targets and measures', icon: ListChecks },
+  { id: 'campaign', label: 'Campaign planner', shortLabel: 'Campaign', description: 'Creative direction', icon: Megaphone },
+  { id: 'quality', label: 'Quality gate', shortLabel: 'Quality', description: 'Evidence and risks', icon: ShieldCheck },
 ]
 
 const JOURNEY_STAGES = [
@@ -1790,66 +1864,159 @@ const JOURNEY_STAGES = [
   { id: 'advocacy', label: 'Advocacy' },
 ]
 
+const STRATEGY_FIELD_ICON_RULES = [
+  { pattern: /pricing|price|budget|cost/i, icon: <DollarSign className="size-3.5" /> },
+  { pattern: /product type|industry|type$/i, icon: <Tag className="size-3.5" /> },
+  { pattern: /product name|working product/i, icon: <PackageSearch className="size-3.5" /> },
+  { pattern: /value proposition|unique selling/i, icon: <Sparkles className="size-3.5" /> },
+  { pattern: /core features|creative do|key differentiators|differentiators/i, icon: <ListChecks className="size-3.5" /> },
+  { pattern: /customer problems|frustrations|objections/i, icon: <CircleAlert className="size-3.5" /> },
+  { pattern: /positioning|objective|goals?|target value/i, icon: <Target className="size-3.5" /> },
+  { pattern: /brand promise/i, icon: <ShieldCheck className="size-3.5" /> },
+  { pattern: /tone of voice/i, icon: <Volume2 className="size-3.5" /> },
+  { pattern: /segment|persona name/i, icon: <Users className="size-3.5" /> },
+  { pattern: /summary|storytelling|key messages|review prompts/i, icon: <MessageSquare className="size-3.5" /> },
+  { pattern: /buying triggers|purchase triggers|primary cta|cta$/i, icon: <MousePointerClick className="size-3.5" /> },
+  { pattern: /questions/i, icon: <HelpCircle className="size-3.5" /> },
+  { pattern: /follow-up/i, icon: <RefreshCw className="size-3.5" /> },
+  { pattern: /education|reasoning/i, icon: <Lightbulb className="size-3.5" /> },
+  { pattern: /referral/i, icon: <Users className="size-3.5" /> },
+  { pattern: /deadline/i, icon: <CalendarDays className="size-3.5" /> },
+  { pattern: /kpi|measurement/i, icon: <BarChart3 className="size-3.5" /> },
+  { pattern: /visual style/i, icon: <ImageIcon className="size-3.5" /> },
+  { pattern: /hierarchy/i, icon: <Layers3 className="size-3.5" /> },
+]
+
+const DEFAULT_STRATEGY_FIELD_ICON = <Pencil className="size-3.5" />
+
+function iconForStrategyField(label) {
+  return STRATEGY_FIELD_ICON_RULES.find(({ pattern }) => pattern.test(label))?.icon ?? DEFAULT_STRATEGY_FIELD_ICON
+}
+
 function EditableText({ label, value, onChange, multiline = false, rows = 3, helper }) {
+  const fieldIcon = iconForStrategyField(label)
+
   return (
-    <label className="block">
-      <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.13em] text-[#84788c]">{label}</span>
+    <label className="strategy-field block">
+      <span className="strategy-field-label mb-2 flex items-center gap-2 text-xs font-semibold text-foreground">
+        <span className="strategy-field-label-icon flex size-6 shrink-0 items-center justify-center rounded-lg" aria-hidden="true">{fieldIcon}</span>
+        <span>{label}</span>
+      </span>
       {multiline ? (
         <textarea
           rows={rows}
           value={value ?? ''}
           onChange={(event) => onChange(event.target.value)}
-          className="w-full resize-y rounded-xl border border-[#d8cbdc] bg-white px-3 py-2.5 text-sm leading-5 text-[#3d3046] outline-none transition focus:border-[#4f378a] focus:ring-3 focus:ring-[#4f378a]/10"
+          className="strategy-field-control w-full resize-y px-3.5 py-3 text-sm leading-6 outline-none"
         />
       ) : (
         <input
           value={value ?? ''}
           onChange={(event) => onChange(event.target.value)}
-          className="h-11 w-full rounded-xl border border-[#d8cbdc] bg-white px-3 text-sm text-[#3d3046] outline-none transition focus:border-[#4f378a] focus:ring-3 focus:ring-[#4f378a]/10"
+          className="strategy-field-control h-11 w-full px-3.5 text-sm outline-none"
         />
       )}
-      {helper ? <span className="mt-1 block text-[11px] leading-4 text-[#95899c]">{helper}</span> : null}
+      {helper ? <span className="mt-1.5 flex items-center gap-1.5 text-[11px] leading-4 text-muted-foreground"><ListChecks className="size-3" aria-hidden="true" />{helper}</span> : null}
     </label>
   )
 }
 
-function EditableList({ label, values, onChange, helper }) {
+function EditableList({ label, values, onChange, helper = 'One item per line', rows }) {
   return (
     <EditableText
       label={label}
       value={Array.isArray(values) ? values.join('\n') : ''}
       onChange={(value) => onChange(value.split('\n').map((item) => item.trim()).filter(Boolean))}
       multiline
-      rows={Math.min(6, Math.max(3, (values?.length ?? 0) + 1))}
-      helper={helper ?? 'One item per line'}
+      rows={rows ?? Math.min(6, Math.max(3, (values?.length ?? 0) + 1))}
+      helper={helper}
     />
   )
 }
 
-function AgentTabPanel({ eyebrow, title, description, children }) {
+function AgentTabPanel({ eyebrow, title, description, icon: Icon = Sparkles, bodyClassName = '', children }) {
   return (
-    <section className="overflow-hidden rounded-[22px] border border-[#cfc1dc] bg-[#fffaff] shadow-[0_12px_32px_rgba(46,32,51,0.06)]">
-      <div className="border-b border-[#e5dce7] bg-[#2b174f] px-5 py-5 text-white sm:px-7">
-        <p className="text-[10px] font-bold uppercase tracking-[0.17em] text-[#d8ff9d]">{eyebrow}</p>
-        <h3 className="mt-2 font-display text-[28px] leading-none tracking-[-0.6px]">{title}</h3>
-        <p className="mt-2 max-w-2xl text-sm leading-5 text-white/65">{description}</p>
+    <section className="strategy-agent-panel overflow-hidden rounded-[22px] border">
+      <div className="strategy-agent-header border-b px-5 py-5 sm:px-7 sm:py-6">
+        <div className="flex items-start gap-4">
+          <span className="strategy-agent-icon flex size-11 shrink-0 items-center justify-center rounded-2xl" aria-hidden="true">
+            <Icon className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="strategy-agent-eyebrow text-[10px] font-bold uppercase tracking-[0.17em]">{eyebrow}</p>
+            <h3 className="strategy-agent-title mt-1.5 font-display text-[27px] leading-tight tracking-[-0.55px] sm:text-[30px]">{title}</h3>
+            <p className="strategy-agent-description mt-2 max-w-2xl text-sm leading-6">{description}</p>
+          </div>
+        </div>
       </div>
-      <div className="space-y-5 p-5 sm:p-7">{children}</div>
+      <div className={`strategy-agent-body space-y-6 p-5 sm:p-7 ${bodyClassName}`}>{children}</div>
     </section>
   )
 }
 
-function ReadOnlyList({ label, values }) {
+function StrategyFieldGroup({ title, description, icon: Icon, children }) {
+  return (
+    <section className="strategy-field-group rounded-2xl border p-4 sm:p-5">
+      <div className="mb-4 flex items-start gap-3">
+        <span className="strategy-subsection-icon flex size-9 shrink-0 items-center justify-center rounded-xl" aria-hidden="true">
+          <Icon className="size-4" />
+        </span>
+        <div>
+          <h4 className="text-sm font-semibold text-foreground">{title}</h4>
+          {description ? <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{description}</p> : null}
+        </div>
+      </div>
+      {children}
+    </section>
+  )
+}
+
+function ExpandableEditor({ eyebrow, title, meta, icon: Icon = Pencil, defaultOpen = false, children }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen)
+
+  return (
+    <details className="strategy-expandable group overflow-hidden rounded-2xl border" open={isOpen} onToggle={(event) => setIsOpen(event.currentTarget.open)}>
+      <summary className="flex min-h-16 cursor-pointer list-none items-center gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden">
+        <span className="strategy-subsection-icon flex size-9 shrink-0 items-center justify-center rounded-xl" aria-hidden="true"><Icon className="size-4" /></span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">{eyebrow}</span>
+          <span className="mt-0.5 block truncate text-sm font-semibold text-foreground">{title}</span>
+        </span>
+        {meta ? <span className="strategy-soft-badge hidden rounded-full px-2.5 py-1 text-[11px] font-semibold sm:inline-flex">{meta}</span> : null}
+        <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180" aria-hidden="true" />
+      </summary>
+      <div className="border-t border-border p-4 sm:p-5">{children}</div>
+    </details>
+  )
+}
+
+function ReadOnlyList({ label, values, icon: HeaderIcon = ListChecks, itemIcon: ItemIcon = Check, tone = 'default' }) {
   if (!Array.isArray(values) || values.length === 0) return null
   return (
-    <div>
-      <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#84788c]">{label}</p>
-      <ul className="mt-2 space-y-2">
+    <div className={`strategy-audit-list is-${tone}`}>
+      <p className="flex items-center gap-2 text-xs font-semibold text-foreground"><span className="strategy-field-label-icon flex size-7 shrink-0 items-center justify-center rounded-lg" aria-hidden="true"><HeaderIcon className="size-3.5" /></span>{label}<span className="ml-auto text-[11px] font-medium tabular-nums text-muted-foreground">{values.length}</span></p>
+      <ul className="mt-3 space-y-2">
         {values.map((value, index) => (
-          <li key={`${value}-${index}`} className="rounded-xl bg-[#f8f3f8] px-3 py-2 text-xs leading-5 text-[#6d6275]">{value}</li>
+          <li key={`${value}-${index}`} className="strategy-audit-list-item flex gap-2.5 rounded-xl border px-3.5 py-3 text-xs leading-5 text-muted-foreground"><ItemIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" /><span>{value}</span></li>
         ))}
       </ul>
     </div>
+  )
+}
+
+function QualityMetricCard({ icon: Icon, value, label, description, tone = 'accent', progress }) {
+  return (
+    <article className={`strategy-quality-metric is-${tone} rounded-2xl border p-4 sm:p-5`}>
+      <div className="flex items-start gap-3">
+        <span className="strategy-quality-metric-icon flex size-10 shrink-0 items-center justify-center rounded-xl" aria-hidden="true"><Icon className="size-[18px]" /></span>
+        <div className="min-w-0 flex-1">
+          <p className="text-xl font-bold leading-none tracking-[-0.35px] text-foreground sm:text-2xl">{value}</p>
+          <p className="mt-1.5 text-xs font-semibold text-foreground">{label}</p>
+          <p className="mt-1 text-[11px] leading-4 text-muted-foreground">{description}</p>
+        </div>
+      </div>
+      {typeof progress === 'number' ? <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-muted" aria-label={`${label}: ${progress} percent`} role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={progress}><span className="strategy-quality-progress block h-full rounded-full" style={{ width: `${progress}%` }} /></div> : null}
+    </article>
   )
 }
 
@@ -1879,6 +2046,20 @@ function StrategyReview({ strategy, strategyId, review, onConfirm, onRequestChan
   const segments = Array.isArray(stp.segments) ? stp.segments : []
   const recommendations = Array.isArray(campaign.campaignRecommendations) ? campaign.campaignRecommendations : []
   const regeneratableSection = REGENERATABLE_STRATEGY_TABS[activeTab]
+  const activeTabConfig = STRATEGY_AGENT_TABS.find((tab) => tab.id === activeTab) ?? STRATEGY_AGENT_TABS[0]
+  const activeTabIndex = STRATEGY_AGENT_TABS.findIndex((tab) => tab.id === activeTab)
+  const qualityScoreNumber = quality.score === null || quality.score === undefined ? Number.NaN : Number(quality.score)
+  const qualityScore = Number.isFinite(qualityScoreNumber) ? Math.max(0, Math.min(100, qualityScoreNumber)) : null
+  const qualityIssues = Array.isArray(quality.issues) ? quality.issues : []
+  const qualityAssumptions = Array.isArray(quality.assumptionRegister) ? quality.assumptionRegister : []
+  const qualityNextDecisions = Array.isArray(quality.nextDecisions) ? quality.nextDecisions : []
+  const qualityEvidenceSources = Array.isArray(quality.evidenceSources) ? quality.evidenceSources : []
+  const qualityIssueCount = qualityIssues.length
+  const qualityStatusLabel = String(quality.status ?? 'Review needed')
+    .replaceAll('_', ' ')
+    .replaceAll('-', ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (character) => character.toUpperCase())
 
   const updatePath = (path, value) => {
     onStrategyChange((current) => {
@@ -1896,24 +2077,46 @@ function StrategyReview({ strategy, strategyId, review, onConfirm, onRequestChan
     })
   }
 
+  const handleTabKeyDown = (event) => {
+    const tabButtons = Array.from(event.currentTarget.closest('[role="tablist"]')?.querySelectorAll('[role="tab"]') ?? [])
+    const currentIndex = tabButtons.indexOf(event.currentTarget)
+    if (currentIndex < 0) return
+
+    let nextIndex
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIndex = (currentIndex + 1) % tabButtons.length
+    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIndex = (currentIndex - 1 + tabButtons.length) % tabButtons.length
+    else if (event.key === 'Home') nextIndex = 0
+    else if (event.key === 'End') nextIndex = tabButtons.length - 1
+    else return
+
+    event.preventDefault()
+    const nextButton = tabButtons[nextIndex]
+    setActiveTab(nextButton.dataset.tabId)
+    nextButton.focus()
+  }
+
   const renderTab = () => {
     if (activeTab === 'overview') return <StrategyOverview strategy={strategy} />
 
     if (activeTab === 'product') {
       return (
-        <AgentTabPanel eyebrow="Product analysis agent" title="The product, clearly understood." description="Edit the product truth, value proposition, and customer problems that downstream agents use as context.">
-          <div className="grid gap-4 md:grid-cols-2">
-            <EditableText label="Working product name" value={product.name} onChange={(value) => updatePath(['product', 'name'], value)} />
-            <EditableText label="Product type" value={product.type} onChange={(value) => updatePath(['product', 'type'], value)} />
-            <EditableText label="Value proposition" value={product.valueProposition} onChange={(value) => updatePath(['product', 'valueProposition'], value)} multiline />
-            <EditableText label="Pricing notes" value={product.pricingNotes} onChange={(value) => updatePath(['product', 'pricingNotes'], value)} multiline />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <EditableList label="Core features" values={product.coreFeatures} onChange={(value) => updatePath(['product', 'coreFeatures'], value)} />
-            <EditableList label="Customer problems" values={product.customerProblems} onChange={(value) => updatePath(['product', 'customerProblems'], value)} />
-            <EditableList label="Unique selling points" values={product.uniqueSellingPoints} onChange={(value) => updatePath(['product', 'uniqueSellingPoints'], value)} />
-            <EditableList label="Differentiators" values={product.differentiators} onChange={(value) => updatePath(['product', 'differentiators'], value)} />
-          </div>
+        <AgentTabPanel eyebrow="Product analysis agent" title="The product, clearly understood." description="Edit the product truth, value proposition, and customer problems that downstream agents use as context." icon={PackageSearch}>
+          <StrategyFieldGroup title="Product foundation" description="The essential facts every downstream agent should share." icon={PackageSearch}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <EditableText label="Working product name" value={product.name} onChange={(value) => updatePath(['product', 'name'], value)} />
+              <EditableText label="Product type" value={product.type} onChange={(value) => updatePath(['product', 'type'], value)} />
+              <EditableText label="Value proposition" value={product.valueProposition} onChange={(value) => updatePath(['product', 'valueProposition'], value)} multiline />
+              <EditableText label="Pricing notes" value={product.pricingNotes} onChange={(value) => updatePath(['product', 'pricingNotes'], value)} multiline />
+            </div>
+          </StrategyFieldGroup>
+          <StrategyFieldGroup title="Customer value" description="Keep each list focused; use one clear idea per line." icon={Lightbulb}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <EditableList label="Core features" values={product.coreFeatures} onChange={(value) => updatePath(['product', 'coreFeatures'], value)} />
+              <EditableList label="Customer problems" values={product.customerProblems} onChange={(value) => updatePath(['product', 'customerProblems'], value)} />
+              <EditableList label="Unique selling points" values={product.uniqueSellingPoints} onChange={(value) => updatePath(['product', 'uniqueSellingPoints'], value)} />
+              <EditableList label="Differentiators" values={product.differentiators} onChange={(value) => updatePath(['product', 'differentiators'], value)} />
+            </div>
+          </StrategyFieldGroup>
           <ReadOnlyList label="Agent assumptions" values={product.assumptions} />
         </AgentTabPanel>
       )
@@ -1921,53 +2124,81 @@ function StrategyReview({ strategy, strategyId, review, onConfirm, onRequestChan
 
     if (activeTab === 'stp') {
       return (
-        <AgentTabPanel eyebrow="STP strategy agent" title="Choose who to win, and why." description="Refine the positioning language and target segment rationale before it shapes personas and campaign concepts.">
-          <div className="grid gap-4 md:grid-cols-2">
-            <EditableText label="Positioning statement" value={positioning.positioningStatement} onChange={(value) => updatePath(['stp', 'positioning', 'positioningStatement'], value)} multiline rows={4} />
-            <EditableText label="Brand promise" value={positioning.brandPromise} onChange={(value) => updatePath(['stp', 'positioning', 'brandPromise'], value)} multiline />
-            <EditableText label="Tone of voice" value={positioning.toneOfVoice} onChange={(value) => updatePath(['stp', 'positioning', 'toneOfVoice'], value)} multiline />
-            <EditableList label="Key differentiators" values={positioning.keyDifferentiators} onChange={(value) => updatePath(['stp', 'positioning', 'keyDifferentiators'], value)} />
-          </div>
-          <div>
+        <AgentTabPanel eyebrow="STP strategy agent" title="Choose who to win, and why." description="Refine the positioning language and target segment rationale before it shapes personas and campaign concepts." icon={Target}>
+          <StrategyFieldGroup title="Market position" description="Shape the promise and language customers should remember." icon={Target}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <EditableText label="Positioning statement" value={positioning.positioningStatement} onChange={(value) => updatePath(['stp', 'positioning', 'positioningStatement'], value)} multiline rows={4} />
+              <EditableText label="Brand promise" value={positioning.brandPromise} onChange={(value) => updatePath(['stp', 'positioning', 'brandPromise'], value)} multiline />
+              <EditableText label="Tone of voice" value={positioning.toneOfVoice} onChange={(value) => updatePath(['stp', 'positioning', 'toneOfVoice'], value)} multiline />
+              <EditableList label="Key differentiators" values={positioning.keyDifferentiators} onChange={(value) => updatePath(['stp', 'positioning', 'keyDifferentiators'], value)} />
+            </div>
+          </StrategyFieldGroup>
+          <StrategyFieldGroup title="Candidate segments" description="Rename a segment without changing its connection to the strategy." icon={Users}>
             <div className="mb-3 flex items-end justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#84788c]">Candidate segments</p>
-                <p className="mt-1 text-xs text-[#766b7d]">You can rename the segments without changing their IDs.</p>
-              </div>
-              <span className="rounded-full bg-[#f2eafa] px-2.5 py-1 text-[11px] font-semibold text-[#4f378a]">{segments.length} segments</span>
+              <p className="text-xs text-muted-foreground">Review each audience before moving to personas.</p>
+              <span className="strategy-soft-badge rounded-full px-2.5 py-1 text-[11px] font-semibold">{segments.length} segments</span>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               {segments.map((segment, index) => (
-                <div key={segment.id ?? index} className="rounded-2xl border border-[#e5dce7] bg-[#fbf7fb] p-4">
+                <div key={segment.id ?? index} className="strategy-mini-card rounded-2xl border p-4">
                   <EditableText label="Segment label" value={segment.label} onChange={(value) => updatePath(['stp', 'segments', index, 'label'], value)} />
-                  <p className="mt-3 text-xs leading-5 text-[#766b7d]">{segment.notes || segment.psychographics?.join(', ') || 'No additional segment notes.'}</p>
+                  <p className="mt-3 text-xs leading-5 text-muted-foreground">{segment.notes || segment.psychographics?.join(', ') || 'No additional segment notes.'}</p>
                 </div>
               ))}
             </div>
-          </div>
+          </StrategyFieldGroup>
         </AgentTabPanel>
       )
     }
 
     if (activeTab === 'personas') {
       return (
-        <AgentTabPanel eyebrow="Buyer persona agent" title="Meet the people behind the segment." description="Edit the language, goals, and frustrations that should guide every post and CTA.">
+        <AgentTabPanel eyebrow="Buyer persona agent" title="Meet the people behind the segment." description="Open one persona at a time to refine the language, goals, and motivations that guide every post and CTA." icon={Users}>
           {personas.map((persona, index) => (
-            <article key={persona.id ?? index} className="rounded-2xl border border-[#e5dce7] bg-[#fbf7fb] p-4 sm:p-5">
-              <div className="grid gap-4 md:grid-cols-[0.75fr_1.25fr]">
-                <div>
+            <ExpandableEditor key={persona.id ?? index} eyebrow={`Persona ${index + 1}`} title={persona.name || 'Untitled persona'} meta={[persona.role, persona.archetype].filter(Boolean).join(' · ')} icon={Users} defaultOpen={index === 0}>
+              <section className="strategy-persona-overview grid gap-5 rounded-2xl border p-4 lg:grid-cols-[minmax(14rem,0.72fr)_minmax(0,1.28fr)] lg:p-5" aria-label={`${persona.name || `Persona ${index + 1}`} overview`}>
+                <div className="min-w-0">
                   <EditableText label="Persona name" value={persona.name} onChange={(value) => updatePath(['personas', index, 'name'], value)} />
-                  <p className="mt-2 text-xs uppercase tracking-[0.11em] text-[#907f9a]">{persona.role} · {persona.archetype}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {persona.role ? <span className="strategy-persona-chip inline-flex min-w-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground"><BriefcaseBusiness className="size-3 shrink-0 text-primary" aria-hidden="true" /><span className="truncate">{persona.role}</span></span> : null}
+                    {persona.archetype ? <span className="strategy-persona-chip inline-flex min-w-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-medium text-muted-foreground"><Sparkles className="size-3 shrink-0 text-primary" aria-hidden="true" /><span className="truncate">{persona.archetype}</span></span> : null}
+                  </div>
                 </div>
-                <EditableText label="Persona summary" value={persona.summary} onChange={(value) => updatePath(['personas', index, 'summary'], value)} multiline rows={4} />
+                <div className="min-w-0 lg:border-l lg:border-border lg:pl-5">
+                  <EditableText label="Persona summary" value={persona.summary} onChange={(value) => updatePath(['personas', index, 'summary'], value)} multiline rows={5} />
+                </div>
+              </section>
+
+              <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                <section className="strategy-persona-cluster is-motivation rounded-2xl border p-4 sm:p-5" aria-labelledby={`persona-${index}-motivations`}>
+                  <div className="mb-5 flex items-start gap-3">
+                    <span className="strategy-persona-cluster-icon flex size-9 shrink-0 items-center justify-center rounded-xl" aria-hidden="true"><Target className="size-4" /></span>
+                    <div>
+                      <h4 id={`persona-${index}-motivations`} className="text-sm font-semibold text-foreground">Motivations</h4>
+                      <p className="mt-1 text-xs leading-5 text-muted-foreground">What this person wants and what prompts action. One item per line.</p>
+                    </div>
+                  </div>
+                  <div className="space-y-5">
+                    <EditableList label="Goals" values={persona.goals} onChange={(value) => updatePath(['personas', index, 'goals'], value)} helper={false} rows={4} />
+                    <EditableList label="Buying triggers" values={persona.buyingTriggers} onChange={(value) => updatePath(['personas', index, 'buyingTriggers'], value)} helper={false} rows={4} />
+                  </div>
+                </section>
+
+                <section className="strategy-persona-cluster is-barrier rounded-2xl border p-4 sm:p-5" aria-labelledby={`persona-${index}-barriers`}>
+                  <div className="mb-5 flex items-start gap-3">
+                    <span className="strategy-persona-cluster-icon flex size-9 shrink-0 items-center justify-center rounded-xl" aria-hidden="true"><CircleAlert className="size-4" /></span>
+                    <div>
+                      <h4 id={`persona-${index}-barriers`} className="text-sm font-semibold text-foreground">Barriers</h4>
+                      <p className="mt-1 text-xs leading-5 text-muted-foreground">What creates friction or prevents a confident purchase. One item per line.</p>
+                    </div>
+                  </div>
+                  <div className="space-y-5">
+                    <EditableList label="Frustrations" values={persona.frustrations} onChange={(value) => updatePath(['personas', index, 'frustrations'], value)} helper={false} rows={4} />
+                    <EditableList label="Objections" values={persona.objections} onChange={(value) => updatePath(['personas', index, 'objections'], value)} helper={false} rows={4} />
+                  </div>
+                </section>
               </div>
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <EditableList label="Goals" values={persona.goals} onChange={(value) => updatePath(['personas', index, 'goals'], value)} />
-                <EditableList label="Frustrations" values={persona.frustrations} onChange={(value) => updatePath(['personas', index, 'frustrations'], value)} />
-                <EditableList label="Buying triggers" values={persona.buyingTriggers} onChange={(value) => updatePath(['personas', index, 'buyingTriggers'], value)} />
-                <EditableList label="Objections" values={persona.objections} onChange={(value) => updatePath(['personas', index, 'objections'], value)} />
-              </div>
-            </article>
+            </ExpandableEditor>
           ))}
         </AgentTabPanel>
       )
@@ -1975,20 +2206,13 @@ function StrategyReview({ strategy, strategyId, review, onConfirm, onRequestChan
 
     if (activeTab === 'journey') {
       return (
-        <AgentTabPanel eyebrow="Buyer journey agent" title="Make the journey feel intentional." description="Shape the questions and content needs at each stage of the funnel. These edits flow into the content handoff.">
+        <AgentTabPanel eyebrow="Buyer journey agent" title="Make the journey feel intentional." description="Open a persona journey, then work through each stage without losing the larger path." icon={MapIcon}>
           {journeys.map((journey, journeyIndex) => (
-            <article key={journey.personaId ?? journeyIndex} className="rounded-2xl border border-[#e5dce7] bg-[#fbf7fb] p-4 sm:p-5">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-[#84788c]">Persona journey</p>
-                  <h4 className="mt-1 text-base font-semibold text-[#201a25]">{journey.personaName}</h4>
-                </div>
-                <span className="rounded-full bg-[#e6fbc7] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-[#315016]">5 stages</span>
-              </div>
+            <ExpandableEditor key={journey.personaId ?? journeyIndex} eyebrow="Persona journey" title={journey.personaName || `Journey ${journeyIndex + 1}`} meta="5 stages" icon={MapIcon} defaultOpen={journeyIndex === 0}>
               <div className="grid gap-3 lg:grid-cols-2">
-                {JOURNEY_STAGES.map((stage) => (
-                  <div key={stage.id} className="rounded-xl border border-[#e5dce7] bg-white p-3">
-                    <p className="mb-3 text-xs font-semibold text-[#4f378a]">{stage.label}</p>
+                {JOURNEY_STAGES.map((stage, stageIndex) => (
+                  <div key={stage.id} className="strategy-mini-card rounded-xl border p-3.5">
+                    <p className="mb-3 flex items-center gap-2 text-xs font-semibold text-primary"><span className="flex size-5 items-center justify-center rounded-full bg-primary/10 text-[10px] tabular-nums">{stageIndex + 1}</span>{stage.label}</p>
                     {journey[stage.id]?.questions ? <EditableList label="Questions" values={journey[stage.id].questions} onChange={(value) => updatePath(['buyerJourney', journeyIndex, stage.id, 'questions'], value)} /> : null}
                     {journey[stage.id]?.objections ? <EditableList label="Objections" values={journey[stage.id].objections} onChange={(value) => updatePath(['buyerJourney', journeyIndex, stage.id, 'objections'], value)} /> : null}
                     {journey[stage.id]?.purchaseTriggers ? <EditableList label="Purchase triggers" values={journey[stage.id].purchaseTriggers} onChange={(value) => updatePath(['buyerJourney', journeyIndex, stage.id, 'purchaseTriggers'], value)} /> : null}
@@ -2000,7 +2224,7 @@ function StrategyReview({ strategy, strategyId, review, onConfirm, onRequestChan
                   </div>
                 ))}
               </div>
-            </article>
+            </ExpandableEditor>
           ))}
         </AgentTabPanel>
       )
@@ -2008,10 +2232,10 @@ function StrategyReview({ strategy, strategyId, review, onConfirm, onRequestChan
 
     if (activeTab === 'objectives') {
       return (
-        <AgentTabPanel eyebrow="SMART objectives agent" title="Make the ambition measurable." description="Edit objectives, target values, and deadlines. The quality gate remains visible in its own tab after you make changes.">
+        <AgentTabPanel eyebrow="SMART objectives agent" title="Make the ambition measurable." description="Review one objective at a time, with its target, deadline, KPI, and measurement method kept together." icon={ListChecks}>
           <div className="space-y-3">
             {objectives.map((objective, index) => (
-              <article key={objective.id ?? index} className="rounded-2xl border border-[#e5dce7] bg-[#fbf7fb] p-4">
+              <ExpandableEditor key={objective.id ?? index} eyebrow={`Objective ${index + 1}`} title={objective.objective || 'Untitled objective'} meta={objective.deadline || objective.kpi} icon={Target} defaultOpen={index === 0}>
                 <EditableText label="Objective" value={objective.objective} onChange={(value) => updatePath(['smartObjectives', index, 'objective'], value)} multiline rows={3} />
                 <div className="mt-4 grid gap-3 md:grid-cols-3">
                   <EditableText label="Target value" value={objective.targetValue} onChange={(value) => updatePath(['smartObjectives', index, 'targetValue'], value)} />
@@ -2022,7 +2246,7 @@ function StrategyReview({ strategy, strategyId, review, onConfirm, onRequestChan
                   <EditableText label="Measurement method" value={objective.measurementMethod} onChange={(value) => updatePath(['smartObjectives', index, 'measurementMethod'], value)} multiline />
                   <EditableText label="Reasoning" value={objective.reasoning} onChange={(value) => updatePath(['smartObjectives', index, 'reasoning'], value)} multiline />
                 </div>
-              </article>
+              </ExpandableEditor>
             ))}
           </div>
         </AgentTabPanel>
@@ -2031,123 +2255,223 @@ function StrategyReview({ strategy, strategyId, review, onConfirm, onRequestChan
 
     if (activeTab === 'campaign') {
       return (
-        <AgentTabPanel eyebrow="Campaign planner agent" title="Turn strategy into a campaign system." description="These are the fields the content workflow will use after approval. Edit them to change the final creative direction.">
-          <EditableText label="Campaign summary" value={campaign.summary} onChange={(value) => updatePath(['campaignStrategy', 'summary'], value)} multiline rows={5} />
-          <div className="grid gap-4 md:grid-cols-2">
-            <EditableText label="Storytelling approach" value={campaign.creativeDirection?.storytellingApproach} onChange={(value) => updatePath(['campaignStrategy', 'creativeDirection', 'storytellingApproach'], value)} multiline />
-            <EditableText label="Visual style" value={campaign.creativeDirection?.visualStyle} onChange={(value) => updatePath(['campaignStrategy', 'creativeDirection', 'visualStyle'], value)} multiline />
-            <EditableList label="Key messages" values={campaign.creativeDirection?.keyMessages} onChange={(value) => updatePath(['campaignStrategy', 'creativeDirection', 'keyMessages'], value)} />
-            <EditableList label="Creative do list" values={campaign.creativeDirection?.doList} onChange={(value) => updatePath(['campaignStrategy', 'creativeDirection', 'doList'], value)} />
-            <EditableText label="Primary CTA" value={campaign.ctaStrategy?.primaryCta} onChange={(value) => updatePath(['campaignStrategy', 'ctaStrategy', 'primaryCta'], value)} />
-            <EditableText label="CTA hierarchy" value={campaign.ctaStrategy?.ctaHierarchy} onChange={(value) => updatePath(['campaignStrategy', 'ctaStrategy', 'ctaHierarchy'], value)} multiline />
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
+        <AgentTabPanel eyebrow="Campaign planner agent" title="Turn strategy into a campaign system." description="Shape the final creative direction the content workflow will use after approval." icon={Megaphone}>
+          <StrategyFieldGroup title="Campaign direction" description="The shared story, visual language, and call to action." icon={Megaphone}>
+            <EditableText label="Campaign summary" value={campaign.summary} onChange={(value) => updatePath(['campaignStrategy', 'summary'], value)} multiline rows={5} />
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <EditableText label="Storytelling approach" value={campaign.creativeDirection?.storytellingApproach} onChange={(value) => updatePath(['campaignStrategy', 'creativeDirection', 'storytellingApproach'], value)} multiline />
+              <EditableText label="Visual style" value={campaign.creativeDirection?.visualStyle} onChange={(value) => updatePath(['campaignStrategy', 'creativeDirection', 'visualStyle'], value)} multiline />
+              <EditableList label="Key messages" values={campaign.creativeDirection?.keyMessages} onChange={(value) => updatePath(['campaignStrategy', 'creativeDirection', 'keyMessages'], value)} />
+              <EditableList label="Creative do list" values={campaign.creativeDirection?.doList} onChange={(value) => updatePath(['campaignStrategy', 'creativeDirection', 'doList'], value)} />
+              <EditableText label="Primary CTA" value={campaign.ctaStrategy?.primaryCta} onChange={(value) => updatePath(['campaignStrategy', 'ctaStrategy', 'primaryCta'], value)} />
+              <EditableText label="CTA hierarchy" value={campaign.ctaStrategy?.ctaHierarchy} onChange={(value) => updatePath(['campaignStrategy', 'ctaStrategy', 'ctaHierarchy'], value)} multiline />
+            </div>
+          </StrategyFieldGroup>
+          <StrategyFieldGroup title="Recommended concepts" description="Open-ended objectives for the first campaign moves." icon={Wand2}>
+            <div className="grid gap-3 md:grid-cols-2">
             {recommendations.map((recommendation, index) => (
-              <div key={recommendation.id ?? index} className="rounded-2xl border border-[#e5dce7] bg-[#fbf7fb] p-4">
-                <p className="mb-3 text-sm font-semibold text-[#201a25]">{recommendation.name}</p>
+              <div key={recommendation.id ?? index} className="strategy-mini-card rounded-2xl border p-4">
+                <p className="mb-3 text-sm font-semibold text-foreground">{recommendation.name}</p>
                 <EditableText label="Objective" value={recommendation.objective} onChange={(value) => updatePath(['campaignStrategy', 'campaignRecommendations', index, 'objective'], value)} multiline />
               </div>
             ))}
-          </div>
+            </div>
+          </StrategyFieldGroup>
         </AgentTabPanel>
       )
     }
 
     return (
-      <AgentTabPanel eyebrow="Quality gate agent" title="Know what is solid, and what is assumed." description="This audit is read-only. Review the evidence and assumptions before approving the edited strategy.">
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl bg-[#e6fbc7] p-4"><p className="text-2xl font-semibold text-[#2b174f]">{quality.score ?? '--'}</p><p className="mt-1 text-xs text-[#315016]">plan quality score</p></div>
-          <div className="rounded-2xl bg-[#f2eafa] p-4"><p className="text-sm font-semibold capitalize text-[#381e72]">{quality.status ?? 'review'}</p><p className="mt-1 text-xs text-[#5d5068]">quality status</p></div>
-          <div className="rounded-2xl bg-[#f8f3f8] p-4"><p className="text-2xl font-semibold text-[#2b174f]">{quality.issues?.length ?? 0}</p><p className="mt-1 text-xs text-[#766b7d]">open findings</p></div>
-        </div>
-        <ReadOnlyList label="Assumption register" values={quality.assumptionRegister} />
-        <ReadOnlyList label="Next decisions" values={quality.nextDecisions} />
-        {(quality.evidenceSources ?? []).length > 0 ? (
-          <div className="space-y-2">
-            <p className="text-xs font-semibold text-[#514a56]">Research sources</p>
-            {(quality.evidenceSources ?? []).map((source, index) => (
-              <a key={`${source.url}-${index}`} href={source.url} target="_blank" rel="noreferrer" className="block rounded-xl border border-[#d9cfe0] bg-white p-3 transition hover:border-[#9e89ba] hover:bg-[#fbf8fd]">
-                <p className="text-sm font-semibold text-[#381e72]">{source.title}</p>
-                <p className="mt-1 text-xs text-[#716777]">{source.publisher} · {source.excerpt}</p>
-              </a>
-            ))}
+      <AgentTabPanel eyebrow="Quality gate agent" title="Know what is solid, and what is assumed." description="This audit is read-only. Review the evidence and assumptions before approving the edited strategy." icon={ShieldCheck} bodyClassName="strategy-quality-body">
+        <section aria-label="Quality summary" className="grid gap-3 md:grid-cols-3">
+          <QualityMetricCard
+            icon={ShieldCheck}
+            value={qualityScore ?? '--'}
+            label="Plan quality"
+            description={qualityScore !== null && qualityScore >= 80 ? 'Strong enough to move forward.' : 'Resolve gaps before final approval.'}
+            tone={qualityScore !== null && qualityScore >= 80 ? 'success' : 'accent'}
+            progress={qualityScore ?? undefined}
+          />
+          <QualityMetricCard
+            icon={Search}
+            value={qualityStatusLabel}
+            label="Evidence status"
+            description="Shows how much of the plan is supported by verified inputs."
+            tone={qualityStatusLabel.toLowerCase().includes('ready') ? 'success' : 'warning'}
+          />
+          <QualityMetricCard
+            icon={CircleAlert}
+            value={qualityIssueCount}
+            label="Open findings"
+            description={qualityIssueCount > 0 ? 'Items still need a decision or stronger evidence.' : 'No unresolved findings remain.'}
+            tone={qualityIssueCount > 0 ? 'warning' : 'success'}
+          />
+        </section>
+
+        {qualityAssumptions.length > 0 || qualityNextDecisions.length > 0 ? (
+          <div className="grid items-start gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+            {qualityAssumptions.length > 0 ? <section className="strategy-quality-section rounded-2xl border p-4 sm:p-5"><ReadOnlyList label="Assumption register" values={qualityAssumptions} icon={Lightbulb} itemIcon={CircleAlert} tone="assumption" /></section> : null}
+            {qualityNextDecisions.length > 0 ? <section className="strategy-quality-section rounded-2xl border p-4 sm:p-5"><ReadOnlyList label="Next decisions" values={qualityNextDecisions} icon={Target} itemIcon={ChevronRight} tone="decision" /></section> : null}
           </div>
-        ) : <p className="rounded-xl bg-[#fff8eb] p-3 text-xs text-[#7a511e]">No external research source was available. Treat the plan’s assumptions as inputs to confirm.</p>}
-        <div className="space-y-2">
-          {(quality.issues ?? []).map((issue, index) => (
-            <div key={`${issue.code}-${index}`} className="rounded-xl border border-[#f0d9b7] bg-[#fff8eb] p-3">
-              <p className="text-xs font-semibold capitalize text-[#9b5a12]">{issue.severity} · {issue.field}</p>
-              <p className="mt-1 text-sm text-[#6d6275]">{issue.message}</p>
-              <p className="mt-1 text-xs text-[#907f9a]">Resolution: {issue.resolution}</p>
+        ) : null}
+
+        <section className="strategy-quality-section rounded-2xl border p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <span className="strategy-subsection-icon flex size-9 shrink-0 items-center justify-center rounded-xl" aria-hidden="true"><Search className="size-4" /></span>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center justify-between gap-2"><h4 className="text-sm font-semibold text-foreground">Research evidence</h4><span className="strategy-soft-badge rounded-full px-2.5 py-1 text-[11px] font-semibold">{qualityEvidenceSources.length} sources</span></div>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">Open a source to review the original evidence behind the strategy.</p>
             </div>
-          ))}
-        </div>
+          </div>
+          {qualityEvidenceSources.length > 0 ? (
+            <ul className="strategy-evidence-list mt-4 overflow-hidden rounded-xl border" aria-label="Research evidence sources">
+              {qualityEvidenceSources.map((source, index) => {
+                const domain = getEvidenceDomain(source)
+                return (
+                  <li key={`${source.url}-${index}`} className="border-b border-border last:border-b-0">
+                    <a
+                      href={source.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      title={source.excerpt ? `${source.title} — ${source.excerpt}` : source.title}
+                      aria-label={`Open ${source.title} from ${domain}`}
+                      className="strategy-evidence-row group grid min-h-12 cursor-pointer grid-cols-[auto_minmax(0,1fr)] items-center gap-3 px-3 py-2.5 sm:grid-cols-[auto_minmax(0,1fr)_minmax(7rem,11rem)_auto]"
+                    >
+                      <span className="strategy-evidence-icon flex size-8 shrink-0 items-center justify-center rounded-lg" aria-hidden="true"><Globe2 className="size-4" /></span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium text-foreground transition-colors group-hover:text-primary">{source.title}</span>
+                        <span className="mt-0.5 block truncate text-[11px] text-muted-foreground sm:hidden">{domain}</span>
+                      </span>
+                      <span className="hidden truncate text-right font-mono text-[11px] text-muted-foreground sm:block">{domain}</span>
+                      <ExternalLink className="hidden size-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary sm:block" aria-hidden="true" />
+                    </a>
+                  </li>
+                )
+              })}
+            </ul>
+          ) : (
+            <div className="strategy-quality-notice mt-4 flex items-start gap-3 rounded-xl border p-3.5" role="status"><CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" /><div><p className="text-xs font-semibold">External evidence is still needed</p><p className="mt-1 text-xs leading-5">Treat the current assumptions as working inputs and confirm them before launch.</p></div></div>
+          )}
+        </section>
+
+        {qualityIssueCount > 0 ? (
+          <section className="strategy-quality-section rounded-2xl border p-4 sm:p-5">
+            <div className="mb-4 flex items-center gap-3"><span className="strategy-quality-warning-icon flex size-9 items-center justify-center rounded-xl"><AlertTriangle className="size-4" /></span><div><h4 className="text-sm font-semibold text-foreground">Findings to resolve</h4><p className="mt-0.5 text-xs text-muted-foreground">Address these before approving the plan.</p></div><span className="ml-auto rounded-full bg-[#fff1dc] px-2.5 py-1 text-[11px] font-bold text-[#8a4b08]">{qualityIssueCount} open</span></div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {qualityIssues.map((issue, index) => (
+                <article key={`${issue.code}-${index}`} className="strategy-quality-finding rounded-xl border p-3.5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#9b5a12]">{issue.severity} · {issue.field}</p>
+                  <p className="mt-2 text-sm leading-5 text-foreground">{issue.message}</p>
+                  <p className="mt-2 border-t border-[#efd9b8] pt-2 text-xs leading-5 text-muted-foreground"><span className="font-semibold text-foreground">Recommended:</span> {issue.resolution}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
       </AgentTabPanel>
     )
   }
 
   return (
-    <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="strategy-review overflow-hidden rounded-[24px] border border-[#cfc1dc] bg-[#f8f3f8] shadow-[0_18px_45px_rgba(46,32,51,0.09)]">
-      <div className="border-b border-[#ded3e4] bg-[#fffaff] px-3 py-3 sm:px-5">
-        <div className="flex gap-2 overflow-x-auto scroll-smooth pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="Strategy agents">
-          {STRATEGY_AGENT_TABS.map(({ id, label, icon: Icon }) => {
-            const selected = activeTab === id
-            return (
-              <button
-                key={id}
-                type="button"
-                role="tab"
-                aria-selected={selected}
-                onClick={() => setActiveTab(id)}
-                className={`flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3 text-xs font-semibold transition ${selected ? 'bg-[#381e72] text-white shadow-[0_5px_14px_rgba(56,30,114,0.18)]' : 'text-[#6d6275] hover:bg-[#f2eafa] hover:text-[#381e72]'}`}
-              >
-                <Icon className="size-3.5" />
-                {label}
-              </button>
-            )
-          })}
+    <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="strategy-review strategy-review-shell overflow-hidden rounded-[24px] border border-border shadow-[0_18px_45px_rgba(46,32,51,0.09)] lg:overflow-visible">
+      <div className="grid items-start lg:grid-cols-[232px_minmax(0,1fr)]">
+        <aside className="strategy-tab-rail border-b border-border p-3 sm:p-4 lg:sticky lg:top-4 lg:z-10 lg:m-4 lg:mr-0 lg:self-start lg:rounded-2xl lg:border lg:p-3.5 lg:shadow-[0_8px_24px_rgba(46,32,51,0.08)]">
+          <div className="mb-3 hidden px-1.5 lg:block">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary">Strategy workspace</p>
+              <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">{activeTabIndex + 1}/{STRATEGY_AGENT_TABS.length}</span>
+            </div>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">Review the plan in order, then approve.</p>
+            <div className="mt-3 h-1 overflow-hidden rounded-full bg-muted" aria-hidden="true"><span className="strategy-nav-progress block h-full rounded-full" style={{ width: `${((activeTabIndex + 1) / STRATEGY_AGENT_TABS.length) * 100}%` }} /></div>
+          </div>
+          <div className="grid grid-cols-4 gap-1.5 lg:flex lg:flex-col" role="tablist" aria-label="Strategy sections">
+            {STRATEGY_AGENT_TABS.map(({ id, label, shortLabel, description, icon: Icon }) => {
+              const selected = activeTab === id
+              return (
+                <button
+                  key={id}
+                  id={`strategy-tab-${id}`}
+                  data-tab-id={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  aria-controls={`strategy-panel-${id}`}
+                  aria-label={label}
+                  tabIndex={selected ? 0 : -1}
+                  onClick={() => setActiveTab(id)}
+                  onKeyDown={handleTabKeyDown}
+                  className={`strategy-tab flex min-h-[66px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1.5 py-2 text-center transition duration-200 lg:min-h-0 lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left ${selected ? 'is-active' : ''}`}
+                >
+                  <span className="strategy-tab-icon flex size-8 shrink-0 items-center justify-center rounded-lg"><Icon className="size-4" aria-hidden="true" /></span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-[10px] font-semibold sm:text-xs lg:text-[13px]">{shortLabel}</span>
+                    <span className="mt-0.5 hidden truncate text-[10px] lg:block">{description}</span>
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </aside>
+
+        <div id={`strategy-panel-${activeTab}`} role="tabpanel" aria-labelledby={`strategy-tab-${activeTab}`} aria-label={activeTabConfig.label} className="min-w-0 p-3 sm:p-5 lg:p-6">
+          {renderTab()}
         </div>
-        <p className="mt-2 px-1 text-[11px] text-[#95899c]">Every panel is owned by one agent. Edit the highlighted fields, then approve the final handoff.</p>
       </div>
 
-      <div className="p-3 sm:p-5">{renderTab()}</div>
-
-      <div className="flex flex-col gap-3 border-t border-[#ded3e4] bg-[#fbf7fb] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
-        <div>
-          <p className="text-sm font-semibold text-[#201a25]">Ready to turn the edited plan into posts?</p>
-          <p className="mt-0.5 text-xs text-[#766b7d]">Approval sends this current strategy draft to the content workflow.</p>
-        </div>
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:min-w-[330px]">
-          <label className="text-xs font-medium text-[#62556b]">Review note <span className="font-normal text-[#84798a]">(optional)</span><textarea value={reviewNote} onChange={(event) => setReviewNote(event.target.value)} maxLength={4000} rows={2} placeholder="What was approved, or what should change?" className="mt-1 block w-full resize-y rounded-xl border border-[#d8cbdc] bg-white px-3 py-2 text-sm text-[#201a25] outline-none focus:border-[#4f378a] focus:ring-2 focus:ring-[#ddd0ef]" /></label>
-          {review?.approvalStatus ? <p className="text-xs text-[#62556b]">Last decision: <span className="font-semibold">{String(review.approvalStatus).toLowerCase().replaceAll('_', ' ')}</span>{review.reviewerName ? ` by ${review.reviewerName}` : ''}</p> : null}
-          {reviewHistory.length > 0 ? <div className="border-t border-[#e6dee8] pt-2 text-xs text-[#62556b]"><p className="font-semibold text-[#514a56]">Review history</p>{reviewHistory.slice(0, 3).map((entry) => <p key={entry.id} className="mt-1">{String(entry.action).toLowerCase().replaceAll('_', ' ')} · {entry.reviewerName} · {new Date(entry.createdAt).toLocaleString()}{entry.note ? ` — ${entry.note}` : ''}</p>)}</div> : null}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={onEdit} disabled={isSubmitting} className="h-11 rounded-xl border border-[#d8cbdc] bg-white px-4 text-sm font-semibold text-[#62556b] transition hover:border-[#a99eb4] disabled:opacity-50">Edit brief</button>
-          <button
-            type="button"
-            onClick={() => onRequestChanges(reviewNote)}
-            disabled={isSubmitting || reviewNote.trim().length < 3}
-            className="h-11 rounded-xl border border-[#d8cbdc] bg-white px-4 text-sm font-semibold text-[#62556b] transition hover:border-[#a99eb4] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Request changes
-          </button>
-          {regeneratableSection ? (
-            <button
-              type="button"
-              onClick={() => onRegenerateSection(regeneratableSection.section, reviewNote)}
-              disabled={isSubmitting || reviewNote.trim().length < 3}
-              className="h-11 rounded-xl border border-[#4f378a] bg-white px-4 text-sm font-semibold text-[#4f378a] transition hover:bg-[#f2eafa] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Regenerate {regeneratableSection.label}
+      <footer className="strategy-review-footer border-t border-border px-4 py-4 sm:px-6">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="strategy-ready-icon flex size-10 shrink-0 items-center justify-center rounded-xl"><Check className="size-[18px]" aria-hidden="true" /></span>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Ready to create the campaign?</p>
+              <p className="mt-0.5 text-xs leading-5 text-muted-foreground">Approve this draft now, or add feedback for another pass.</p>
+            </div>
+          </div>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button type="button" onClick={onEdit} disabled={isSubmitting} className="strategy-secondary-action flex h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition disabled:opacity-50"><Pencil className="size-4" aria-hidden="true" />Edit brief</button>
+            <button type="button" onClick={() => onConfirm(reviewNote)} disabled={isSubmitting} className="strategy-primary-action flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-60">
+              {isSubmitting ? <LoadingRing className="size-4" /> : <Wand2 className="size-4" aria-hidden="true" />}
+              {isSubmitting ? 'Starting workflow…' : 'Approve & create posts'}
             </button>
-          ) : null}
-          <button type="button" onClick={() => onConfirm(reviewNote)} disabled={isSubmitting} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#381e72] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(56,30,114,0.2)] transition hover:bg-[#4f378a] disabled:cursor-wait disabled:opacity-60">
-            {isSubmitting ? <LoadingRing className="size-4 text-[#d8ff9d]" /> : <Wand2 className="size-4 text-[#d8ff9d]" />}
-            {isSubmitting ? 'Starting content workflow...' : 'Approve & create posts'}
-          </button>
+          </div>
         </div>
-      </div>
+
+        <details className="strategy-feedback group mt-3 rounded-2xl border">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-3.5 text-sm font-semibold text-primary [&::-webkit-details-marker]:hidden">
+            <MessageCircleMore className="size-4" aria-hidden="true" />
+            Add feedback or request changes
+            {reviewNote.trim() ? <span className="strategy-soft-badge ml-1 rounded-full px-2 py-0.5 text-[10px]">Note added</span> : null}
+            <ChevronDown className="ml-auto size-4 transition-transform group-open:rotate-180" aria-hidden="true" />
+          </summary>
+          <div className="grid gap-4 border-t border-border p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+            <div>
+              <label className="text-xs font-semibold text-foreground">Review note <span className="font-normal text-muted-foreground">(required for changes)</span><textarea value={reviewNote} onChange={(event) => setReviewNote(event.target.value)} maxLength={4000} rows={3} placeholder="Describe what should change and why…" className="strategy-field-control mt-2 block w-full resize-y px-3.5 py-3 text-sm outline-none" /></label>
+              {review?.approvalStatus ? <p className="mt-2 text-xs text-muted-foreground">Last decision: <span className="font-semibold text-foreground">{String(review.approvalStatus).toLowerCase().replaceAll('_', ' ')}</span>{review.reviewerName ? ` by ${review.reviewerName}` : ''}</p> : null}
+              {reviewHistory.length > 0 ? <details className="mt-2 text-xs text-muted-foreground"><summary className="cursor-pointer font-semibold text-foreground">View review history ({reviewHistory.length})</summary><div className="mt-2 space-y-1.5">{reviewHistory.slice(0, 3).map((entry) => <p key={entry.id}>{String(entry.action).toLowerCase().replaceAll('_', ' ')} · {entry.reviewerName} · {new Date(entry.createdAt).toLocaleString()}{entry.note ? ` — ${entry.note}` : ''}</p>)}</div></details> : null}
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row lg:justify-end">
+              {regeneratableSection ? (
+                <button
+                  type="button"
+                  onClick={() => onRegenerateSection(regeneratableSection.section, reviewNote)}
+                  disabled={isSubmitting || reviewNote.trim().length < 3}
+                  className="strategy-secondary-action flex h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <RefreshCw className="size-4" aria-hidden="true" />Regenerate {regeneratableSection.label}
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => onRequestChanges(reviewNote)}
+                disabled={isSubmitting || reviewNote.trim().length < 3}
+                className="strategy-secondary-action flex h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <MessageSquare className="size-4" aria-hidden="true" />Request changes
+              </button>
+            </div>
+          </div>
+        </details>
+      </footer>
     </motion.section>
   )
 }
@@ -2223,6 +2547,13 @@ function WorkflowProgress({ runState, generateImages, workflowKind = 'content' }
     .filter(isStepActive)
     .map((step) => step.label)
   const completedCount = visibleSteps.filter(isStepComplete).length
+  // Steps can finish out of display order (QA often completes while visuals are
+  // still rendering), so the connecting line follows the leading run of finished
+  // steps. Keying it to each node instead leaves purple islands between grey gaps.
+  const reachedIndex = visibleSteps.reduce(
+    (furthest, step, index) => furthest === index - 1 && isStepComplete(step) ? index : furthest,
+    -1,
+  )
   const progressPercent = visibleSteps.length ? Math.round((completedCount / visibleSteps.length) * 100) : 0
 
   return (
@@ -2246,46 +2577,56 @@ function WorkflowProgress({ runState, generateImages, workflowKind = 'content' }
           </div>
         </div>
 
-        <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-[#e9e1eb]" aria-hidden="true">
-          <motion.div className="h-full rounded-full bg-[#4f378a]" animate={{ width: `${progressPercent}%` }} transition={{ duration: 0.35, ease: 'easeOut' }} />
-        </div>
       </div>
 
-      <ol className="grid gap-px border-t border-[#e6dee8] bg-[#e6dee8] sm:grid-cols-2 lg:grid-cols-4">
+      {/* The steps run in sequence, so they read as one left-to-right track
+          rather than a wrapping grid where step 4 sits above step 5. */}
+      <ol className="flex items-start overflow-x-auto border-t border-[#efe9f0] px-5 pb-5 pt-6 sm:px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {visibleSteps.map((step, index) => {
           const isComplete = isStepComplete(step)
           const isActive = isStepActive(step)
           const status = isComplete ? 'Complete' : isActive ? 'Working now' : 'Waiting'
+          const isLast = index === visibleSteps.length - 1
+          const isTrackFilled = index <= reachedIndex
           return (
-            <motion.li
+            <li
               key={step.id}
               tabIndex={0}
               aria-label={`${step.label}: ${status}. ${step.description}`}
               title={step.description}
-              whileHover={{ y: -1 }}
-              className={`group relative flex min-h-[78px] items-start gap-3 p-4 outline-none transition-[background-color,box-shadow,color] focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#4f378a] ${
-                isComplete
-                  ? 'bg-[#eff9df] text-[#315016]'
-                  : isActive
-                    ? 'z-[1] bg-[#f2eafa] text-[#381e72] shadow-[inset_0_0_0_1px_#8d6bb4,0_6px_18px_rgba(79,55,138,0.11)]'
-                    : 'bg-[#faf7fa] text-[#8b818f] hover:bg-white hover:text-[#625b71]'
-              }`}
+              className="group flex min-w-[86px] flex-1 flex-col items-center rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
             >
-              <span className={`flex size-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${isComplete ? 'bg-white/80 text-[#315016]' : isActive ? 'bg-[#381e72] text-[#d8ff9d]' : 'bg-white text-[#8b818f]'}`}>
-                {isComplete ? (
-                  <Check className="size-3.5" strokeWidth={2.5} />
-                ) : isActive ? (
-                  <LoadingRing className="size-3.5" />
-                ) : (
-                  String(index + 1).padStart(2, '0')
-                )}
+              <div className="flex w-full items-center" aria-hidden="true">
+                <span className={`h-0.5 flex-1 rounded-full transition-colors ${index === 0 ? 'bg-transparent' : isTrackFilled ? 'bg-[#4f378a]' : 'bg-[#eae4ec]'}`} />
+                <span
+                  className={`flex size-8 shrink-0 items-center justify-center rounded-full text-[11px] font-bold tabular-nums transition-colors ${
+                    isComplete
+                      ? 'bg-[#dcefc0] text-[#315016]'
+                      : isActive
+                        ? 'bg-[#381e72] text-[#d8ff9d] ring-4 ring-[#4f378a]/15'
+                        : 'border border-[#e4dde7] bg-white text-[#a79fac]'
+                  }`}
+                >
+                  {isComplete ? (
+                    <Check className="size-4" strokeWidth={2.5} />
+                  ) : isActive ? (
+                    <LoadingRing className="size-3.5" />
+                  ) : (
+                    String(index + 1).padStart(2, '0')
+                  )}
+                </span>
+                <span className={`h-0.5 flex-1 rounded-full transition-colors ${isLast ? 'bg-transparent' : isTrackFilled ? 'bg-[#4f378a]' : 'bg-[#eae4ec]'}`} />
+              </div>
+              <span className={`mt-2.5 px-1 text-center text-[11px] leading-4 transition-colors ${
+                isActive
+                  ? 'font-semibold text-[#381e72]'
+                  : isComplete
+                    ? 'font-medium text-[#4a4453]'
+                    : 'font-medium text-[#a79fac]'
+              }`}>
+                {step.label}
               </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-xs font-bold leading-4">{step.label}</span>
-                <span className={`mt-1 block text-[10px] font-semibold uppercase tracking-[0.08em] ${isComplete ? 'text-[#5b7b43]' : isActive ? 'text-[#7454a0]' : 'text-[#a098a4]'}`}>{status}</span>
-              </span>
-              {isActive ? <span className="mt-1 size-1.5 shrink-0 animate-pulse rounded-full bg-[#77a84d]" aria-hidden="true" /> : null}
-            </motion.li>
+            </li>
           )
         })}
       </ol>
@@ -2405,7 +2746,6 @@ function ResultsPanel({
   onStartCampaign,
   canStartCampaign,
 }) {
-  const [campaignCopied, setCampaignCopied] = useState(false)
   const selectedPlatforms = PLATFORM_OPTIONS.filter((platform) => values.platforms.includes(platform.id))
 
   const updateCaption = (index, value) => {
@@ -2423,29 +2763,9 @@ function ResultsPanel({
   const totalPosts = campaign?.calendar?.length ?? 0
   const openQaNotes = campaign?.notes?.filter((note) => !note.resolved).length ?? 0
 
-  const copyCampaign = async () => {
-    const content = (campaign?.calendar ?? []).map((post, index) => {
-      const platform = PLATFORM_OPTIONS.find((option) => option.id === post.platform)?.label ?? post.platform
-      return [
-        `${index + 1}. ${platform}${post.date ? ` — ${post.date}` : ''}`,
-        post.caption,
-        post.hashtags?.length ? post.hashtags.map((tag) => `#${tag}`).join(' ') : '',
-        post.cta,
-      ].filter(Boolean).join('\n')
-    }).join('\n\n')
-
-    try {
-      await navigator.clipboard.writeText(content)
-    } catch {
-      // Clipboard access can be unavailable in embedded previews.
-    }
-    setCampaignCopied(true)
-    window.setTimeout(() => setCampaignCopied(false), 1600)
-  }
-
   return (
     <main className="min-w-0 flex-1 bg-[#f8f3f8] lg:max-h-[calc(100dvh-64px)] lg:overflow-y-auto" id="generated-results">
-      <div className={`mx-auto px-4 py-6 transition-[max-width] duration-300 sm:px-7 lg:px-8 lg:py-8 xl:px-10 ${hasStrategyReview || hasResults ? 'max-w-[1180px]' : 'max-w-[960px]'}`}>
+      <div className={`mx-auto px-4 py-6 transition-[max-width] duration-300 sm:px-7 lg:px-8 lg:py-8 xl:px-10 ${hasStrategyReview ? 'max-w-[1380px]' : hasResults ? 'max-w-[1240px]' : 'max-w-[960px]'}`}>
         {hasResults ? (
           <header className="mb-6 overflow-hidden rounded-[28px] bg-[#2b174f] text-white shadow-[0_24px_60px_rgba(43,23,79,0.18)]">
             <div className="relative px-5 py-6 sm:px-7 sm:py-7 lg:px-8">
@@ -2474,14 +2794,6 @@ function ResultsPanel({
                     className="flex h-11 items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d8ff9d]"
                   >
                     <Pencil className="size-4" aria-hidden="true" /> Edit brief
-                  </button>
-                  <button
-                    type="button"
-                    onClick={copyCampaign}
-                    className="flex h-11 items-center gap-2 rounded-xl bg-[#d8ff9d] px-4 text-sm font-bold text-[#2b174f] transition-colors hover:bg-[#e4ffb9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#2b174f]"
-                  >
-                    {campaignCopied ? <Check className="size-4" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}
-                    {campaignCopied ? 'Campaign copied' : 'Copy all posts'}
                   </button>
                 </div>
               </div>
@@ -2655,6 +2967,7 @@ function mergeWorkflowStatus(current, next) {
 export function GeneratePage() {
   const [restoredState] = useState(() => readGenerateState())
   const [projects, setProjects] = useState([])
+  const [projectModal, setProjectModal] = useState({ open: false, project: null, defaultName: '' })
   const [activeProject, setActiveProject] = useState(() => restoredState?.activeProject ?? '')
   const [chats, setChats] = useState([])
   const [activeChat, setActiveChat] = useState(() => restoredState?.activeChat ?? '')
@@ -2672,6 +2985,7 @@ export function GeneratePage() {
   const [submittedValues, setSubmittedValues] = useState(() => restoredState?.submittedValues ?? null)
   const [runState, setRunState] = useState(null)
   const [activeRunId, setActiveRunId] = useState(() => restoredState?.activeRunId ?? '')
+  const [canceling, setCanceling] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [historyEntries, setHistoryEntries] = useState([])
   const [historyLoading, setHistoryLoading] = useState(false)
@@ -2679,16 +2993,16 @@ export function GeneratePage() {
   const [briefOpen, setBriefOpen] = useState(false)
   const [mobileRenameOpen, setMobileRenameOpen] = useState(false)
   const [mobileProjectName, setMobileProjectName] = useState('')
+  const [projectPendingDelete, setProjectPendingDelete] = useState(null)
   const [chatPendingDelete, setChatPendingDelete] = useState(null)
   const abortRef = useRef(null)
+  const navigationEpochRef = useRef(0)
   const sseHealthyRef = useRef(false)
   const cancelMobileRenameRef = useRef(false)
 
   const currentProject = projects.find((project) => project.id === activeProject) ?? projects[0] ?? EMPTY_PROJECT
   const currentChat = chats.find((chat) => chat.id === activeChat) ?? chats[0] ?? { id: '', title: 'New chat', historyCount: 0 }
   const isGenerating = phase === 'strategy' || phase === 'content'
-  const restoredRunId = restoredState?.activeRunId
-  const restoredPhase = restoredState?.phase
   const restoredProjectId = restoredState?.activeProject
   const restoredChatId = restoredState?.activeChat
   const closeCampaignBrief = useCallback(() => setBriefOpen(false), [])
@@ -2706,7 +3020,7 @@ export function GeneratePage() {
     sseHealthyRef.current = false
     return subscribeToWorkflow(phase, activeRunId, {
       onProgress: (progress) => {
-        sseHealthyRef.current = progress.status !== 'success' && progress.status !== 'failed' && progress.status !== 'suspended'
+        sseHealthyRef.current = progress.status !== 'success' && progress.status !== 'failed' && progress.status !== 'suspended' && progress.status !== 'canceled'
         setRunState(progress)
       },
       onError: () => {
@@ -2768,36 +3082,39 @@ export function GeneratePage() {
   }, [restoredChatId, restoredProjectId])
 
   useEffect(() => {
-    if (
-      !restoredRunId ||
-      restoredRunId !== activeRunId ||
-      restoredPhase !== phase ||
-      (phase !== 'strategy' && phase !== 'content')
-    ) return undefined
+    if (!activeRunId || (phase !== 'strategy' && phase !== 'content')) return undefined
+
+    const runId = activeRunId
+    const runPhase = phase
+    const navigationEpoch = navigationEpochRef.current
     const controller = new AbortController()
+    abortRef.current?.abort()
     abortRef.current = controller
 
-    const resumeRun = async () => {
+    const monitorRun = async () => {
       try {
-        const finalState = phase === 'strategy'
-          ? await waitForStrategy(activeRunId, { signal: controller.signal, shouldPoll: () => !sseHealthyRef.current, onTick: (state) => setRunState((current) => mergeWorkflowStatus(current, state)) })
-          : await waitForContent(activeRunId, { signal: controller.signal, shouldPoll: () => !sseHealthyRef.current, onTick: (state) => setRunState((current) => mergeWorkflowStatus(current, state)) })
+        const finalState = runPhase === 'strategy'
+          ? await waitForStrategy(runId, { signal: controller.signal, shouldPoll: () => !sseHealthyRef.current, onTick: (state) => setRunState((current) => mergeWorkflowStatus(current, state)) })
+          : await waitForContent(runId, { signal: controller.signal, shouldPoll: () => !sseHealthyRef.current, onTick: (state) => setRunState((current) => mergeWorkflowStatus(current, state)) })
+
+        if (controller.signal.aborted || navigationEpochRef.current !== navigationEpoch) return
         setRunState(finalState)
 
         if (finalState.status === 'failed') {
           const raw = finalState.error
           setError(typeof raw === 'string' ? raw : raw?.message || 'The workflow failed to complete.')
-          setPhase(phase === 'strategy' ? 'idle' : 'review')
+          setPhase(runPhase === 'strategy' ? 'idle' : 'review')
         } else if (finalState.status === 'canceled') {
-          setPhase(phase === 'strategy' ? 'idle' : 'review')
-        } else if (finalState.result && phase === 'strategy') {
+          setError('')
+          setPhase(runPhase === 'strategy' ? 'idle' : 'review')
+        } else if (finalState.result && runPhase === 'strategy') {
           const parsedResult = marketingStrategyOutputSchema.safeParse(finalState.result)
           if (!parsedResult.success) throw new Error('The restored strategy response did not match the strategy schema.')
           setStrategy(parsedResult.data)
           setStrategyReview(finalState)
-          setStrategyRunId(activeRunId)
+          setStrategyRunId(runId)
           setPhase('review')
-        } else if (finalState.result && phase === 'content') {
+        } else if (finalState.result && runPhase === 'content') {
           const parsedResult = campaignOutputSchema.safeParse(finalState.result)
           if (!parsedResult.success) throw new Error('The restored campaign response did not match the campaign schema.')
           setCampaign(parsedResult.data)
@@ -2814,15 +3131,18 @@ export function GeneratePage() {
       } catch (error) {
         if (error?.name === 'AbortError') return
         setError(typeof error?.message === 'string' ? error.message : 'The workflow could not be restored after refresh.')
-        setPhase(phase === 'strategy' ? 'idle' : 'review')
+        setPhase(runPhase === 'strategy' ? 'idle' : 'review')
       } finally {
-        setActiveRunId('')
+        if (abortRef.current === controller) abortRef.current = null
+        if (navigationEpochRef.current === navigationEpoch) {
+          setActiveRunId((current) => current === runId ? '' : current)
+        }
       }
     }
 
-    void resumeRun()
+    void monitorRun()
     return () => controller.abort()
-  }, [activeProject, activeRunId, phase, restoredPhase, restoredRunId])
+  }, [activeProject, activeRunId, phase])
 
   useEffect(() => {
     try {
@@ -2843,14 +3163,15 @@ export function GeneratePage() {
     }
   }, [activeChat, activeProject, activeRunId, campaign, phase, strategy, strategyReview, strategyRunId, submittedValues, values])
 
-  const refreshProjectNavigation = () => {
-    if (!activeProject) return
-    void Promise.all([listProjects(), listChats(activeProject)])
-      .then(([nextProjects, nextChats]) => {
-        setProjects(nextProjects)
-        setChats(nextChats)
-      })
-      .catch(() => undefined)
+  const detachFromActiveRun = () => {
+    navigationEpochRef.current += 1
+    abortRef.current?.abort()
+    abortRef.current = null
+    sseHealthyRef.current = false
+    setActiveRunId('')
+    setPhase('idle')
+    setRunState(null)
+    setCanceling(false)
   }
 
   function restoreHistoryEntry(entry) {
@@ -2878,8 +3199,13 @@ export function GeneratePage() {
     const active = entries.find((entry) => entry.status === 'running' && (entry.kind === 'strategy' || entry.kind === 'content'))
     if (active?.id) {
       setCampaign(null)
-      setStrategy(null)
-      setStrategyRunId('')
+      const latestStrategy = active.kind === 'content'
+        ? entries.find((entry) => entry.kind === 'strategy' && entry.status === 'success' && entry.result)
+        : null
+      if (!latestStrategy || !restoreHistoryEntry(latestStrategy)) {
+        setStrategy(null)
+        setStrategyRunId('')
+      }
       setPhase(active.kind)
       setActiveRunId(active.id)
       setRunState({ status: 'running', activeSteps: [], completedSteps: [] })
@@ -2890,10 +3216,33 @@ export function GeneratePage() {
     return latestSuccess ? restoreHistoryEntry(latestSuccess) : false
   }
 
-  const handleNewProject = async () => {
+  const handleNewProject = () => {
+    setProjectModal({ open: true, project: null, defaultName: `Untitled Project ${projects.length + 1}` })
+  }
+
+  const handleEditProject = (project) => {
+    setProjectModal({ open: true, project, defaultName: '' })
+  }
+
+  const handleSaveProjectAppearance = async ({ name, iconId, color }) => {
+    const target = projectModal.project
+    if (target) {
+      if (name !== target.name) {
+        const renamed = await handleRenameProject(target, name)
+        if (renamed === false) return false
+      }
+      saveProjectAppearance(target.id, { iconId, color })
+      setProjects((current) => current.map((item) => item.id === target.id ? { ...item, iconId, color } : item))
+      return true
+    }
+    return handleCreateProject({ name, iconId, color })
+  }
+
+  const handleCreateProject = async ({ name, iconId, color }) => {
     try {
-      const project = await createProject(`Untitled Project ${projects.length + 1}`)
-      setProjects((current) => [{ ...project, chatCount: 0 }, ...current])
+      const project = await createProject(name)
+      saveProjectAppearance(project.id, { iconId, color })
+      setProjects((current) => [{ ...project, iconId, color, chatCount: 0 }, ...current])
       setActiveProject(project.id)
       setChats([])
       setActiveChat('')
@@ -2906,15 +3255,16 @@ export function GeneratePage() {
       setRunState(null)
       setHistoryOpen(false)
       setError('')
-      return project
+      return true
     } catch (createError) {
       setError(typeof createError?.message === 'string' ? createError.message : 'Could not create the project.')
-      return null
+      return false
     }
   }
 
   const handleSelectProject = async (projectId, preferredChatId = '') => {
-    if (isGenerating || (projectId === activeProject && !preferredChatId)) return
+    if (projectId === activeProject && !preferredChatId) return
+    detachFromActiveRun()
     try {
       const projectChats = await listChats(projectId)
       setActiveProject(projectId)
@@ -2989,12 +3339,17 @@ export function GeneratePage() {
     if (!renamed) setMobileRenameOpen(true)
   }
 
-  const handleDeleteProject = async (project) => {
-    if (isGenerating) return
-    const confirmed = window.confirm(`Delete “${project.name}” and all of its chats and history? This cannot be undone.`)
-    if (!confirmed) return
+  const handleDeleteProject = (project) => {
+    if (isGenerating || !project?.id) return
+    setProjectPendingDelete(project)
+  }
+
+  const handleConfirmDeleteProject = async () => {
+    const project = projectPendingDelete
+    if (!project?.id || isGenerating) return
     try {
       await deleteProject(project.id)
+      forgetProjectAppearance(project.id)
       const remaining = await listProjects()
       if (remaining.length === 0) {
         setProjects([])
@@ -3031,6 +3386,8 @@ export function GeneratePage() {
       setError('')
     } catch (deleteError) {
       setError(typeof deleteError?.message === 'string' ? deleteError.message : 'Could not delete the project.')
+    } finally {
+      setProjectPendingDelete(null)
     }
   }
 
@@ -3100,11 +3457,12 @@ export function GeneratePage() {
   }
 
   const handleSelectChat = async (chatId, projectId = activeProject) => {
+    if (projectId === activeProject && chatId === activeChat) return
     if (projectId !== activeProject) {
       await handleSelectProject(projectId, chatId)
       return
     }
-    if (isGenerating || chatId === activeChat) return
+    detachFromActiveRun()
     setActiveChat(chatId)
     setCampaign(null)
     setStrategy(null)
@@ -3175,6 +3533,7 @@ export function GeneratePage() {
     const controller = new AbortController()
     abortRef.current = controller
 
+    setBriefOpen(false)
     setPhase('strategy')
     setCampaign(null)
     setStrategy(null)
@@ -3187,44 +3546,12 @@ export function GeneratePage() {
     })
     try {
       const { runId } = await startStrategy(parsed.data, { signal: controller.signal, projectId: activeProject, chatId: activeChat })
+      if (controller.signal.aborted) return
       setActiveRunId(runId)
-
-      const finalState = await waitForStrategy(runId, {
-        signal: controller.signal,
-        shouldPoll: () => !sseHealthyRef.current,
-        intervalMs: 1500,
-        maxAttempts: 600,
-        onTick: (state) => setRunState((current) => mergeWorkflowStatus(current, state)),
-      })
-
-      setRunState(finalState)
-
-      if (finalState.status === 'failed') {
-        const raw = finalState.error
-        setError(typeof raw === 'string' ? raw : raw?.message || 'The workflow failed to complete.')
-        setPhase('idle')
-      } else if (finalState.status === 'canceled') {
-        setError('')
-        setPhase('idle')
-      } else if (finalState.result) {
-        const parsedResult = marketingStrategyOutputSchema.safeParse(finalState.result)
-        if (!parsedResult.success) {
-          throw new Error('The strategy workflow completed, but its response did not match the strategy schema.')
-        }
-        setStrategy(parsedResult.data)
-        setStrategyReview(finalState)
-        setStrategyRunId(runId)
-        setPhase('review')
-        refreshProjectNavigation()
-      } else {
-        throw new Error('The strategy workflow completed without returning a plan.')
-      }
     } catch (err) {
       if (err?.name === 'AbortError') return
       setError(typeof err?.message === 'string' ? err.message : 'Something went wrong while building the strategy.')
       setPhase('idle')
-    } finally {
-      setActiveRunId('')
     }
   }
 
@@ -3242,6 +3569,16 @@ export function GeneratePage() {
       return
     }
 
+    const parsedContentInput = contentWorkflowInputSchema.safeParse(
+      buildContentWorkflowInput(sourceValues, strategy, currentProject.name),
+    )
+    if (!parsedContentInput.success) {
+      setError(`The content brief is incomplete: ${parsedContentInput.error.issues.map((issue) => issue.message).join('; ')}`)
+      setBriefOpen(true)
+      return
+    }
+    const contentInput = parsedContentInput.data
+
     try {
       const reviewed = await reviewStrategy(strategyRunId, {
         action: 'APPROVED',
@@ -3254,6 +3591,16 @@ export function GeneratePage() {
       return
     }
 
+    setSubmittedValues({
+      ...sourceValues,
+      brandName: contentInput.brandName,
+      product: contentInput.product,
+      targetAudience: contentInput.targetAudience,
+      platforms: [...contentInput.platforms],
+      duration: contentInput.duration,
+      postsPerWeek: contentInput.postsPerWeek,
+    })
+
     abortRef.current?.abort()
     const controller = new AbortController()
     abortRef.current = controller
@@ -3262,52 +3609,14 @@ export function GeneratePage() {
     setCampaign(null)
     setRunState({ status: 'running', activeSteps: [], completedSteps: [] })
 
-    const contentInput = {
-      brandName: sourceValues.brandName,
-      product: sourceValues.product,
-      targetAudience: sourceValues.targetAudience || strategy.campaignStrategy.audienceStrategy.primaryAudience,
-      platforms: sourceValues.platforms,
-      duration: sourceValues.duration,
-      postsPerWeek: sourceValues.postsPerWeek,
-      generateImages: sourceValues.generateImages,
-      requireApproval: false,
-    }
-
     try {
       const { runId } = await startContent(contentInput, { signal: controller.signal, chatId: activeChat, strategyId: strategyRunId })
+      if (controller.signal.aborted) return
       setActiveRunId(runId)
-      const finalState = await waitForContent(runId, {
-        signal: controller.signal,
-        shouldPoll: () => !sseHealthyRef.current,
-        intervalMs: 1500,
-        maxAttempts: 600,
-        onTick: (state) => setRunState((current) => mergeWorkflowStatus(current, state)),
-      })
-
-      setRunState(finalState)
-      if (finalState.status === 'failed') {
-        const raw = finalState.error
-        setError(typeof raw === 'string' ? raw : raw?.message || 'The content workflow failed to complete.')
-        setPhase('review')
-      } else if (finalState.status === 'canceled') {
-        setPhase('review')
-      } else if (finalState.result) {
-        const parsedResult = campaignOutputSchema.safeParse(finalState.result)
-        if (!parsedResult.success) {
-          throw new Error('The content workflow completed, but its response did not match the campaign result schema.')
-        }
-        setCampaign(parsedResult.data)
-        setPhase('complete')
-        refreshProjectNavigation()
-      } else {
-        throw new Error('The content workflow completed without returning a campaign.')
-      }
     } catch (err) {
       if (err?.name === 'AbortError') return
       setError(typeof err?.message === 'string' ? err.message : 'Something went wrong while creating the posts.')
       setPhase('review')
-    } finally {
-      setActiveRunId('')
     }
   }
 
@@ -3349,57 +3658,51 @@ export function GeneratePage() {
         instructions,
         { signal: controller.signal },
       )
+      if (controller.signal.aborted) return
       setActiveRunId(runId)
-      const finalState = await waitForStrategy(runId, {
-        signal: controller.signal,
-        intervalMs: 1500,
-        maxAttempts: 600,
-        onTick: (state) => setRunState((current) => mergeWorkflowStatus(current, state)),
-      })
-      setRunState(finalState)
-
-      if (finalState.status === 'failed') {
-        const raw = finalState.error
-        setError(typeof raw === 'string' ? raw : raw?.message || 'The selected strategy section could not be regenerated.')
-        setPhase('review')
-        return
-      }
-
-      const parsedResult = marketingStrategyOutputSchema.safeParse(finalState.result)
-      if (!parsedResult.success) {
-        throw new Error('The revised strategy response did not match the strategy schema.')
-      }
-      setStrategy(parsedResult.data)
-      setStrategyReview(finalState)
-      setPhase('review')
-      refreshProjectNavigation()
     } catch (err) {
       if (err?.name === 'AbortError') return
       setError(typeof err?.message === 'string' ? err.message : 'Could not regenerate the selected strategy section.')
       setPhase('review')
-    } finally {
-      setActiveRunId('')
     }
   }
 
   const handleEditStrategy = () => {
-    abortRef.current?.abort()
-    setStrategy(null)
-    setStrategyRunId('')
-    setCampaign(null)
-    setPhase('idle')
-    setRunState(null)
-    setError('')
+    if (isGenerating) return
     setBriefOpen(true)
     window.setTimeout(() => document.querySelector('#product')?.focus(), 50)
   }
 
-  const handleCancel = () => {
-    abortRef.current?.abort()
-    sseHealthyRef.current = false
-    setError('Stopped waiting for this run. It continues in the background and remains available in history.')
-    setPhase(phase === 'content' ? 'review' : 'idle')
-    setActiveRunId('')
+  const handleCancel = async () => {
+    if (!activeRunId || canceling) return
+
+    const runId = activeRunId
+    const runPhase = phase
+    const cancelEpoch = navigationEpochRef.current
+    setCanceling(true)
+    setError('')
+
+    try {
+      if (runPhase === 'strategy') await cancelStrategy(runId)
+      else await cancelContent(runId)
+
+      // The user may have opened another chat while the cancellation request
+      // was in flight. The original run is canceled, but the new chat's view
+      // and monitor must remain untouched.
+      if (navigationEpochRef.current !== cancelEpoch) return
+
+      navigationEpochRef.current += 1
+      abortRef.current?.abort()
+      abortRef.current = null
+      sseHealthyRef.current = false
+      setRunState(null)
+      setPhase(runPhase === 'content' ? 'review' : 'idle')
+      setActiveRunId((current) => current === runId ? '' : current)
+    } catch (cancelError) {
+      setError(typeof cancelError?.message === 'string' ? cancelError.message : 'Could not cancel this workflow run.')
+    } finally {
+      setCanceling(false)
+    }
   }
 
   const effectiveError = error
@@ -3432,7 +3735,7 @@ export function GeneratePage() {
                 className="h-9 min-w-0 flex-1 rounded-lg border border-[#8e70b2] bg-[#faf6ff] px-2.5 text-sm font-semibold text-[#201a25] outline-none ring-2 ring-[#ddd0ef] selection:bg-[#d9c8f4]"
               />
             ) : (
-              <select value={activeProject} onChange={(event) => void handleSelectProject(event.target.value)} disabled={isGenerating || projects.length === 0} aria-label="Active project" className="min-w-0 flex-1 truncate rounded-lg border border-[#ded7e3] bg-white px-2.5 py-2 text-xs font-semibold text-[#201a25] outline-none focus:border-[#4f378a] disabled:text-[#948a98]">
+              <select value={activeProject} onChange={(event) => void handleSelectProject(event.target.value)} disabled={projects.length === 0} aria-label="Active project" className="min-w-0 flex-1 truncate rounded-lg border border-[#ded7e3] bg-white px-2.5 py-2 text-xs font-semibold text-[#201a25] outline-none focus:border-[#4f378a] disabled:text-[#948a98]">
                 {projects.length === 0 ? <option value="">No projects yet</option> : null}
                 {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
               </select>
@@ -3462,6 +3765,7 @@ export function GeneratePage() {
           onSelect={handleSelectProject}
           onNewProject={handleNewProject}
           onRenameProject={handleRenameProject}
+          onEditProject={handleEditProject}
           onDeleteProject={handleDeleteProject}
           onSelectChat={handleSelectChat}
           onRenameChat={handleRenameChat}
@@ -3493,8 +3797,15 @@ export function GeneratePage() {
           canStartCampaign={Boolean(activeProject && activeChat)}
         />
       </div>
+      <ProjectAppearanceModal
+        open={projectModal.open}
+        project={projectModal.project}
+        defaultName={projectModal.defaultName}
+        onClose={() => setProjectModal((current) => ({ ...current, open: false }))}
+        onSubmit={handleSaveProjectAppearance}
+      />
       <CampaignFormModal
-        open={briefOpen && phase === 'idle'}
+        open={briefOpen && !isGenerating}
         onClose={closeCampaignBrief}
         chatKey={activeChat || 'no-campaign-chat'}
         values={values}
@@ -3509,8 +3820,8 @@ export function GeneratePage() {
         <div className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full bg-[#381e72] px-4 py-2 text-xs font-semibold text-white shadow-lg">
           <LoadingRing className="size-3.5 text-[#d8ff9d]" />
            {phase === 'strategy' ? 'Building strategy…' : 'Creating posts…'}
-          <button type="button" onClick={handleCancel} className="ml-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] hover:bg-white/25">
-            Cancel
+          <button type="button" onClick={() => void handleCancel()} disabled={!activeRunId || canceling} className="ml-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] hover:bg-white/25 disabled:cursor-wait disabled:opacity-60">
+            {canceling ? 'Canceling…' : 'Cancel'}
           </button>
         </div>
       ) : null}
@@ -3524,20 +3835,41 @@ export function GeneratePage() {
           onOpenEntry={handleOpenHistoryEntry}
         />
       ) : null}
-      <AlertDialog open={Boolean(chatPendingDelete)} onOpenChange={(open) => { if (!open) setChatPendingDelete(null) }}>
-        <AlertDialogContent>
+      <AlertDialog open={Boolean(projectPendingDelete)} onOpenChange={(open) => { if (!open) setProjectPendingDelete(null) }}>
+        <AlertDialogContent className="border-border bg-card text-foreground">
           <AlertDialogHeader>
-            <span className="mb-2 flex size-11 items-center justify-center rounded-2xl bg-[#fbe2e8] text-[#ad3150]">
+            <span className="mb-2 flex size-11 items-center justify-center rounded-2xl bg-destructive/10 text-destructive" aria-hidden="true">
+              <Trash2 className="size-5" />
+            </span>
+            <AlertDialogTitle>Delete “{projectPendingDelete?.name}”?</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              This permanently removes the project and all of its chats, strategies, generated content, and history. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-xs leading-5 text-muted-foreground">
+            <CircleAlert className="mt-0.5 size-4 shrink-0 text-destructive" aria-hidden="true" />
+            <p><span className="font-semibold text-foreground">Permanent deletion.</span> Keep the project if you may need any of its work later.</p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-11 cursor-pointer border-border bg-background text-foreground hover:bg-muted">Keep project</AlertDialogCancel>
+            <AlertDialogAction className="h-11 cursor-pointer gap-2" onClick={() => void handleConfirmDeleteProject()}><Trash2 className="size-4" aria-hidden="true" />Delete project</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={Boolean(chatPendingDelete)} onOpenChange={(open) => { if (!open) setChatPendingDelete(null) }}>
+        <AlertDialogContent className="border-border bg-card text-foreground">
+          <AlertDialogHeader>
+            <span className="mb-2 flex size-11 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
               <Trash2 className="size-5" />
             </span>
             <AlertDialogTitle>Delete this chat?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-muted-foreground">
               “{chatPendingDelete?.chat?.title}” and all of its strategy and content history will be permanently deleted. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep chat</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void handleConfirmDeleteChat()}>Delete chat</AlertDialogAction>
+            <AlertDialogCancel className="h-11 cursor-pointer border-border bg-background text-foreground hover:bg-muted">Keep chat</AlertDialogCancel>
+            <AlertDialogAction className="h-11 cursor-pointer gap-2" onClick={() => void handleConfirmDeleteChat()}><Trash2 className="size-4" aria-hidden="true" />Delete chat</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -1,5 +1,7 @@
 // Browser client for the Nest application API. The Mastra service is reached
 // by Nest workers only; it is never a browser data source.
+import { getProjectAppearance } from './projectAppearance'
+
 const DEFAULT_BASE = '/api'
 
 export function getApiBase() {
@@ -56,6 +58,7 @@ function workflowState(record) {
     PENDING: 'running',
     RUNNING: 'running',
     SUSPENDED: 'suspended',
+    CANCELED: 'canceled',
     READY: 'success',
     FAILED: 'failed',
   }
@@ -70,7 +73,8 @@ export async function listProjects({ signal } = {}) {
   const data = await request('/projects?limit=100', { headers: { Accept: 'application/json' }, signal })
   return Array.isArray(data?.items) ? data.items.map((project) => ({
     ...project,
-    color: '#d0bcff',
+    // The API has no icon/colour field, so appearance is resolved client-side.
+    ...getProjectAppearance(project.id),
     chatCount: project._count?.campaigns ?? 0,
     historyCount: 0,
   })) : []
@@ -252,6 +256,20 @@ export async function startContent(input, { signal, chatId: campaignId, strategy
   return { runId: record.id, status: workflowState(record).status }
 }
 
+export function cancelStrategy(strategyId, { signal } = {}) {
+  return request(`/strategies/${encodeURIComponent(strategyId)}/cancel`, {
+    method: 'POST',
+    signal,
+  })
+}
+
+export function cancelContent(contentRunId, { signal } = {}) {
+  return request(`/content-runs/${encodeURIComponent(contentRunId)}/cancel`, {
+    method: 'POST',
+    signal,
+  })
+}
+
 async function getWorkflow(kind, id, { signal } = {}) {
   const path = kind === 'strategy' ? `/strategies/${encodeURIComponent(id)}` : `/content-runs/${encodeURIComponent(id)}`
   return workflowState(await request(path, { headers: { Accept: 'application/json' }, signal }))
@@ -273,7 +291,7 @@ export function subscribeToWorkflow(kind, runId, { onProgress, onError } = {}) {
   return () => source.close()
 }
 
-export const TERMINAL_STATES = new Set(['success', 'failed'])
+export const TERMINAL_STATES = new Set(['success', 'failed', 'canceled'])
 
 function abortableDelay(ms, signal) {
   return new Promise((resolve, reject) => {
@@ -304,6 +322,7 @@ async function waitForWorkflow(kind, runId, options = {}) {
       continue
     }
     const state = await getWorkflow(kind, runId, { signal })
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
     onTick?.(state, attempt)
     if (TERMINAL_STATES.has(state.status)) return state
     await abortableDelay(intervalMs, signal)
