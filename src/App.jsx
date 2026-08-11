@@ -25,6 +25,9 @@ const GeneratePage = lazy(() =>
 const ConnectorsPage = lazy(() =>
   import("@/features/connectors/pages/ConnectorsPage").then((module) => ({ default: module.ConnectorsPage })),
 );
+const BillingPage = lazy(() =>
+  import("@/features/billing/pages/BillingPage").then((module) => ({ default: module.BillingPage })),
+);
 
 function App() {
   return (
@@ -38,6 +41,7 @@ function App() {
           <Route path="/otp-login" element={<GuestRoute><OtpLoginPage /></GuestRoute>} />
           <Route path="/generate" element={<ProtectedRoute><GeneratePage /></ProtectedRoute>} />
           <Route path="/connectors" element={<ProtectedRoute><ConnectorsPage /></ProtectedRoute>} />
+          <Route path="/billing" element={<ProtectedRoute><BillingPage /></ProtectedRoute>} />
         </Routes>
       </Suspense>
     </AuthProvider>

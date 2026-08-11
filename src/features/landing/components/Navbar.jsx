@@ -1,4 +1,4 @@
-import { ChevronDown, Loader2, LogOut, Menu, X } from "lucide-react";
+import { ChevronDown, CreditCard, Loader2, LogOut, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
@@ -136,6 +136,15 @@ export function Navbar() {
                       {user?.email ? <p className="mt-0.5 truncate text-xs text-[#7b7180]">{user.email}</p> : null}
                     </div>
                     <div className="my-1 h-px bg-[#e7dfe9]" />
+                    <Link
+                      to="/billing"
+                      role="menuitem"
+                      onClick={() => setAccountOpen(false)}
+                      className="flex min-h-11 w-full items-center gap-2.5 rounded-xl px-3 text-left text-sm font-semibold text-[#381e72] transition-colors hover:bg-[#f2eafa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                    >
+                      <CreditCard className="size-[17px]" />
+                      Billing &amp; plans
+                    </Link>
                     <button
                       type="button"
                       role="menuitem"
