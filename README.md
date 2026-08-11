@@ -1,4 +1,4 @@
-# AetherFlow AI frontend
+# Sada frontend
 
 React/Vite frontend for the marketing strategy and content workflows in the
 sibling `../marketing-workflow-demo` Mastra service.

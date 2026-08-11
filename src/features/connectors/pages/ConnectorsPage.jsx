@@ -219,7 +219,7 @@ export function ConnectorsPage() {
                 <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#d6c3fb]">
                   02 · Orchestrate
                 </p>
-                <h3 className="mt-2 text-xl font-bold">Jasper intelligence</h3>
+                <h3 className="mt-2 text-xl font-bold">Sada intelligence</h3>
                 <p className="mt-3 text-sm leading-6 text-white/72">
                   One strategy becomes three polished messages, reviewed for fit and
                   consistency.

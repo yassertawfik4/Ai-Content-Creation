@@ -11,7 +11,7 @@ export function AuthShell({ children }) {
               <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#4f378a] shadow-lg shadow-black/10">
                 <img src={brandMark} alt="" className="size-[19px]" />
               </span>
-              <span className="pl-2 text-[22px] font-medium leading-7">AetherFlow AI</span>
+              <span className="pl-2 text-[22px] font-medium leading-7">Sada</span>
             </div>
           </header>
           {children}
