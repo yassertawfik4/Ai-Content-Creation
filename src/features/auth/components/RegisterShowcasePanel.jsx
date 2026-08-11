@@ -68,7 +68,7 @@ export function RegisterShowcasePanel() {
             <em className="text-[#a38ae3]">workforce.</em>
           </h2>
           <p className="max-w-[560px] text-base leading-7 tracking-[0.15px] text-[#d0bcff] 2xl:text-lg 2xl:leading-[28.8px]">
-            AetherFlow AI provides a specialized pod of intelligent agents designed to scale your marketing from insight to execution.
+            Sada provides a specialized pod of intelligent agents designed to scale your marketing from insight to execution.
           </p>
         </header>
 
@@ -96,9 +96,7 @@ export function RegisterShowcasePanel() {
               <img src={coreMark} alt="" className="size-[24px]" />
             </div>
             <p className="text-xl font-semibold leading-7 text-white">
-              AetherFlow
-              <br />
-              AI
+              Sada
             </p>
             <p className="pt-1 text-[10px] font-medium leading-[15px] tracking-[1px] text-[#d0bcff]">
               CENTRAL CORE
