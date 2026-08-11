@@ -119,6 +119,27 @@ export function verifyEmailOtp({ email, otp }) {
   })
 }
 
+export function requestPasswordResetOtp({ email }) {
+  return authFetch('/auth/email-otp/request-password-reset', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  })
+}
+
+export function checkPasswordResetOtp({ email, otp }) {
+  return authFetch('/auth/email-otp/check-verification-otp', {
+    method: 'POST',
+    body: JSON.stringify({ email, otp, type: 'forget-password' }),
+  })
+}
+
+export function resetPasswordWithOtp({ email, otp, password }) {
+  return authFetch('/auth/email-otp/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ email, otp, password }),
+  })
+}
+
 export function signInEmailOtp({ email, otp, name, image }) {
   return authFetch('/auth/sign-in/email-otp', {
     method: 'POST',
