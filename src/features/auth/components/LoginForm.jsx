@@ -72,12 +72,20 @@ export function LoginForm({ onSuccess, onUnverified }) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label
-          htmlFor="password"
-          className="text-sm font-medium tracking-[1.4px] text-[#494551]"
-        >
-          Password
-        </Label>
+        <div className="flex items-center justify-between gap-4">
+          <Label
+            htmlFor="password"
+            className="text-sm font-medium tracking-[1.4px] text-[#494551]"
+          >
+            Password
+          </Label>
+          <Link
+            to="/forgot-password"
+            className="rounded-md text-xs font-semibold text-[#4f378a] underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4f378a]"
+          >
+            Forgot password?
+          </Link>
+        </div>
         <div className="relative">
           <Input
             id="password"

@@ -19,6 +19,9 @@ const VerifyEmailPage = lazy(() =>
 const OtpLoginPage = lazy(() =>
   import("@/features/auth/pages/OtpLoginPage").then((module) => ({ default: module.OtpLoginPage })),
 );
+const ForgotPasswordPage = lazy(() =>
+  import("@/features/auth/pages/ForgotPasswordPage").then((module) => ({ default: module.ForgotPasswordPage })),
+);
 const GeneratePage = lazy(() =>
   import("@/features/generate/pages/GeneratePage").then((module) => ({ default: module.GeneratePage })),
 );
@@ -45,6 +48,7 @@ function App() {
           <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
           <Route path="/verify-email" element={<GuestRoute><VerifyEmailPage /></GuestRoute>} />
           <Route path="/otp-login" element={<GuestRoute><OtpLoginPage /></GuestRoute>} />
+          <Route path="/forgot-password" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
           <Route path="/generate" element={<ProtectedRoute><GeneratePage /></ProtectedRoute>} />
           <Route path="/connectors" element={<ProtectedRoute><ConnectorsPage /></ProtectedRoute>} />
           <Route path="/publishing" element={<ProtectedRoute><PublishingPage /></ProtectedRoute>} />
