@@ -39,7 +39,7 @@ export function ConnectorCard({ connector }) {
       </ul>
 
       <Link
-        to="/register"
+        to="/publishing"
         className="mt-8 inline-flex min-h-12 items-center justify-between rounded-xl border border-[#b9a8cf]/55 bg-[#fbf8ff] px-4 text-sm font-semibold text-[#381e72] transition-colors duration-200 hover:border-[#70579e]/60 hover:bg-[#f1e9fb] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] focus-visible:ring-offset-2"
       >
         Connect {connector.name}

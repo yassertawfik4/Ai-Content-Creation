@@ -123,6 +123,14 @@ export function addDocumentKnowledgeSource(projectId, input, { signal } = {}) {
   })
 }
 
+export function uploadDocumentKnowledgeSource(projectId, file, { signal } = {}) {
+  const body = new FormData()
+  body.append('file', file)
+  return request(`/projects/${encodeURIComponent(projectId)}/knowledge/sources/document-upload`, {
+    method: 'POST', body, signal,
+  })
+}
+
 export function addSocialKnowledgeSource(projectId, input, { signal } = {}) {
   return request(`/projects/${encodeURIComponent(projectId)}/knowledge/sources/social-posts`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(input), signal,
@@ -193,6 +201,32 @@ export function getChatHistory(_projectId, campaignId, { signal } = {}) {
     headers: { Accept: 'application/json' },
     signal,
   })
+}
+
+export function reviewStrategy(strategyId, { action, note, output }, { signal } = {}) {
+  return request(`/strategies/${encodeURIComponent(strategyId)}/review`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, note, ...(output ? { output } : {}) }),
+    signal,
+  })
+}
+
+export function listStrategyReviews(strategyId, { signal } = {}) {
+  return request(`/strategies/${encodeURIComponent(strategyId)}/reviews`, {
+    headers: { Accept: 'application/json' },
+    signal,
+  })
+}
+
+export async function regenerateStrategySection(strategyId, section, feedback, { signal } = {}) {
+  const record = await request(`/strategies/${encodeURIComponent(strategyId)}/sections/regenerate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ section, feedback }),
+    signal,
+  })
+  return { runId: record.id, status: workflowState(record).status }
 }
 
 export async function startStrategy(input, { signal, chatId: campaignId } = {}) {
@@ -283,4 +317,60 @@ export function waitForStrategy(runId, options = {}) {
 
 export function waitForContent(runId, options = {}) {
   return waitForWorkflow('content', runId, options)
+}
+
+export function getMetaConnectorStatus({ signal } = {}) {
+  return request('/connectors/meta/status', { headers: { Accept: 'application/json' }, signal })
+}
+
+export function startMetaConnection({ signal } = {}) {
+  return request('/connectors/meta/oauth/start', { method: 'POST', signal })
+}
+
+export function syncMetaConnection({ signal } = {}) {
+  return request('/connectors/meta/sync', { method: 'POST', signal })
+}
+
+export function selectMetaAccount(accountId, selected, { signal } = {}) {
+  return request(`/connectors/meta/accounts/${encodeURIComponent(accountId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ selected }),
+    signal,
+  })
+}
+
+export function disconnectMeta({ signal } = {}) {
+  return request('/connectors/meta', { method: 'DELETE', signal })
+}
+
+export async function listCampaignContents(campaignId, { signal } = {}) {
+  const data = await request(`/campaigns/${encodeURIComponent(campaignId)}/contents?status=READY&limit=100`, {
+    headers: { Accept: 'application/json' },
+    signal,
+  })
+  return Array.isArray(data?.items) ? data.items : []
+}
+
+export function schedulePublication(contentId, socialAccountId, scheduledFor, { signal } = {}) {
+  return request(`/contents/${encodeURIComponent(contentId)}/publications`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ socialAccountId, ...(scheduledFor ? { scheduledFor } : {}) }),
+    signal,
+  })
+}
+
+export async function listPublications({ status, signal } = {}) {
+  const query = status ? `?status=${encodeURIComponent(status)}&limit=100` : '?limit=100'
+  const data = await request(`/publications${query}`, { headers: { Accept: 'application/json' }, signal })
+  return { items: Array.isArray(data?.items) ? data.items : [], meta: data?.meta }
+}
+
+export function cancelPublication(publicationId, { signal } = {}) {
+  return request(`/publications/${encodeURIComponent(publicationId)}`, { method: 'DELETE', signal })
+}
+
+export function retryPublication(publicationId, { signal } = {}) {
+  return request(`/publications/${encodeURIComponent(publicationId)}/retry`, { method: 'POST', signal })
 }

@@ -71,8 +71,11 @@ import {
   getChatHistory,
   listChats,
   listProjects,
+  listStrategyReviews,
   renameChat,
   renameProject,
+  regenerateStrategySection,
+  reviewStrategy,
   startContent,
   startStrategy,
   subscribeToWorkflow,
@@ -87,6 +90,12 @@ const PLATFORM_ICONS = {
   facebook: Users,
   tiktok: Music2,
   youtube_shorts: Video,
+}
+
+const REGENERATABLE_STRATEGY_TABS = {
+  personas: { section: 'personas', label: 'personas' },
+  journey: { section: 'buyerJourney', label: 'buyer journey' },
+  objectives: { section: 'smartObjectives', label: 'objectives' },
 }
 
 const ART_GRADIENTS = [
@@ -118,7 +127,7 @@ const STRATEGY_STEPS = [
   { id: 'buyer-journey', label: 'Buyer journey', description: 'Maps audience needs and messages across the journey.' },
   { id: 'smart-objectives', label: 'SMART objectives', description: 'Sets measurable campaign goals and success criteria.' },
   { id: 'campaign-planner', label: 'Campaign plan', description: 'Combines every strategy decision into an actionable plan.' },
-  { id: 'quality-gate', label: 'Quality check', description: 'Audits the plan for evidence, gaps, and assumptions.' },
+  { id: 'plan-quality-gate', label: 'Quality check', description: 'Audits the plan for evidence, gaps, and assumptions.' },
 ]
 
 const EMPTY_PROJECT = { id: '', name: 'Campaign workspace', color: '#d0bcff', historyCount: 0 }
@@ -1631,8 +1640,19 @@ function ReadOnlyList({ label, values }) {
   )
 }
 
-function StrategyReview({ strategy, onConfirm, onEdit, onStrategyChange, isSubmitting }) {
+function StrategyReview({ strategy, strategyId, review, onConfirm, onRequestChanges, onRegenerateSection, onEdit, onStrategyChange, isSubmitting }) {
   const [activeTab, setActiveTab] = useState('overview')
+  const [reviewNote, setReviewNote] = useState(review?.reviewNote ?? '')
+  const [reviewHistory, setReviewHistory] = useState([])
+
+  useEffect(() => {
+    if (!strategyId) return undefined
+    const controller = new AbortController()
+    void listStrategyReviews(strategyId, { signal: controller.signal })
+      .then(setReviewHistory)
+      .catch(() => undefined)
+    return () => controller.abort()
+  }, [strategyId, review?.updatedAt])
   if (!strategy) return null
 
   const product = strategy.product ?? {}
@@ -1645,6 +1665,7 @@ function StrategyReview({ strategy, onConfirm, onEdit, onStrategyChange, isSubmi
   const objectives = Array.isArray(strategy.smartObjectives) ? strategy.smartObjectives : []
   const segments = Array.isArray(stp.segments) ? stp.segments : []
   const recommendations = Array.isArray(campaign.campaignRecommendations) ? campaign.campaignRecommendations : []
+  const regeneratableSection = REGENERATABLE_STRATEGY_TABS[activeTab]
 
   const updatePath = (path, value) => {
     onStrategyChange((current) => {
@@ -1828,6 +1849,17 @@ function StrategyReview({ strategy, onConfirm, onEdit, onStrategyChange, isSubmi
         </div>
         <ReadOnlyList label="Assumption register" values={quality.assumptionRegister} />
         <ReadOnlyList label="Next decisions" values={quality.nextDecisions} />
+        {(quality.evidenceSources ?? []).length > 0 ? (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-[#514a56]">Research sources</p>
+            {(quality.evidenceSources ?? []).map((source, index) => (
+              <a key={`${source.url}-${index}`} href={source.url} target="_blank" rel="noreferrer" className="block rounded-xl border border-[#d9cfe0] bg-white p-3 transition hover:border-[#9e89ba] hover:bg-[#fbf8fd]">
+                <p className="text-sm font-semibold text-[#381e72]">{source.title}</p>
+                <p className="mt-1 text-xs text-[#716777]">{source.publisher} · {source.excerpt}</p>
+              </a>
+            ))}
+          </div>
+        ) : <p className="rounded-xl bg-[#fff8eb] p-3 text-xs text-[#7a511e]">No external research source was available. Treat the plan’s assumptions as inputs to confirm.</p>}
         <div className="space-y-2">
           {(quality.issues ?? []).map((issue, index) => (
             <div key={`${issue.code}-${index}`} className="rounded-xl border border-[#f0d9b7] bg-[#fff8eb] p-3">
@@ -1872,11 +1904,18 @@ function StrategyReview({ strategy, onConfirm, onEdit, onStrategyChange, isSubmi
           <p className="text-sm font-semibold text-[#201a25]">Ready to turn the edited plan into posts?</p>
           <p className="mt-0.5 text-xs text-[#766b7d]">Approval sends this current strategy draft to the content workflow.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:min-w-[330px]">
+          <label className="text-xs font-medium text-[#62556b]">Review note <span className="font-normal text-[#84798a]">(optional)</span><textarea value={reviewNote} onChange={(event) => setReviewNote(event.target.value)} maxLength={4000} rows={2} placeholder="What was approved, or what should change?" className="mt-1 block w-full resize-y rounded-xl border border-[#d8cbdc] bg-white px-3 py-2 text-sm text-[#201a25] outline-none focus:border-[#4f378a] focus:ring-2 focus:ring-[#ddd0ef]" /></label>
+          {review?.approvalStatus ? <p className="text-xs text-[#62556b]">Last decision: <span className="font-semibold">{String(review.approvalStatus).toLowerCase().replaceAll('_', ' ')}</span>{review.reviewerName ? ` by ${review.reviewerName}` : ''}</p> : null}
+          {reviewHistory.length > 0 ? <div className="border-t border-[#e6dee8] pt-2 text-xs text-[#62556b]"><p className="font-semibold text-[#514a56]">Review history</p>{reviewHistory.slice(0, 3).map((entry) => <p key={entry.id} className="mt-1">{String(entry.action).toLowerCase().replaceAll('_', ' ')} · {entry.reviewerName} · {new Date(entry.createdAt).toLocaleString()}{entry.note ? ` — ${entry.note}` : ''}</p>)}</div> : null}
+        </div>
+        <div className="flex flex-wrap gap-2">
           <button type="button" onClick={onEdit} disabled={isSubmitting} className="h-11 rounded-xl border border-[#d8cbdc] bg-white px-4 text-sm font-semibold text-[#62556b] transition hover:border-[#a99eb4] disabled:opacity-50">Edit brief</button>
-          <button type="button" onClick={onConfirm} disabled={isSubmitting} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#381e72] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(56,30,114,0.2)] transition hover:bg-[#4f378a] disabled:cursor-wait disabled:opacity-60">
+          {regeneratableSection ? <button type="button" onClick={() => onRegenerateSection(regeneratableSection.section, reviewNote)} disabled={isSubmitting || reviewNote.trim().length < 3} title={reviewNote.trim().length < 3 ? 'Add at least three characters of feedback first.' : undefined} className="flex h-11 items-center gap-2 rounded-xl border border-[#9e89ba] bg-[#f2eafa] px-4 text-sm font-semibold text-[#381e72] transition hover:bg-[#e9def3] disabled:cursor-not-allowed disabled:opacity-50"><RefreshCw className="size-4" /> Regenerate {regeneratableSection.label}</button> : null}
+          <button type="button" onClick={() => onRequestChanges(reviewNote)} disabled={isSubmitting} className="h-11 rounded-xl border border-[#d8cbdc] bg-white px-4 text-sm font-semibold text-[#62556b] transition hover:border-[#a99eb4] disabled:opacity-50">Request changes</button>
+          <button type="button" onClick={() => onConfirm(reviewNote)} disabled={isSubmitting} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#381e72] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(56,30,114,0.2)] transition hover:bg-[#4f378a] disabled:cursor-wait disabled:opacity-60">
             {isSubmitting ? <Loader2 className="size-4 animate-spin text-[#d8ff9d]" /> : <Wand2 className="size-4 text-[#d8ff9d]" />}
-            {isSubmitting ? 'Starting content workflow...' : 'Approve & create posts'}
+            {isSubmitting ? 'Saving approval...' : 'Approve & create posts'}
           </button>
         </div>
       </div>
@@ -2117,6 +2156,9 @@ function ResultsPanel({
   onDismissError,
   onRetryError,
   onConfirmStrategy,
+  onRequestStrategyChanges,
+  onRegenerateStrategySection,
+  strategyReview,
   onEditStrategy,
   onStrategyChange,
 }) {
@@ -2280,7 +2322,7 @@ function ResultsPanel({
               ))}
             </motion.div>
           ) : hasStrategyReview ? (
-            <StrategyReview strategy={strategy} onConfirm={onConfirmStrategy} onEdit={onEditStrategy} onStrategyChange={onStrategyChange} isSubmitting={false} />
+            <StrategyReview strategy={strategy} strategyId={strategyReview?.id ?? null} review={strategyReview} onConfirm={onConfirmStrategy} onRequestChanges={onRequestStrategyChanges} onRegenerateSection={onRegenerateStrategySection} onEdit={onEditStrategy} onStrategyChange={onStrategyChange} isSubmitting={false} />
           ) : hasResults ? (
             <motion.div key="results" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6" aria-live="polite">
               <nav aria-label="Campaign sections" className="flex gap-2 overflow-x-auto rounded-2xl border border-[#ded4e2] bg-[#fffaff] p-2 shadow-[0_6px_18px_rgba(46,32,51,0.04)]">
@@ -2366,6 +2408,7 @@ export function GeneratePage() {
   const [activeChat, setActiveChat] = useState(() => restoredState?.activeChat ?? '')
   const [campaign, setCampaign] = useState(() => restoredState?.campaign ?? null)
   const [strategy, setStrategy] = useState(() => restoredState?.strategy ?? null)
+  const [strategyReview, setStrategyReview] = useState(() => restoredState?.strategyReview ?? null)
   const [strategyRunId, setStrategyRunId] = useState(() => restoredState?.strategyRunId ?? '')
   const [phase, setPhase] = useState(() => {
     if (restoredState?.activeRunId && (restoredState.phase === 'strategy' || restoredState.phase === 'content')) return restoredState.phase
@@ -2494,6 +2537,7 @@ export function GeneratePage() {
           const parsedResult = marketingStrategyOutputSchema.safeParse(finalState.result)
           if (!parsedResult.success) throw new Error('The restored strategy response did not match the strategy schema.')
           setStrategy(parsedResult.data)
+          setStrategyReview(finalState)
           setStrategyRunId(activeRunId)
           setPhase('review')
         } else if (finalState.result && phase === 'content') {
@@ -2532,6 +2576,7 @@ export function GeneratePage() {
         campaign,
         phase,
         strategy,
+        strategyReview,
         strategyRunId,
         submittedValues,
         values,
@@ -2539,7 +2584,7 @@ export function GeneratePage() {
     } catch {
       // Persistence is best-effort when storage is disabled or unavailable.
     }
-  }, [activeChat, activeProject, activeRunId, campaign, phase, strategy, strategyRunId, submittedValues, values])
+  }, [activeChat, activeProject, activeRunId, campaign, phase, strategy, strategyReview, strategyRunId, submittedValues, values])
 
   const refreshProjectNavigation = () => {
     if (!activeProject) return
@@ -2565,6 +2610,7 @@ export function GeneratePage() {
     const parsed = marketingStrategyOutputSchema.safeParse(entry.result)
     if (!parsed.success) return false
     setStrategy(parsed.data)
+    setStrategyReview(entry)
     setStrategyRunId(entry.id ?? '')
     setCampaign(null)
     setPhase('review')
@@ -2909,6 +2955,7 @@ export function GeneratePage() {
           throw new Error('The strategy workflow completed, but its response did not match the strategy schema.')
         }
         setStrategy(parsedResult.data)
+        setStrategyReview(finalState)
         setStrategyRunId(runId)
         setPhase('review')
         refreshProjectNavigation()
@@ -2929,12 +2976,24 @@ export function GeneratePage() {
     setErrors({})
   }
 
-  const handleConfirmStrategy = async () => {
+  const handleConfirmStrategy = async (note) => {
     if (!strategy || isGenerating) return
 
     const sourceValues = submittedValues ?? values
     if (!strategyRunId) {
       setError('The strategy did not include a campaign plan to send to the content workflow.')
+      return
+    }
+
+    try {
+      const reviewed = await reviewStrategy(strategyRunId, {
+        action: 'APPROVED',
+        note,
+        output: strategy,
+      })
+      setStrategyReview(reviewed)
+    } catch (err) {
+      setError(typeof err?.message === 'string' ? err.message : 'Could not save strategy approval.')
       return
     }
 
@@ -2989,6 +3048,77 @@ export function GeneratePage() {
     } catch (err) {
       if (err?.name === 'AbortError') return
       setError(typeof err?.message === 'string' ? err.message : 'Something went wrong while creating the posts.')
+      setPhase('review')
+    } finally {
+      setActiveRunId('')
+    }
+  }
+
+  const handleRequestStrategyChanges = async (note) => {
+    if (!strategyRunId || !strategy || isGenerating) return
+    try {
+      const reviewed = await reviewStrategy(strategyRunId, {
+        action: 'CHANGES_REQUESTED',
+        note,
+        output: strategy,
+      })
+      setStrategyReview(reviewed)
+      setError('Changes requested. Update the relevant section, then approve the revised strategy.')
+    } catch (err) {
+      setError(typeof err?.message === 'string' ? err.message : 'Could not save requested changes.')
+    }
+  }
+
+  const handleRegenerateStrategySection = async (section, feedback) => {
+    if (!strategyRunId || !strategy || isGenerating) return
+    const instructions = feedback?.trim()
+    if (!instructions || instructions.length < 3) {
+      setError('Add a short review note explaining what the selected section should change.')
+      return
+    }
+
+    abortRef.current?.abort()
+    sseHealthyRef.current = false
+    const controller = new AbortController()
+    abortRef.current = controller
+    setError('')
+    setPhase('strategy')
+    setRunState({ status: 'running', activeSteps: ['regenerate-strategy-section'], completedSteps: [] })
+
+    try {
+      const { runId } = await regenerateStrategySection(
+        strategyRunId,
+        section,
+        instructions,
+        { signal: controller.signal },
+      )
+      setActiveRunId(runId)
+      const finalState = await waitForStrategy(runId, {
+        signal: controller.signal,
+        intervalMs: 1500,
+        maxAttempts: 600,
+        onTick: (state) => setRunState((current) => mergeWorkflowStatus(current, state)),
+      })
+      setRunState(finalState)
+
+      if (finalState.status === 'failed') {
+        const raw = finalState.error
+        setError(typeof raw === 'string' ? raw : raw?.message || 'The selected strategy section could not be regenerated.')
+        setPhase('review')
+        return
+      }
+
+      const parsedResult = marketingStrategyOutputSchema.safeParse(finalState.result)
+      if (!parsedResult.success) {
+        throw new Error('The revised strategy response did not match the strategy schema.')
+      }
+      setStrategy(parsedResult.data)
+      setStrategyReview(finalState)
+      setPhase('review')
+      refreshProjectNavigation()
+    } catch (err) {
+      if (err?.name === 'AbortError') return
+      setError(typeof err?.message === 'string' ? err.message : 'Could not regenerate the selected strategy section.')
       setPhase('review')
     } finally {
       setActiveRunId('')
@@ -3105,8 +3235,11 @@ export function GeneratePage() {
           projectName={`${currentProject.name} · ${currentChat.title}`}
           error={effectiveError}
           onDismissError={() => setError('')}
-          onRetryError={strategy && !campaign ? handleConfirmStrategy : handleGenerate}
+          onRetryError={strategy && !campaign ? () => handleConfirmStrategy() : handleGenerate}
           onConfirmStrategy={handleConfirmStrategy}
+          onRequestStrategyChanges={handleRequestStrategyChanges}
+          onRegenerateStrategySection={handleRegenerateStrategySection}
+          strategyReview={strategyReview}
           onEditStrategy={handleEditStrategy}
           onStrategyChange={setStrategy}
         />
