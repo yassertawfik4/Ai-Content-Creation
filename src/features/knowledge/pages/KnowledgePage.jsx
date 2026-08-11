@@ -17,7 +17,6 @@ import {
   refreshKnowledgeSource,
   reindexProjectKnowledge,
   updateProjectBrandProfile,
-  uploadDocumentKnowledgeSource,
 } from "@/lib/campaignApi";
 
 const emptyProfile = {

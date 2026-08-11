@@ -2124,6 +2124,24 @@ function StrategyReview({ strategy, strategyId, review, onConfirm, onRequestChan
         </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={onEdit} disabled={isSubmitting} className="h-11 rounded-xl border border-[#d8cbdc] bg-white px-4 text-sm font-semibold text-[#62556b] transition hover:border-[#a99eb4] disabled:opacity-50">Edit brief</button>
+          <button
+            type="button"
+            onClick={() => onRequestChanges(reviewNote)}
+            disabled={isSubmitting || reviewNote.trim().length < 3}
+            className="h-11 rounded-xl border border-[#d8cbdc] bg-white px-4 text-sm font-semibold text-[#62556b] transition hover:border-[#a99eb4] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Request changes
+          </button>
+          {regeneratableSection ? (
+            <button
+              type="button"
+              onClick={() => onRegenerateSection(regeneratableSection.section, reviewNote)}
+              disabled={isSubmitting || reviewNote.trim().length < 3}
+              className="h-11 rounded-xl border border-[#4f378a] bg-white px-4 text-sm font-semibold text-[#4f378a] transition hover:bg-[#f2eafa] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Regenerate {regeneratableSection.label}
+            </button>
+          ) : null}
           <button type="button" onClick={() => onConfirm(reviewNote)} disabled={isSubmitting} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#381e72] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(56,30,114,0.2)] transition hover:bg-[#4f378a] disabled:cursor-wait disabled:opacity-60">
             {isSubmitting ? <LoadingRing className="size-4 text-[#d8ff9d]" /> : <Wand2 className="size-4 text-[#d8ff9d]" />}
             {isSubmitting ? 'Starting content workflow...' : 'Approve & create posts'}
