@@ -173,7 +173,8 @@ export function BillingPage() {
       setPlans(Array.isArray(planData) ? planData : [])
       setSubscription(subscriptionData ?? null)
       if (subscriptionData?.billingInterval) {
-        setInterval(subscriptionData.billingInterval === 'monthly' ? 'month' : 'year')
+        const normalized = String(subscriptionData.billingInterval).toUpperCase()
+        setInterval(normalized === 'MONTHLY' ? 'month' : 'year')
       }
     } catch (loadError) {
       setError(getErrorMessage(loadError))
@@ -191,7 +192,8 @@ export function BillingPage() {
         setPlans(Array.isArray(planData) ? planData : [])
         setSubscription(subscriptionData ?? null)
         if (subscriptionData?.billingInterval) {
-          setInterval(subscriptionData.billingInterval === 'monthly' ? 'month' : 'year')
+          const normalized = String(subscriptionData.billingInterval).toUpperCase()
+          setInterval(normalized === 'MONTHLY' ? 'month' : 'year')
         }
       })
       .catch((loadError) => {
@@ -207,6 +209,10 @@ export function BillingPage() {
 
   const isActiveStatus = ['ACTIVE', 'TRIALING', 'PAST_DUE', 'UNPAID'].includes(subscription?.status)
   const currentPlanCode = subscription?.plan?.code
+  const subscribedInterval =
+    String(subscription?.billingInterval ?? '').toUpperCase() === 'MONTHLY'
+      ? 'month'
+      : 'year'
 
   const choosePlan = async (planCode) => {
     setError('')
@@ -227,7 +233,11 @@ export function BillingPage() {
     setBusyPlan(planCode)
     setBusyAction('change')
     try {
-      await changePlan({ planCode, interval })
+      const { url } = await changePlan({ planCode, interval })
+      if (url) {
+        window.location.assign(url)
+        return
+      }
       await load()
       setPopup({
         kind: 'success',
@@ -348,9 +358,14 @@ export function BillingPage() {
           <div className="grid gap-6 md:grid-cols-3">
             {sortedPlans.map((plan, index) => {
               const detail = PLAN_DETAILS[plan.code] ?? { eyebrow: 'Plan', features: [] }
-              const priceCents = interval === 'year' ? plan.priceYearlyCents : plan.priceMonthlyCents
+              const isSamePlanSubscription = subscription && currentPlanCode === plan.code
+              const isCurrent = isSamePlanSubscription && isActiveStatus
+              const priceCents =
+                (isCurrent ? subscribedInterval : interval) === 'year'
+                  ? plan.priceYearlyCents
+                  : plan.priceMonthlyCents
+              const priceInterval = isCurrent ? subscribedInterval : interval
               const hasPrice = priceCents != null
-              const isCurrent = currentPlanCode === plan.code && isActiveStatus
               const isSamePlan = currentPlanCode === plan.code
               const busy = busyPlan === plan.code
               const highlight = plan.code === 'pro'
@@ -385,7 +400,7 @@ export function BillingPage() {
                         <span className="font-display text-4xl font-bold tracking-[-1px] text-[#201a25]">
                           {priceCents === 0 ? '$0' : formatCents(priceCents)}
                         </span>
-                        <span className="mb-1 text-sm text-[#8a8190]">{priceCents === 0 ? 'forever' : ` / ${interval}`}</span>
+                        <span className="mb-1 text-sm text-[#8a8190]">{priceCents === 0 ? 'forever' : ` / ${priceInterval}`}</span>
                       </>
                     ) : (
                       <span className="text-sm text-[#8a8190]">Contact us</span>
@@ -395,12 +410,18 @@ export function BillingPage() {
                   <div className="mt-6 flex min-h-12">
                     {isCurrent ? (
                       <span className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#cfe2b2] bg-[#eff9df] text-sm font-semibold text-[#315016]">
-                        <Check className="size-4" /> Current plan
+                        <Check className="size-4" /> Current plan · {subscribedInterval === 'year' ? 'Yearly' : 'Monthly'}
                       </span>
-                    ) : isSamePlan ? (
-                      <span className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#e2d9e6] bg-[#f3edf5] text-sm font-semibold text-[#625b71]">
-                        {subscription ? (subscription.status === 'CANCELLED' ? 'Resume' : 'Re-subscribe') : 'Choose'}
-                      </span>
+                    ) : isSamePlan && subscription?.status === 'CANCELLED' ? (
+                      <button
+                        type="button"
+                        onClick={() => choosePlan(plan.code)}
+                        disabled={busy || Boolean(busyPlan)}
+                        className="group flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#381e72] px-4 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(56,30,114,0.22)] transition-all hover:bg-[#4f378a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#381e72] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {busy ? <Loader2 className="size-4 animate-spin text-[#b7f36b]" /> : <Sparkles className="size-4 text-[#b7f36b]" />}
+                        {busy ? 'Opening checkout…' : 'Resume subscription'}
+                      </button>
                     ) : subscription ? (
                       <button
                         type="button"
