@@ -4,6 +4,7 @@ import { MarketingTeamSection } from '../components/MarketingTeamSection'
 import { SocialBand } from '../components/SocialBand'
 import { PipelineSection } from '../components/PipelineSection'
 import { ImpactBentoSection } from '../components/ImpactBentoSection'
+import { PricingSection } from '../components/PricingSection'
 import { CtaSection } from '../components/CtaSection'
 import { Footer } from '../components/Footer'
 
@@ -17,6 +18,7 @@ export function LandingPage() {
         <PipelineSection />
         <SocialBand id="connectors" />
         <ImpactBentoSection />
+        <PricingSection />
         <CtaSection />
       </main>
       <Footer />
