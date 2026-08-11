@@ -1,4 +1,4 @@
-import { ChevronDown, Loader2, LogOut, Menu, X } from "lucide-react";
+import { ChevronDown, Loader2, LogOut, Menu, Settings, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
@@ -69,10 +69,10 @@ export function Navbar() {
       <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-6 lg:px-8">
         <Link to="/" className="flex items-center gap-2">
           <span className="flex size-8 items-center justify-center rounded-lg bg-[#381e72] text-base font-bold text-white">
-            J
+            S
           </span>
           <span className="text-xl font-bold tracking-tight text-[#1d1b20]">
-            Jasper <span className="text-[#4f378a]">AI</span>
+            Sada
           </span>
         </Link>
 
@@ -133,10 +133,19 @@ export function Navbar() {
                     className="absolute right-0 top-[calc(100%+7px)] z-50 w-60 origin-top-right overflow-hidden rounded-2xl border border-[#ded7e3] bg-[#fffaff] p-2 shadow-[0_16px_40px_rgba(45,31,52,0.16)]"
                   >
                     <div className="px-3 py-2.5">
-                      <p className="truncate text-sm font-semibold text-[#201a25]">{user?.name || "AetherFlow user"}</p>
+                      <p className="truncate text-sm font-semibold text-[#201a25]">{user?.name || "Sada user"}</p>
                       {user?.email ? <p className="mt-0.5 truncate text-xs text-[#7b7180]">{user.email}</p> : null}
                     </div>
                     <div className="my-1 h-px bg-[#e7dfe9]" />
+                    <Link
+                      to="/settings"
+                      role="menuitem"
+                      onClick={() => setAccountOpen(false)}
+                      className="flex min-h-11 w-full items-center gap-2.5 rounded-xl px-3 text-left text-sm font-semibold text-[#514759] transition-colors hover:bg-[#f1eaf4] hover:text-[#4f378a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#675094]"
+                    >
+                      <Settings className="size-[17px]" />
+                      Settings
+                    </Link>
                     <button
                       type="button"
                       role="menuitem"
@@ -220,6 +229,14 @@ export function Navbar() {
                       {user?.name ?? "Account"}
                     </span>
                   </div>
+                  <Link
+                    to="/settings"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-base font-medium text-[#494551] transition-colors hover:bg-[#f2ecf3] hover:text-[#381e72]"
+                  >
+                    <Settings className="size-4" />
+                    Settings
+                  </Link>
                   <button
                     type="button"
                     onClick={handleLogout}

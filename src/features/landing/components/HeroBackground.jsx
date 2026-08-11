@@ -10,7 +10,7 @@ export function HeroBackground() {
       aria-hidden="true"
     >
       {/* The artwork stays deliberately quiet so the message remains primary. */}
-      <div className="absolute inset-0 opacity-[0.24] sm:opacity-[0.3] lg:opacity-[0.36]">
+      <div className="hero-artwork-layer absolute inset-0 opacity-[0.24] sm:opacity-[0.3] lg:opacity-[0.36]">
         <motion.img
           src={heroArtwork}
           alt=""
@@ -66,12 +66,12 @@ export function HeroBackground() {
       )}
 
       {/* A soft reading veil opens around the copy and dissolves the image edges. */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_58%_62%_at_50%_43%,rgba(254,247,255,0.82)_0%,rgba(254,247,255,0.58)_48%,rgba(254,247,255,0.08)_100%)]" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(254,247,255,0.6)_0%,transparent_18%,transparent_72%,#fef7ff_100%)]" />
+      <div className="hero-reading-veil absolute inset-0" />
+      <div className="hero-edge-veil absolute inset-0" />
 
       {/* Color echoes from the artwork add depth without introducing more detail. */}
-      <div className="absolute -left-32 top-[18%] size-80 rounded-full bg-[#65dce8]/10 blur-[90px]" />
-      <div className="absolute -right-24 top-[32%] size-96 rounded-full bg-[#dd3ee5]/10 blur-[110px]" />
+      <div className="hero-accent-glow absolute -left-32 top-[18%] size-80 rounded-full blur-[90px]" />
+      <div className="hero-accent-glow absolute -right-24 top-[32%] size-96 rounded-full blur-[110px]" />
 
       <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#9c84bd]/20 to-transparent" />
     </div>

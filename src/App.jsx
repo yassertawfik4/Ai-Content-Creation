@@ -28,6 +28,9 @@ const ConnectorsPage = lazy(() =>
 const KnowledgePage = lazy(() =>
   import("@/features/knowledge/pages/KnowledgePage").then((module) => ({ default: module.KnowledgePage })),
 );
+const SettingsPage = lazy(() =>
+  import("@/features/settings/pages/SettingsPage").then((module) => ({ default: module.SettingsPage })),
+);
 
 function App() {
   return (
@@ -42,6 +45,7 @@ function App() {
           <Route path="/generate" element={<ProtectedRoute><GeneratePage /></ProtectedRoute>} />
           <Route path="/connectors" element={<ProtectedRoute><ConnectorsPage /></ProtectedRoute>} />
           <Route path="/knowledge" element={<ProtectedRoute><KnowledgePage /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
         </Routes>
       </Suspense>
     </AuthProvider>

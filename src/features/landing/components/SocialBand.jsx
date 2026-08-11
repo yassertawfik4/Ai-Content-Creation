@@ -129,11 +129,11 @@ function OrbitingPlatform({ platform, index, prefersReducedMotion, isOrbiting })
   );
 }
 
-function JasperHub({ prefersReducedMotion }) {
+function SadaHub({ prefersReducedMotion }) {
   return (
     <div className="absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2">
       <motion.div
-        className="absolute -inset-8 rounded-full bg-[#7252bd]/20 blur-2xl"
+        className="sada-hub-glow absolute -inset-8 rounded-full blur-2xl"
         animate={
           prefersReducedMotion
             ? undefined
@@ -142,7 +142,7 @@ function JasperHub({ prefersReducedMotion }) {
         transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      <div className="absolute -inset-3 rounded-full border border-dashed border-[#7b5eb5]/45" />
+      <div className="sada-hub-ring absolute -inset-3 rounded-full border border-dashed" />
 
       <motion.div
         initial={
@@ -153,10 +153,10 @@ function JasperHub({ prefersReducedMotion }) {
         whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
         viewport={{ once: true, amount: 0.7 }}
         transition={{ type: "spring", stiffness: 170, damping: 17 }}
-        className="relative flex size-24 items-center justify-center rounded-full border border-white/60 bg-gradient-to-br from-[#5f43a4] to-[#381e72] text-4xl font-bold text-white shadow-[0_22px_55px_rgba(56,30,114,0.32)] md:size-28 md:text-5xl"
+        className="sada-hub-core relative flex size-24 items-center justify-center rounded-full border text-4xl font-bold md:size-28 md:text-5xl"
       >
         <span className="absolute inset-px rounded-full bg-[linear-gradient(145deg,rgba(255,255,255,0.18),transparent_42%)]" />
-        <span className="relative">J</span>
+        <span className="relative">S</span>
       </motion.div>
     </div>
   );
@@ -165,10 +165,10 @@ function JasperHub({ prefersReducedMotion }) {
 function OrbitTracks() {
   return (
     <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-      <div className="absolute left-1/2 top-1/2 size-[clamp(18.2rem,48vw,33.75rem)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-[#75d7e2]/40 shadow-[0_0_70px_rgba(111,209,222,0.07)]" />
-      <div className="absolute left-1/2 top-1/2 size-[clamp(11.5rem,32vw,22.5rem)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-[#9678c7]/35" />
-      <div className="absolute left-1/2 top-1/2 size-[clamp(7.5rem,18vw,12rem)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#8065b6]/10" />
-      <div className="absolute left-1/2 top-1/2 size-[clamp(18rem,46vw,32rem)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(114,82,189,0.08)_0%,rgba(114,82,189,0.025)_40%,transparent_72%)]" />
+      <div className="sada-orbit-track sada-orbit-track-outer absolute left-1/2 top-1/2 size-[clamp(18.2rem,48vw,33.75rem)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed" />
+      <div className="sada-orbit-track sada-orbit-track-middle absolute left-1/2 top-1/2 size-[clamp(11.5rem,32vw,22.5rem)] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed" />
+      <div className="sada-orbit-track sada-orbit-track-inner absolute left-1/2 top-1/2 size-[clamp(7.5rem,18vw,12rem)] -translate-x-1/2 -translate-y-1/2 rounded-full border" />
+      <div className="sada-orbit-field absolute left-1/2 top-1/2 size-[clamp(18rem,46vw,32rem)] -translate-x-1/2 -translate-y-1/2 rounded-full" />
     </div>
   );
 }
@@ -184,7 +184,7 @@ export function SocialBand({ id }) {
       className="relative overflow-hidden bg-[#fef7ff] px-4 py-24 sm:px-6 lg:px-8 lg:py-28"
     >
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#9c84bd]/20 to-transparent" />
-      <div className="pointer-events-none absolute left-1/2 top-[62%] h-72 w-[80%] -translate-x-1/2 rounded-full bg-[#805ac7]/[0.06] blur-[100px]" />
+      <div className="sada-social-ambient pointer-events-none absolute left-1/2 top-[62%] h-72 w-[80%] -translate-x-1/2 rounded-full blur-[100px]" />
 
       <div className="relative mx-auto flex max-w-[1280px] flex-col items-center">
         <motion.div
@@ -218,7 +218,7 @@ export function SocialBand({ id }) {
             />
           ))}
 
-          <JasperHub prefersReducedMotion={prefersReducedMotion} />
+          <SadaHub prefersReducedMotion={prefersReducedMotion} />
         </div>
       </div>
     </section>
