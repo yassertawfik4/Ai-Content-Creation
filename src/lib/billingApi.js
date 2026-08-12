@@ -60,14 +60,14 @@ async function billingFetch(path, options = {}) {
   return data
 }
 
-/** Public plan catalog ({ code, name, description, sortOrder, priceMonthlyCents, priceYearlyCents }). */
-export function listPlans({ signal } = {}) {
-  return billingFetch('/plans', { signal })
-}
-
 /** The signed-in user's subscription (or null). Requires a session. */
 export function getSubscription({ signal } = {}) {
   return billingFetch('/me', { signal })
+}
+
+/** The signed-in user's current generation-credit balance and reset date. */
+export function getCreditUsage({ signal } = {}) {
+  return billingFetch('/usage', { signal })
 }
 
 /**
