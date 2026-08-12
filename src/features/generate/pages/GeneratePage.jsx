@@ -96,6 +96,7 @@ import {
   subscribeToWorkflow,
   waitForContent,
   waitForStrategy,
+  waitForWorkflowBilling,
 } from '@/lib/campaignApi'
 import { ProjectIcon, forgetProjectAppearance, saveProjectAppearance } from '@/lib/projectAppearance'
 import ProjectAppearanceModal from '../components/ProjectAppearanceModal'
@@ -2664,6 +2665,46 @@ function ErrorBanner({ message, onDismiss, onRetry, title = 'Workflow failed' })
   )
 }
 
+const tokenNumber = new Intl.NumberFormat()
+
+function formatWorkflowCost(value) {
+  const cost = Number(value)
+  if (!Number.isFinite(cost)) return 'Cost unavailable'
+  return `$${cost.toLocaleString(undefined, {
+    minimumFractionDigits: 4,
+    maximumFractionDigits: 4,
+  })}`
+}
+
+function WorkflowBilling({ billing, executions = [], compact = false }) {
+  if (!billing) return null
+  const statusText = {
+    pending: 'Calculating cost…',
+    unpriced: 'Cost unavailable for this model',
+    unavailable: 'Usage unavailable',
+  }[billing.status]
+  return (
+    <section className={`${compact ? 'mt-3 rounded-xl px-3 py-2.5' : 'mb-5 rounded-2xl px-4 py-3.5'} border border-[#ddd2e3] bg-[#faf6fb]`} aria-label="Workflow token usage and cost">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#62556b]">
+        <span><strong className="text-[#302537]">{tokenNumber.format(billing.inputTokens ?? 0)}</strong> input</span>
+        <span><strong className="text-[#302537]">{tokenNumber.format(billing.outputTokens ?? 0)}</strong> output</span>
+        <span><strong className="text-[#302537]">{tokenNumber.format(billing.totalTokens ?? 0)}</strong> total tokens</span>
+        <span className="ml-auto font-bold text-[#4f378a]">{billing.status === 'ready' ? formatWorkflowCost(billing.estimatedCostUsd) : statusText}</span>
+      </div>
+      {executions.length > 1 ? (
+        <div className="mt-2 space-y-1 border-t border-[#e5dce8] pt-2">
+          {executions.map((execution, index) => (
+            <div key={execution.id} className="flex items-center justify-between gap-3 text-[11px] text-[#776b7d]">
+              <span>{execution.kind === 'strategy_section_revision' ? `Section revision ${index}` : 'Initial strategy'}</span>
+              <span>{tokenNumber.format(execution.billing?.totalTokens ?? 0)} tokens · {execution.billing?.status === 'ready' ? formatWorkflowCost(execution.billing.estimatedCostUsd) : (statusText ?? 'Cost unavailable')}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
 function ProjectHistoryDrawer({ project, chat, entries, isLoading, onClose, onOpenEntry }) {
   return (
     <AnimatePresence>
@@ -2709,6 +2750,7 @@ function ProjectHistoryDrawer({ project, chat, entries, isLoading, onClose, onOp
                     </div>
                     <p className="mt-2 text-xs text-[#807586]">{new Date(entry.createdAt).toLocaleString()}</p>
                     {entry.postCount > 0 ? <p className="mt-1 text-xs font-medium text-[#4f378a]">{entry.postCount} posts generated</p> : null}
+                    <WorkflowBilling billing={entry.billing} executions={entry.executions} compact />
                     {entry.error ? <p className="mt-2 line-clamp-2 text-xs leading-5 text-[#a1385a]">{entry.error}</p> : null}
                     {canOpen ? (
                       <button type="button" onClick={() => onOpenEntry(entry)} className="mt-3 h-9 rounded-lg bg-[#f2eafa] px-3 text-xs font-semibold text-[#381e72] transition hover:bg-[#e8dcf3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
@@ -2854,6 +2896,8 @@ function ResultsPanel({
 
         {error ? <ErrorBanner message={error} onDismiss={onDismissError} onRetry={onRetryError} title={phase === 'strategy' || (!campaign && !strategy) ? 'Strategy generation failed' : 'Content generation failed'} /> : null}
 
+        {!isGenerating ? <WorkflowBilling billing={runState?.billing} executions={runState?.executions} /> : null}
+
         <AnimatePresence mode="wait">
           {isGenerating ? (
             <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4" aria-live="polite" aria-label="Generating campaign posts">
@@ -2997,6 +3041,7 @@ export function GeneratePage() {
   const [chatPendingDelete, setChatPendingDelete] = useState(null)
   const abortRef = useRef(null)
   const navigationEpochRef = useRef(0)
+  const billingAbortRef = useRef(null)
   const sseHealthyRef = useRef(false)
   const cancelMobileRenameRef = useRef(false)
 
@@ -3010,7 +3055,24 @@ export function GeneratePage() {
     if (activeProject && activeChat) setBriefOpen(true)
   }, [activeChat, activeProject])
 
-  useEffect(() => () => abortRef.current?.abort(), [])
+  useEffect(() => () => {
+    abortRef.current?.abort()
+    billingAbortRef.current?.abort()
+  }, [])
+
+  const refreshRunBilling = useCallback((kind, runId) => {
+    billingAbortRef.current?.abort()
+    const controller = new AbortController()
+    billingAbortRef.current = controller
+    void waitForWorkflowBilling(kind, runId, {
+      signal: controller.signal,
+      onTick: (state) => setRunState((current) => mergeWorkflowStatus(current, state)),
+    }).catch((billingError) => {
+      if (billingError?.name !== 'AbortError') {
+        // Accounting is best-effort and never changes the workflow result.
+      }
+    })
+  }, [])
 
   // Live agent progress arrives over SSE. `waitForStrategy`/`waitForContent`
   // still poll the persisted run as a reconnect-safe fallback and to retrieve
@@ -3099,6 +3161,7 @@ export function GeneratePage() {
 
         if (controller.signal.aborted || navigationEpochRef.current !== navigationEpoch) return
         setRunState(finalState)
+        refreshRunBilling(runPhase, runId)
 
         if (finalState.status === 'failed') {
           const raw = finalState.error
@@ -3142,7 +3205,7 @@ export function GeneratePage() {
 
     void monitorRun()
     return () => controller.abort()
-  }, [activeProject, activeRunId, phase])
+  }, [activeProject, activeRunId, phase, refreshRunBilling])
 
   useEffect(() => {
     try {
@@ -3183,6 +3246,7 @@ export function GeneratePage() {
       setStrategy(null)
       setStrategyRunId('')
       setPhase('complete')
+      setRunState(entry)
       return true
     }
     const parsed = marketingStrategyOutputSchema.safeParse(entry.result)
@@ -3192,6 +3256,7 @@ export function GeneratePage() {
     setStrategyRunId(entry.id ?? '')
     setCampaign(null)
     setPhase('review')
+    setRunState(entry)
     return true
   }
 
