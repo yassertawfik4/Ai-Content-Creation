@@ -46,6 +46,7 @@ export function LoginPage() {
             Don&apos;t have an account?{' '}
             <Link
               to="/register"
+              state={{ from: location.state?.from }}
               className="font-semibold text-[#4f378a] underline-offset-4 hover:underline"
             >
               Sign up

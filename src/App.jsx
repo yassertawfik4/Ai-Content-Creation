@@ -37,6 +37,12 @@ const KnowledgePage = lazy(() =>
 const SettingsPage = lazy(() =>
   import("@/features/settings/pages/SettingsPage").then((module) => ({ default: module.SettingsPage })),
 );
+const BillingPage = lazy(() =>
+  import("@/features/billing/pages/BillingPage").then((module) => ({ default: module.BillingPage })),
+);
+const CheckoutPage = lazy(() =>
+  import("@/features/billing/pages/CheckoutPage").then((module) => ({ default: module.CheckoutPage })),
+);
 
 function App() {
   return (
@@ -54,6 +60,8 @@ function App() {
           <Route path="/publishing" element={<ProtectedRoute><PublishingPage /></ProtectedRoute>} />
           <Route path="/knowledge" element={<ProtectedRoute><KnowledgePage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+          <Route path="/billing" element={<ProtectedRoute><BillingPage /></ProtectedRoute>} />
+          <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
         </Routes>
       </Suspense>
     </AuthProvider>

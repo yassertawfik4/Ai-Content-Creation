@@ -13,6 +13,7 @@ import {
   ChevronRight,
   CircleAlert,
   Clock3,
+  Coins,
   Copy,
   DollarSign,
   ExternalLink,
@@ -101,6 +102,7 @@ import {
 import { ProjectIcon, forgetProjectAppearance, saveProjectAppearance } from '@/lib/projectAppearance'
 import ProjectAppearanceModal from '../components/ProjectAppearanceModal'
 import { PlatformLogo, getPlatformBrandColor, hasPlatformLogo } from '@/lib/platformBrands'
+import { getCreditUsage } from '@/lib/billingApi'
 
 const PLATFORM_ICONS = {
   instagram: Camera,
@@ -360,6 +362,7 @@ function ProjectSidebar({
   historyOpen,
   isOpen,
   onToggle,
+  creditUsage,
 }) {
   const [expandedProjectIds, setExpandedProjectIds] = useState([])
   const [collapsedProjectIds, setCollapsedProjectIds] = useState([])
@@ -735,17 +738,24 @@ function ProjectSidebar({
       <div className="mt-auto border-t border-[#f0eef2] px-2.5 pt-3">
         <div className="flex items-center gap-2 text-xs font-semibold text-[#201a25]">
           <span className="flex size-5 items-center justify-center rounded-full bg-[#eee9f6] text-[#4f378a]">
-            <Sparkles className="size-3" />
+            <Coins className="size-3" />
           </span>
-          Pro workspace
+          {creditUsage?.plan?.name ? `${creditUsage.plan.name} allowance` : 'Generation credits'}
         </div>
         <div className="mt-2.5 h-1 overflow-hidden rounded-full bg-[#f0eef2]">
-          <div className="h-full w-[64%] rounded-full bg-[#4f378a]" />
+          <div
+            className={`h-full rounded-full transition-[width] ${creditUsage?.blockedReason ? 'bg-[#ad3150]' : 'bg-[#4f378a]'}`}
+            style={{ width: `${creditUsage?.limit ? Math.max(0, Math.min(100, (creditUsage.remaining / creditUsage.limit) * 100)) : 0}%` }}
+          />
         </div>
-        <p className="mt-2 text-[11px] leading-4 text-[#9a94a3]">6,420 of 10,000 words used</p>
-        <button type="button" className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-[#4f378a] hover:underline">
+        <p className="mt-2 text-[11px] leading-4 text-[#9a94a3]">
+          {creditUsage
+            ? `${creditUsage.remaining.toLocaleString()} of ${creditUsage.limit.toLocaleString()} credits left`
+            : 'Checking your allowance…'}
+        </p>
+        <Link to="/billing" className="mt-1.5 flex min-h-8 items-center gap-1.5 text-xs font-semibold text-[#4f378a] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
           <Settings className="size-3.5" /> Manage plan
-        </button>
+        </Link>
       </div>
     </aside>
   )
@@ -942,7 +952,7 @@ function buildContentWorkflowInput(values, strategy, projectName) {
   }
 }
 
-function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, isGenerating, isLocked = false, initiallyOpen = false, onRequestClose, isModal = false }) {
+function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, isGenerating, isLocked = false, initiallyOpen = false, onRequestClose, isModal = false, creditUsage }) {
   const [isOpen, setIsOpen] = useState(initiallyOpen)
   const [currentStep, setCurrentStep] = useState(0)
   const [furthestStep, setFurthestStep] = useState(0)
@@ -1394,15 +1404,26 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
             </button>
             <button
               type="submit"
-              disabled={!currentStepComplete || isGenerating}
+              disabled={!currentStepComplete || isGenerating || (isLastStep && creditUsage?.canGenerate === false)}
               className="group relative flex h-12 min-w-0 flex-1 items-center justify-center gap-2 overflow-hidden rounded-xl bg-[#381e72] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(56,30,114,0.22)] transition-all hover:bg-[#4f378a] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] focus-visible:ring-offset-2"
             >
               <span className="absolute inset-y-0 -left-10 w-8 -skew-x-12 bg-white/20 transition-transform duration-500 group-hover:translate-x-96" />
               {isLastStep ? (isGenerating ? <LoadingRing className="size-[17px] text-[#d8ff9d]" /> : <Wand2 className="size-[17px] text-[#d8ff9d]" />) : null}
-              {isLastStep ? (isGenerating ? 'Building…' : 'Build strategy') : <>Next <ChevronRight className="size-4" /></>}
+              {isLastStep
+                ? (isGenerating ? 'Building…' : creditUsage?.canGenerate === false ? 'Credits required' : 'Build strategy')
+                : <>Next <ChevronRight className="size-4" /></>}
             </button>
           </div>
-          {!currentStepComplete ? <p className="mt-2.5 text-center text-[11px] text-[#8b818f]">Complete the required fields above to continue.</p> : <p className="mt-2.5 text-center text-[11px] text-[#8b818f]">{isLastStep ? 'Strategy first. Posts begin only after your approval.' : 'Your progress is saved as you move between steps.'}</p>}
+          {!currentStepComplete ? (
+            <p className="mt-2.5 text-center text-[11px] text-[#8b818f]">Complete the required fields above to continue.</p>
+          ) : isLastStep && creditUsage?.canGenerate === false ? (
+            <p role="status" className="mt-2.5 text-center text-[11px] font-medium text-[#9f2949]">
+              {creditUsage.blockedReason === 'payment_required' ? 'Your subscription needs attention.' : 'Your monthly credits are used.'}{' '}
+              <Link to="/billing" className="font-bold text-[#4f378a] underline underline-offset-2">Manage plan</Link>
+            </p>
+          ) : (
+            <p className="mt-2.5 text-center text-[11px] text-[#8b818f]">{isLastStep ? 'Uses 1 credit. Posts begin only after your approval.' : 'Your progress is saved as you move between steps.'}</p>
+          )}
         </div>
         </fieldset>
       </form>
@@ -2021,7 +2042,7 @@ function QualityMetricCard({ icon: Icon, value, label, description, tone = 'acce
   )
 }
 
-function StrategyReview({ strategy, strategyId, review, onConfirm, onRequestChanges, onRegenerateSection, onEdit, onStrategyChange, isSubmitting }) {
+function StrategyReview({ strategy, strategyId, review, onConfirm, onRequestChanges, onRegenerateSection, onEdit, onStrategyChange, isSubmitting, creditUsage }) {
   const [activeTab, setActiveTab] = useState('overview')
   const [reviewNote, setReviewNote] = useState(review?.reviewNote ?? '')
   const [reviewHistory, setReviewHistory] = useState([])
@@ -2430,9 +2451,9 @@ function StrategyReview({ strategy, strategyId, review, onConfirm, onRequestChan
           </div>
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <button type="button" onClick={onEdit} disabled={isSubmitting} className="strategy-secondary-action flex h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition disabled:opacity-50"><Pencil className="size-4" aria-hidden="true" />Edit brief</button>
-            <button type="button" onClick={() => onConfirm(reviewNote)} disabled={isSubmitting} className="strategy-primary-action flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-60">
+            <button type="button" onClick={() => onConfirm(reviewNote)} disabled={isSubmitting || creditUsage?.canGenerate === false} className="strategy-primary-action flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60">
               {isSubmitting ? <LoadingRing className="size-4" /> : <Wand2 className="size-4" aria-hidden="true" />}
-              {isSubmitting ? 'Starting workflow…' : 'Approve & create posts'}
+              {isSubmitting ? 'Starting workflow…' : creditUsage?.canGenerate === false ? 'Credits required' : 'Approve & create posts · 1 credit'}
             </button>
           </div>
         </div>
@@ -2787,6 +2808,7 @@ function ResultsPanel({
   onStrategyChange,
   onStartCampaign,
   canStartCampaign,
+  creditUsage,
 }) {
   const selectedPlatforms = PLATFORM_OPTIONS.filter((platform) => values.platforms.includes(platform.id))
 
@@ -2921,7 +2943,7 @@ function ResultsPanel({
               ))}
             </motion.div>
           ) : hasStrategyReview ? (
-            <StrategyReview strategy={strategy} strategyId={strategyReview?.id ?? null} review={strategyReview} onConfirm={onConfirmStrategy} onRequestChanges={onRequestStrategyChanges} onRegenerateSection={onRegenerateStrategySection} onEdit={onEditStrategy} onStrategyChange={onStrategyChange} isSubmitting={false} />
+            <StrategyReview strategy={strategy} strategyId={strategyReview?.id ?? null} review={strategyReview} onConfirm={onConfirmStrategy} onRequestChanges={onRequestStrategyChanges} onRegenerateSection={onRegenerateStrategySection} onEdit={onEditStrategy} onStrategyChange={onStrategyChange} isSubmitting={false} creditUsage={creditUsage} />
           ) : hasResults ? (
             <motion.div key="results" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6" aria-live="polite">
               <nav aria-label="Campaign sections" className="flex gap-2 overflow-x-auto rounded-2xl border border-[#ded4e2] bg-[#fffaff] p-2 shadow-[0_6px_18px_rgba(46,32,51,0.04)]">
@@ -3033,6 +3055,7 @@ export function GeneratePage() {
   const [historyOpen, setHistoryOpen] = useState(false)
   const [historyEntries, setHistoryEntries] = useState([])
   const [historyLoading, setHistoryLoading] = useState(false)
+  const [creditUsage, setCreditUsage] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [briefOpen, setBriefOpen] = useState(false)
   const [mobileRenameOpen, setMobileRenameOpen] = useState(false)
@@ -3055,9 +3078,30 @@ export function GeneratePage() {
     if (activeProject && activeChat) setBriefOpen(true)
   }, [activeChat, activeProject])
 
+  const refreshCreditUsage = useCallback(async () => {
+    try {
+      const usage = await getCreditUsage()
+      setCreditUsage(usage ?? null)
+      return usage
+    } catch {
+      // Workflow endpoints still enforce the allowance if this status request fails.
+      return null
+    }
+  }, [])
+
   useEffect(() => () => {
     abortRef.current?.abort()
     billingAbortRef.current?.abort()
+  }, [])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    getCreditUsage({ signal: controller.signal })
+      .then((usage) => setCreditUsage(usage ?? null))
+      .catch((usageError) => {
+        if (usageError?.name !== 'AbortError') setCreditUsage(null)
+      })
+    return () => controller.abort()
   }, [])
 
   const refreshRunBilling = useCallback((kind, runId) => {
@@ -3162,6 +3206,7 @@ export function GeneratePage() {
         if (controller.signal.aborted || navigationEpochRef.current !== navigationEpoch) return
         setRunState(finalState)
         refreshRunBilling(runPhase, runId)
+        void refreshCreditUsage()
 
         if (finalState.status === 'failed') {
           const raw = finalState.error
@@ -3193,6 +3238,7 @@ export function GeneratePage() {
         }
       } catch (error) {
         if (error?.name === 'AbortError') return
+        if (error?.credits) setCreditUsage(error.credits)
         setError(typeof error?.message === 'string' ? error.message : 'The workflow could not be restored after refresh.')
         setPhase(runPhase === 'strategy' ? 'idle' : 'review')
       } finally {
@@ -3205,7 +3251,7 @@ export function GeneratePage() {
 
     void monitorRun()
     return () => controller.abort()
-  }, [activeProject, activeRunId, phase, refreshRunBilling])
+  }, [activeProject, activeRunId, phase, refreshCreditUsage, refreshRunBilling])
 
   useEffect(() => {
     try {
@@ -3568,6 +3614,13 @@ export function GeneratePage() {
     event?.preventDefault()
     if (isGenerating) return
 
+    if (creditUsage?.canGenerate === false) {
+      setError(creditUsage.blockedReason === 'payment_required'
+        ? 'Your subscription needs attention before another generation can start.'
+        : 'You have used all generation credits for this period. Upgrade your plan or wait for the reset.')
+      return
+    }
+
     setError('')
     setErrors({})
 
@@ -3613,8 +3666,10 @@ export function GeneratePage() {
       const { runId } = await startStrategy(parsed.data, { signal: controller.signal, projectId: activeProject, chatId: activeChat })
       if (controller.signal.aborted) return
       setActiveRunId(runId)
+      void refreshCreditUsage()
     } catch (err) {
       if (err?.name === 'AbortError') return
+      if (err?.credits) setCreditUsage(err.credits)
       setError(typeof err?.message === 'string' ? err.message : 'Something went wrong while building the strategy.')
       setPhase('idle')
     }
@@ -3627,6 +3682,13 @@ export function GeneratePage() {
 
   const handleConfirmStrategy = async (note) => {
     if (!strategy || isGenerating) return
+
+    if (creditUsage?.canGenerate === false) {
+      setError(creditUsage.blockedReason === 'payment_required'
+        ? 'Your subscription needs attention before content can be created.'
+        : 'You have used all generation credits for this period. Upgrade your plan or wait for the reset.')
+      return
+    }
 
     const sourceValues = submittedValues ?? values
     if (!strategyRunId) {
@@ -3678,8 +3740,10 @@ export function GeneratePage() {
       const { runId } = await startContent(contentInput, { signal: controller.signal, chatId: activeChat, strategyId: strategyRunId })
       if (controller.signal.aborted) return
       setActiveRunId(runId)
+      void refreshCreditUsage()
     } catch (err) {
       if (err?.name === 'AbortError') return
+      if (err?.credits) setCreditUsage(err.credits)
       setError(typeof err?.message === 'string' ? err.message : 'Something went wrong while creating the posts.')
       setPhase('review')
     }
@@ -3767,6 +3831,7 @@ export function GeneratePage() {
       setError(typeof cancelError?.message === 'string' ? cancelError.message : 'Could not cancel this workflow run.')
     } finally {
       setCanceling(false)
+      void refreshCreditUsage()
     }
   }
 
@@ -3840,6 +3905,7 @@ export function GeneratePage() {
           historyOpen={historyOpen}
           isOpen={sidebarOpen}
           onToggle={() => setSidebarOpen((current) => !current)}
+          creditUsage={creditUsage}
         />
         <ResultsPanel
           campaign={campaign}
@@ -3860,6 +3926,7 @@ export function GeneratePage() {
           onStrategyChange={setStrategy}
           onStartCampaign={openCampaignBrief}
           canStartCampaign={Boolean(activeProject && activeChat)}
+          creditUsage={creditUsage}
         />
       </div>
       <ProjectAppearanceModal
@@ -3880,6 +3947,7 @@ export function GeneratePage() {
         onFillTestData={handleFillTestData}
         isGenerating={isGenerating}
         isLocked={!activeProject || !activeChat}
+        creditUsage={creditUsage}
       />
       {isGenerating ? (
         <div className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full bg-[#381e72] px-4 py-2 text-xs font-semibold text-white shadow-lg">
