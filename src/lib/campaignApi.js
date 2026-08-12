@@ -64,8 +64,38 @@ function workflowState(record) {
   }
   return {
     ...record,
+    billing: normalizeBilling(record.billing),
+    executions: Array.isArray(record.executions) ? record.executions : [],
     status: statusByBackendStatus[record.status] ?? 'failed',
     result: record.output,
+  }
+}
+
+function normalizeBilling(billing) {
+  const statuses = new Set(['pending', 'ready', 'unpriced', 'unavailable'])
+  if (!billing || !statuses.has(billing.status)) {
+    return {
+      status: 'unavailable',
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      estimatedCostUsd: null,
+    }
+  }
+  return {
+    status: billing.status,
+    inputTokens: Number.isFinite(billing.inputTokens) ? billing.inputTokens : 0,
+    outputTokens: Number.isFinite(billing.outputTokens) ? billing.outputTokens : 0,
+    totalTokens: Number.isFinite(billing.totalTokens) ? billing.totalTokens : 0,
+    estimatedCostUsd: typeof billing.estimatedCostUsd === 'string' ? billing.estimatedCostUsd : null,
+  }
+}
+
+function normalizeHistoryEntry(entry) {
+  return {
+    ...entry,
+    billing: normalizeBilling(entry?.billing),
+    executions: Array.isArray(entry?.executions) ? entry.executions : [],
   }
 }
 
@@ -194,17 +224,19 @@ export function deleteChat(_projectId, campaignId, { signal } = {}) {
 }
 
 export async function getProjectHistory(projectId, { signal } = {}) {
-  return request(`/projects/${encodeURIComponent(projectId)}/history`, {
+  const entries = await request(`/projects/${encodeURIComponent(projectId)}/history`, {
     headers: { Accept: 'application/json' },
     signal,
   })
+  return Array.isArray(entries) ? entries.map(normalizeHistoryEntry) : []
 }
 
-export function getChatHistory(_projectId, campaignId, { signal } = {}) {
-  return request(`/campaigns/${encodeURIComponent(campaignId)}/history`, {
+export async function getChatHistory(_projectId, campaignId, { signal } = {}) {
+  const entries = await request(`/campaigns/${encodeURIComponent(campaignId)}/history`, {
     headers: { Accept: 'application/json' },
     signal,
   })
+  return Array.isArray(entries) ? entries.map(normalizeHistoryEntry) : []
 }
 
 export function reviewStrategy(strategyId, { action, note, output }, { signal } = {}) {
@@ -336,6 +368,21 @@ export function waitForStrategy(runId, options = {}) {
 
 export function waitForContent(runId, options = {}) {
   return waitForWorkflow('content', runId, options)
+}
+
+export async function waitForWorkflowBilling(
+  kind,
+  runId,
+  { signal, intervalMs = 2000, maxAttempts = 15, onTick } = {},
+) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+    const state = await getWorkflow(kind, runId, { signal })
+    onTick?.(state, attempt)
+    if (state.billing.status !== 'pending') return state
+    await abortableDelay(intervalMs, signal)
+  }
+  return getWorkflow(kind, runId, { signal })
 }
 
 export function getMetaConnectorStatus({ signal } = {}) {
