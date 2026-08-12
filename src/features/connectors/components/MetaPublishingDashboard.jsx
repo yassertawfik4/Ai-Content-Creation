@@ -27,6 +27,7 @@ import {
   startMetaConnection,
   syncMetaConnection,
 } from "@/lib/campaignApi";
+import { getErrorMessage, isAbortError } from "@/lib/errors";
 import demoPostImage from "@/assets/hero-social-studio.webp";
 
 const STATUS_STYLE = {
@@ -267,7 +268,7 @@ export function MetaPublishingDashboard() {
         setCampaigns(campaignItems);
         setCampaignId(campaignItems[0]?.id ?? "");
       })
-      .catch((cause) => cause?.name !== "AbortError" && setError(cause.message))
+      .catch((cause) => !isAbortError(cause) && setError(getErrorMessage(cause)))
       .finally(() => setLoading(false));
     return () => controller.abort();
   }, []);
@@ -280,7 +281,7 @@ export function MetaPublishingDashboard() {
         setContents(items);
         setContentId(items[0]?.id ?? "");
       })
-      .catch((cause) => cause?.name !== "AbortError" && setError(cause.message));
+      .catch((cause) => !isAbortError(cause) && setError(getErrorMessage(cause)));
     return () => controller.abort();
   }, [campaignId]);
 
@@ -300,7 +301,7 @@ export function MetaPublishingDashboard() {
       await operation();
       if (successMessage) setMessage(successMessage);
     } catch (cause) {
-      setError(cause.message);
+      setError(getErrorMessage(cause));
     } finally {
       setBusy("");
     }
