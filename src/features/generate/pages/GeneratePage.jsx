@@ -4,7 +4,6 @@ import {
   AlertTriangle,
   AtSign,
   BarChart3,
-  Bell,
   BriefcaseBusiness,
   CalendarDays,
   Camera,
@@ -132,10 +131,10 @@ const WORKFLOW_STEPS = [
   { id: 'research', eventIds: ['build-brief', 'content-research'], label: 'Research', description: 'Builds the content brief and gathers current audience and trend signals.' },
   { id: 'strategize', eventIds: ['content-strategy'], label: 'Strategy', description: 'Turns the research into a narrative, pillars, and platform direction.' },
   { id: 'generate-content', eventIds: ['generate-content'], label: 'Copywriting', description: 'Writes the campaign posts for each selected platform.' },
+  { id: 'qa', eventIds: ['content-preflight', 'qa-review', 'content-approval'], label: 'Editor QA', description: 'Checks claims, platform rules, and editorial quality.' },
   { id: 'generate-visuals', eventIds: ['generate-visuals'], label: 'Visual direction', description: 'Creates a complete visual prompt for every post.' },
   { id: 'generate-images', eventIds: ['generate-visuals'], label: 'Image generation', optional: 'images', description: 'Renders an image asset from each approved visual direction.' },
   { id: 'generate-hashtags', eventIds: ['generate-hashtags'], label: 'Hashtags & SEO', description: 'Adds platform-aware hashtags and search keywords.' },
-  { id: 'qa', eventIds: ['content-preflight', 'qa-review', 'content-approval'], label: 'Editor QA', description: 'Checks claims, platform rules, and editorial quality.' },
   { id: 'schedule', eventIds: ['schedule', 'claim-audit'], label: 'Calendar', description: 'Schedules the posts and completes the final claim audit.' },
 ]
 
@@ -188,7 +187,8 @@ const navLinks = [
   { label: 'Home', to: '/' },
   { label: 'Generate', to: '/generate' },
   { label: 'Connectors', to: '/connectors' },
-  { label: 'Pricing', href: '/#pricing' },
+  { label: 'Publishing', to: '/publishing' },
+  { label: 'Knowledge', to: '/knowledge' },
 ]
 
 function AppHeader() {
@@ -245,10 +245,10 @@ function AppHeader() {
         </span>
       </Link>
 
-      <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-7 md:flex">
+      <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-5 md:flex lg:gap-7 xl:gap-8">
         {navLinks.map((link) => {
           const isActive = link.to ? location.pathname === link.to : false
-          const className = `text-sm transition-colors ${isActive ? 'font-semibold text-[#381e72]' : 'text-[#6a6170] hover:text-[#381e72]'}`
+          const className = `whitespace-nowrap text-[15px] transition-colors lg:text-base ${isActive ? 'font-semibold text-[#381e72]' : 'text-[#6a6170] hover:text-[#381e72]'}`
           return link.to ? (
             <Link key={link.to} to={link.to} className={className}>
               {link.label}
@@ -262,27 +262,7 @@ function AppHeader() {
       </nav>
 
       <div className="ml-auto flex items-center gap-1.5">
-        <button
-          type="button"
-          className="hidden h-10 min-w-48 items-center gap-2 rounded-xl border border-[#ded7e3] bg-white px-3 text-sm text-[#776e7d] shadow-[0_1px_2px_rgba(29,27,32,0.04)] transition-colors hover:border-[#a99eb4] hover:text-[#201a25] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] md:flex"
-          aria-label="Search projects"
-        >
-          <Search className="size-4" />
-          <span>Search anything</span>
-          <kbd className="ml-auto rounded-md bg-[#f3edf5] px-1.5 py-0.5 text-[10px] text-[#625b71]">⌘ K</kbd>
-        </button>
-        {[HelpCircle, Bell].map((Icon, index) => (
-          <button
-            key={index}
-            type="button"
-            aria-label={index === 0 ? 'Help and resources' : 'Notifications'}
-            className="relative flex size-10 items-center justify-center rounded-xl text-[#625b71] transition-colors hover:bg-[#f3edf5] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
-          >
-            <Icon className="size-[19px]" />
-            {index === 1 ? <span className="absolute right-2.5 top-2.5 size-1.5 rounded-full bg-[#ad3150] ring-2 ring-[#fffaff]" /> : null}
-          </button>
-        ))}
-        <div ref={profileMenuRef} className="relative ml-1">
+        <div ref={profileMenuRef} className="relative">
           <button
             ref={profileButtonRef}
             type="button"
@@ -595,7 +575,7 @@ function ProjectSidebar({
                     }}
                     maxLength={80}
                     aria-label={`New name for ${project.name}`}
-                    className="h-8 min-w-0 flex-1 rounded-md border border-[#c8bcd8] bg-white px-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#201a25] outline-none ring-2 ring-[#ece4f5] selection:bg-[#e2d6f4]"
+                    className="h-8 min-w-0 flex-1 rounded-md border border-[#c8bcd8] bg-white px-2 text-[13px] font-semibold uppercase tracking-[0.1em] text-[#201a25] outline-none ring-2 ring-[#ece4f5] selection:bg-[#e2d6f4]"
                   />
                 ) : (
                   <button
@@ -606,8 +586,8 @@ function ProjectSidebar({
                     title={project.name}
                     className="flex min-w-0 flex-1 items-center gap-1.5 self-stretch rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
                   >
-                    <ProjectIcon iconId={project.iconId} className="size-[15px] shrink-0" style={{ color: project.color }} aria-hidden="true" />
-                    <span className={`min-w-0 truncate text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors ${isActive ? 'text-[#4f378a]' : 'text-[#9a94a3] group-hover/project:text-[#6b6577]'}`}>
+                    <ProjectIcon iconId={project.iconId} className="size-[17px] shrink-0" style={{ color: project.color }} aria-hidden="true" />
+                    <span className={`min-w-0 truncate text-[13px] font-semibold uppercase tracking-[0.12em] transition-colors ${isActive ? 'text-[#4f378a]' : 'text-[#9a94a3] group-hover/project:text-[#6b6577]'}`}>
                       {project.name}
                     </span>
                     <ChevronDown className={`size-3 shrink-0 text-[#b8b2c0] transition-transform duration-200 ${isExpanded ? '' : '-rotate-90'}`} aria-hidden="true" />
@@ -661,7 +641,7 @@ function ProjectSidebar({
                         className={`group/chat relative rounded-lg transition-colors ${selected ? 'bg-[#f1eef6]' : 'hover:bg-[#f7f6f9]'}`}
                       >
                         {editingChatId === chat.id ? (
-                          <div className="flex min-h-9 items-center px-1.5">
+                          <div className="flex min-h-9 items-center pl-5 pr-1.5">
                             <input
                               autoFocus
                               value={chatTitleDraft}
@@ -678,12 +658,12 @@ function ProjectSidebar({
                               }}
                               maxLength={120}
                               aria-label={`New name for ${chat.title}`}
-                              className="h-8 min-w-0 flex-1 rounded-md border border-[#c8bcd8] bg-white px-2 text-[13px] font-medium text-[#201a25] outline-none ring-2 ring-[#ece4f5]"
+                              className="h-8 min-w-0 flex-1 rounded-md border border-[#c8bcd8] bg-white px-2 text-[12px] font-medium text-[#201a25] outline-none ring-2 ring-[#ece4f5]"
                             />
                           </div>
                         ) : (
-                          <button type="button" onClick={() => selectChat(chat.id, project.id)} aria-current={selected ? 'page' : undefined} className="flex min-h-9 w-full items-center rounded-lg pl-2.5 pr-9 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
-                            <span className={`min-w-0 flex-1 truncate text-[13px] ${selected ? 'font-semibold text-[#201a25]' : 'font-medium text-[#4a4453]'}`} title={chat.title}>{chat.title}</span>
+                          <button type="button" onClick={() => selectChat(chat.id, project.id)} aria-current={selected ? 'page' : undefined} className="flex min-h-9 w-full items-center rounded-lg pl-5 pr-9 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
+                            <span className={`min-w-0 flex-1 truncate text-[12px] ${selected ? 'font-semibold text-[#201a25]' : 'font-medium text-[#4a4453]'}`} title={chat.title}>{chat.title}</span>
                           </button>
                         )}
                         {editingChatId !== chat.id ? (
@@ -716,7 +696,7 @@ function ProjectSidebar({
                     <button
                       type="button"
                       onClick={() => createChatInProject(project.id)}
-                      className="flex min-h-9 w-full items-center gap-2 rounded-lg pl-2.5 pr-2 text-left text-[13px] font-medium text-[#9a94a3] transition-colors hover:bg-[#f7f6f9] hover:text-[#4f378a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                      className="flex min-h-9 w-full items-center gap-2 rounded-lg pl-5 pr-2 text-left text-[12px] font-medium text-[#9a94a3] transition-colors hover:bg-[#f7f6f9] hover:text-[#4f378a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
                     >
                       <Plus className="size-3.5 shrink-0" /> Start the first chat
                     </button>
@@ -949,6 +929,61 @@ function buildContentWorkflowInput(values, strategy, projectName) {
       : EMPTY_VALUES.postsPerWeek,
     generateImages: values?.generateImages !== false,
     requireApproval: false,
+  }
+}
+
+function hasBriefContent(values) {
+  return Boolean(values?.brandName?.trim() || values?.product?.trim() || values?.targetAudience?.trim())
+}
+
+function platformsFromChannels(channels) {
+  if (!Array.isArray(channels)) return []
+  const normalize = (name) => String(name ?? '').toLowerCase().replace(/[\s-]+/g, '_')
+  return channels
+    .map((channel) => {
+      const key = normalize(typeof channel === 'string' ? channel : channel?.channel)
+      if (!key) return ''
+      if (key === 'twitter') return 'x'
+      if (key === 'youtube' || key === 'shorts') return 'youtube_shorts'
+      return PLATFORM_OPTIONS.some((option) => option.id === key) ? key : ''
+    })
+    .filter((id, index, all) => id && all.indexOf(id) === index)
+}
+
+// "Edit brief" can be reached long after the brief was submitted — reopening a
+// chat from history restores only the strategy output, never the form values.
+// Rebuild the brief from the strategy so the form is never blank behind it.
+function valuesFromStrategy(strategy, projectName) {
+  if (!strategy) return { ...EMPTY_VALUES, platforms: [...EMPTY_VALUES.platforms] }
+
+  const product = strategy.product ?? {}
+  const campaignStrategy = strategy.campaignStrategy ?? {}
+  const positioning = strategy.stp?.positioning ?? {}
+  const creative = campaignStrategy.creativeDirection ?? {}
+  const segments = Array.isArray(strategy.stp?.segments) ? strategy.stp.segments : []
+
+  const brandVoice = firstNonBlankString(positioning.toneOfVoice, EMPTY_VALUES.brandVoice)
+  const matchingPreset = BRAND_VOICE_PRESETS.find((preset) => preset.value === brandVoice)
+  const keyMessages = (Array.isArray(creative.keyMessages) ? creative.keyMessages : [])
+    .filter((message) => typeof message === 'string' && message.trim())
+  const platforms = platformsFromChannels(campaignStrategy.primaryChannels)
+
+  return {
+    ...EMPTY_VALUES,
+    brandName: firstNonBlankString(product.name, projectName),
+    product: firstNonBlankString(product.valueProposition, product.name, campaignStrategy.summary),
+    industry: firstNonBlankString(product.type),
+    businessType: firstNonBlankString(product.businessType, campaignStrategy.audienceStrategy?.salesMotion),
+    pricing: firstNonBlankString(product.pricingNotes),
+    targetAudience: firstNonBlankString(
+      campaignStrategy.audienceStrategy?.primaryAudience,
+      segments[0]?.label,
+      positioning.positioningStatement,
+    ),
+    brandVoice,
+    voicePreset: matchingPreset?.id ?? 'custom',
+    platforms: platforms.length ? platforms : [...EMPTY_VALUES.platforms],
+    keyMessagesText: keyMessages.join('\n'),
   }
 }
 
@@ -1705,7 +1740,49 @@ function StrategySummary({ strategy }) {
   )
 }
 
+function formatQualityStatus(status) {
+  return String(status ?? 'Review needed')
+    .replaceAll('_', ' ')
+    .replaceAll('-', ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (character) => character.toUpperCase())
+}
+
+// A bare number reads as arbitrary; the ring says the score is out of 100.
+function ScoreRing({ score, size = 60, stroke = 5 }) {
+  const parsed = Number(score)
+  const value = Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : null
+  const radius = (size - stroke) / 2
+  const circumference = 2 * Math.PI * radius
+
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90" aria-hidden="true">
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" strokeWidth={stroke} className="strategy-score-track" />
+        {value === null ? null : (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={circumference * (1 - value / 100)}
+            className="strategy-score-arc"
+          />
+        )}
+      </svg>
+      <span className="strategy-agent-title absolute inset-0 flex items-center justify-center text-[17px] font-bold tabular-nums">
+        {value === null ? '--' : value}
+      </span>
+      <span className="sr-only">{value === null ? 'Plan quality score unavailable' : `Plan quality score ${value} out of 100`}</span>
+    </div>
+  )
+}
+
 function StrategyOverview({ strategy }) {
+  const [summaryExpanded, setSummaryExpanded] = useState(false)
   if (!strategy) return null
 
   const product = strategy.product ?? {}
@@ -1720,6 +1797,17 @@ function StrategyOverview({ strategy }) {
   const channels = Array.isArray(campaign.primaryChannels) ? campaign.primaryChannels : []
   const recommendations = Array.isArray(campaign.campaignRecommendations) ? campaign.campaignRecommendations : []
 
+  const openIssues = Array.isArray(quality.issues) ? quality.issues.length : 0
+  const summary = typeof campaign.summary === 'string' ? campaign.summary.trim() : ''
+  // The generated summary is one long unbroken block. Clamp it to a readable
+  // opening rather than pushing the rest of the plan below the fold.
+  const summaryIsLong = summary.length > 320
+  const heroStats = [
+    { label: 'Personas', value: personas.length, icon: Users },
+    { label: 'Objectives', value: objectives.length, icon: Target },
+    { label: 'Channels', value: channels.length, icon: BarChart3 },
+  ]
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 12 }}
@@ -1729,21 +1817,62 @@ function StrategyOverview({ strategy }) {
       <div className="strategy-overview-hero relative overflow-hidden border-b px-5 py-6 sm:px-7 sm:py-7">
         <div className="strategy-hero-orb absolute -right-10 -top-20 size-64 rounded-full border blur-[1px]" />
         <div className="strategy-hero-ring absolute -bottom-28 right-24 size-52 rounded-full border" />
-        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-          <div className="max-w-2xl">
-            <div className="strategy-agent-eyebrow mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.17em]">
-              <Sparkles className="size-3.5" /> Strategy ready for review
+        <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-8">
+          <div className="min-w-0">
+            <div className="strategy-agent-eyebrow mb-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[11px] font-bold uppercase tracking-[0.17em]">
+              <Sparkles className="size-3.5 shrink-0" aria-hidden="true" />
+              Strategy ready for review
+              {product.type ? <span className="strategy-hero-chip rounded-full px-2 py-0.5 text-[10px] tracking-[0.1em]">{product.type}</span> : null}
             </div>
-            <h3 className="strategy-agent-title font-display text-[32px] leading-[1.02] tracking-[-0.8px] sm:text-[40px]">A point of view worth building from.</h3>
-            <p className="strategy-agent-description mt-3 max-w-xl text-sm leading-6">{campaign.summary}</p>
+            <h3 className="strategy-agent-title font-display text-[30px] leading-[1.06] tracking-[-0.7px] sm:text-[38px]">
+              {firstNonBlankString(product.name, 'Your campaign strategy')}
+            </h3>
+            {summary ? (
+              <p
+                id="strategy-hero-summary"
+                className={`strategy-agent-description mt-3 max-w-[62ch] whitespace-pre-line text-sm leading-6 ${summaryIsLong && !summaryExpanded ? 'line-clamp-4' : ''}`}
+              >
+                {summary}
+              </p>
+            ) : null}
+            {summaryIsLong ? (
+              <button
+                type="button"
+                onClick={() => setSummaryExpanded((current) => !current)}
+                aria-expanded={summaryExpanded}
+                aria-controls="strategy-hero-summary"
+                className="strategy-hero-toggle mt-2 inline-flex items-center gap-1.5 rounded-md text-xs font-semibold transition"
+              >
+                {summaryExpanded ? 'Show less' : 'Read the full summary'}
+                <ChevronDown className={`size-3.5 transition-transform ${summaryExpanded ? 'rotate-180' : ''}`} aria-hidden="true" />
+              </button>
+            ) : null}
           </div>
-          <div className="strategy-quality-score flex shrink-0 items-center gap-3 rounded-2xl border px-4 py-3 backdrop-blur-sm">
-            <div className="strategy-score-value flex size-12 items-center justify-center rounded-full border text-lg font-bold">
-              {quality.score ?? '--'}
+
+          <div className="flex flex-col gap-3">
+            <div className="strategy-quality-score rounded-2xl border p-4 backdrop-blur-sm">
+              <div className="flex items-center gap-3.5">
+                <ScoreRing score={quality.score} />
+                <div className="min-w-0">
+                  <p className="strategy-agent-description text-[10px] font-bold uppercase tracking-[0.14em]">Plan quality</p>
+                  <p className="strategy-agent-title mt-0.5 truncate text-[15px] font-semibold">{formatQualityStatus(quality.status)}</p>
+                </div>
+              </div>
+              <p className="strategy-agent-description strategy-hero-divider mt-3 pt-3 text-xs leading-5">
+                {openIssues > 0
+                  ? `${openIssues} finding${openIssues === 1 ? '' : 's'} to resolve before approving.`
+                  : 'No open findings. This plan is ready for your approval.'}
+              </p>
             </div>
-            <div>
-              <p className="strategy-agent-description text-[10px] font-bold uppercase tracking-[0.14em]">Plan quality</p>
-              <p className="strategy-agent-title mt-0.5 text-sm font-semibold capitalize">{String(quality.status ?? 'review')}</p>
+
+            <div className="grid grid-cols-3 gap-2">
+              {heroStats.map(({ label, value, icon: Icon }) => (
+                <div key={label} className="strategy-hero-stat rounded-xl px-2 py-2.5 text-center">
+                  <Icon className="mx-auto size-3.5 opacity-70" aria-hidden="true" />
+                  <p className="strategy-agent-title mt-1.5 text-lg font-semibold leading-none tabular-nums">{value}</p>
+                  <p className="strategy-agent-description mt-1 text-[10px] font-semibold uppercase tracking-[0.1em]">{label}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -1866,6 +1995,8 @@ function StrategyOverview({ strategy }) {
     </motion.section>
   )
 }
+
+const TAB_SPRING = { type: 'spring', stiffness: 420, damping: 34, mass: 0.7 }
 
 const STRATEGY_AGENT_TABS = [
   { id: 'overview', label: 'Overview', shortLabel: 'Start here', description: 'Strategy at a glance', icon: Sparkles },
@@ -2044,6 +2175,7 @@ function QualityMetricCard({ icon: Icon, value, label, description, tone = 'acce
 
 function StrategyReview({ strategy, strategyId, review, onConfirm, onRequestChanges, onRegenerateSection, onEdit, onStrategyChange, isSubmitting, creditUsage }) {
   const [activeTab, setActiveTab] = useState('overview')
+  const [tabDirection, setTabDirection] = useState(1)
   const [reviewNote, setReviewNote] = useState(review?.reviewNote ?? '')
   const [reviewHistory, setReviewHistory] = useState([])
 
@@ -2077,11 +2209,7 @@ function StrategyReview({ strategy, strategyId, review, onConfirm, onRequestChan
   const qualityNextDecisions = Array.isArray(quality.nextDecisions) ? quality.nextDecisions : []
   const qualityEvidenceSources = Array.isArray(quality.evidenceSources) ? quality.evidenceSources : []
   const qualityIssueCount = qualityIssues.length
-  const qualityStatusLabel = String(quality.status ?? 'Review needed')
-    .replaceAll('_', ' ')
-    .replaceAll('-', ' ')
-    .toLowerCase()
-    .replace(/\b\w/g, (character) => character.toUpperCase())
+  const qualityStatusLabel = formatQualityStatus(quality.status)
 
   const updatePath = (path, value) => {
     onStrategyChange((current) => {
@@ -2099,22 +2227,36 @@ function StrategyReview({ strategy, strategyId, review, onConfirm, onRequestChan
     })
   }
 
-  const handleTabKeyDown = (event) => {
-    const tabButtons = Array.from(event.currentTarget.closest('[role="tablist"]')?.querySelectorAll('[role="tab"]') ?? [])
-    const currentIndex = tabButtons.indexOf(event.currentTarget)
-    if (currentIndex < 0) return
+  // The rail only mounts three tabs at a time, so arrow keys walk the full tab
+  // list by index rather than by the buttons currently in the DOM. The travel
+  // direction drives which side entering and leaving tabs animate from.
+  const selectTab = (id, direction) => {
+    if (id === activeTab) return
+    setTabDirection(direction)
+    setActiveTab(id)
+  }
 
+  const goToTabIndex = (index, { focus = false } = {}) => {
+    const total = STRATEGY_AGENT_TABS.length
+    const nextTab = STRATEGY_AGENT_TABS[((index % total) + total) % total]
+    selectTab(nextTab.id, index > activeTabIndex ? 1 : -1)
+    if (focus) {
+      requestAnimationFrame(() => {
+        document.getElementById(`strategy-tab-${nextTab.id}`)?.focus()
+      })
+    }
+  }
+
+  const handleTabKeyDown = (event) => {
     let nextIndex
-    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIndex = (currentIndex + 1) % tabButtons.length
-    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIndex = (currentIndex - 1 + tabButtons.length) % tabButtons.length
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIndex = activeTabIndex + 1
+    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIndex = activeTabIndex - 1
     else if (event.key === 'Home') nextIndex = 0
-    else if (event.key === 'End') nextIndex = tabButtons.length - 1
+    else if (event.key === 'End') nextIndex = STRATEGY_AGENT_TABS.length - 1
     else return
 
     event.preventDefault()
-    const nextButton = tabButtons[nextIndex]
-    setActiveTab(nextButton.dataset.tabId)
-    nextButton.focus()
+    goToTabIndex(nextIndex, { focus: true })
   }
 
   const renderTab = () => {
@@ -2396,48 +2538,115 @@ function StrategyReview({ strategy, strategyId, review, onConfirm, onRequestChan
 
   return (
     <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="strategy-review strategy-review-shell overflow-hidden rounded-[24px] border border-border shadow-[0_18px_45px_rgba(46,32,51,0.09)] lg:overflow-visible">
-      <div className="grid items-start lg:grid-cols-[232px_minmax(0,1fr)]">
-        <aside className="strategy-tab-rail border-b border-border p-3 sm:p-4 lg:sticky lg:top-4 lg:z-10 lg:m-4 lg:mr-0 lg:self-start lg:rounded-2xl lg:border lg:p-3.5 lg:shadow-[0_8px_24px_rgba(46,32,51,0.08)]">
-          <div className="mb-3 hidden px-1.5 lg:block">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary">Strategy workspace</p>
-              <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">{activeTabIndex + 1}/{STRATEGY_AGENT_TABS.length}</span>
-            </div>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">Review the plan in order, then approve.</p>
-            <div className="mt-3 h-1 overflow-hidden rounded-full bg-muted" aria-hidden="true"><span className="strategy-nav-progress block h-full rounded-full" style={{ width: `${((activeTabIndex + 1) / STRATEGY_AGENT_TABS.length) * 100}%` }} /></div>
+      <div className="strategy-tab-rail flex flex-col gap-3 border-b border-border px-3 py-3 sm:px-5 sm:py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary">Strategy workspace</p>
+            <span className="text-[10px] font-semibold tabular-nums text-muted-foreground">{activeTabIndex + 1}/{STRATEGY_AGENT_TABS.length}</span>
           </div>
-          <div className="grid grid-cols-4 gap-1.5 lg:flex lg:flex-col" role="tablist" aria-label="Strategy sections">
-            {STRATEGY_AGENT_TABS.map(({ id, label, shortLabel, description, icon: Icon }) => {
-              const selected = activeTab === id
-              return (
-                <button
-                  key={id}
-                  id={`strategy-tab-${id}`}
-                  data-tab-id={id}
-                  type="button"
-                  role="tab"
-                  aria-selected={selected}
-                  aria-controls={`strategy-panel-${id}`}
-                  aria-label={label}
-                  tabIndex={selected ? 0 : -1}
-                  onClick={() => setActiveTab(id)}
-                  onKeyDown={handleTabKeyDown}
-                  className={`strategy-tab flex min-h-[66px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1.5 py-2 text-center transition duration-200 lg:min-h-0 lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:py-2.5 lg:text-left ${selected ? 'is-active' : ''}`}
-                >
-                  <span className="strategy-tab-icon flex size-8 shrink-0 items-center justify-center rounded-lg"><Icon className="size-4" aria-hidden="true" /></span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-[10px] font-semibold sm:text-xs lg:text-[13px]">{shortLabel}</span>
-                    <span className="mt-0.5 hidden truncate text-[10px] lg:block">{description}</span>
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-        </aside>
-
-        <div id={`strategy-panel-${activeTab}`} role="tabpanel" aria-labelledby={`strategy-tab-${activeTab}`} aria-label={activeTabConfig.label} className="min-w-0 p-3 sm:p-5 lg:p-6">
-          {renderTab()}
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">Review the plan in order, then approve.</p>
+          <div className="mt-2 h-1 w-full max-w-[200px] overflow-hidden rounded-full bg-muted" aria-hidden="true"><span className="strategy-nav-progress block h-full rounded-full" style={{ width: `${((activeTabIndex + 1) / STRATEGY_AGENT_TABS.length) * 100}%` }} /></div>
         </div>
+
+        <div className="strategy-tab-slider flex min-w-0 items-center justify-between gap-1 rounded-full p-1 sm:justify-end sm:gap-1.5">
+          <button
+            type="button"
+            onClick={() => goToTabIndex(activeTabIndex - 1)}
+            aria-label={`Previous section: ${STRATEGY_AGENT_TABS[(activeTabIndex - 1 + STRATEGY_AGENT_TABS.length) % STRATEGY_AGENT_TABS.length].label}`}
+            className="strategy-tab-arrow flex size-8 shrink-0 items-center justify-center rounded-full transition"
+          >
+            <ChevronRight className="size-4 rotate-180" aria-hidden="true" />
+          </button>
+
+          <div className="relative flex min-w-0 items-center gap-1 sm:gap-1.5" role="tablist" aria-label="Strategy sections">
+            <AnimatePresence initial={false} mode="popLayout">
+              {[-1, 0, 1].map((offset) => {
+                const index = (activeTabIndex + offset + STRATEGY_AGENT_TABS.length) % STRATEGY_AGENT_TABS.length
+                const { id, label, shortLabel, description, icon: Icon } = STRATEGY_AGENT_TABS[index]
+                const selected = offset === 0
+                return (
+                  <motion.button
+                    key={id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.8, x: tabDirection * 28 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.8, x: tabDirection * -28 }}
+                    transition={TAB_SPRING}
+                    id={`strategy-tab-${id}`}
+                    data-tab-id={id}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    aria-controls={`strategy-panel-${id}`}
+                    aria-label={label}
+                    title={label}
+                    tabIndex={selected ? 0 : -1}
+                    onClick={() => selectTab(id, offset || 1)}
+                    onKeyDown={handleTabKeyDown}
+                    className={`strategy-tab relative flex min-w-0 items-center gap-2 rounded-full px-2.5 py-1.5 text-left sm:px-3 sm:py-2 ${selected ? 'is-active' : 'strategy-tab-peek'}`}
+                  >
+                    {selected ? (
+                      <motion.span
+                        layoutId="strategy-tab-active-fill"
+                        className="strategy-tab-fill absolute inset-0 rounded-full"
+                        transition={TAB_SPRING}
+                        aria-hidden="true"
+                      />
+                    ) : null}
+                    <span className="strategy-tab-icon relative flex size-7 shrink-0 items-center justify-center rounded-full sm:size-8">
+                      <Icon className="size-3.5 sm:size-4" aria-hidden="true" />
+                    </span>
+                    <span className={`relative min-w-0 ${selected ? '' : 'hidden sm:block'}`}>
+                      <span className="block truncate text-xs font-semibold sm:text-[13px]">{shortLabel}</span>
+                      <AnimatePresence initial={false}>
+                        {selected ? (
+                          <motion.span
+                            key="description"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 0.8, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.18, ease: 'easeOut' }}
+                            className="mt-0.5 block truncate text-[10px]"
+                          >
+                            {description}
+                          </motion.span>
+                        ) : null}
+                      </AnimatePresence>
+                    </span>
+                  </motion.button>
+                )
+              })}
+            </AnimatePresence>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => goToTabIndex(activeTabIndex + 1)}
+            aria-label={`Next section: ${STRATEGY_AGENT_TABS[(activeTabIndex + 1) % STRATEGY_AGENT_TABS.length].label}`}
+            className="strategy-tab-arrow flex size-8 shrink-0 items-center justify-center rounded-full transition"
+          >
+            <ChevronRight className="size-4" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+
+      <div className="min-w-0 p-3 sm:p-5 lg:p-6">
+        <AnimatePresence initial={false} mode="wait">
+          <motion.div
+            key={activeTab}
+            id={`strategy-panel-${activeTab}`}
+            role="tabpanel"
+            aria-labelledby={`strategy-tab-${activeTab}`}
+            aria-label={activeTabConfig.label}
+            initial={{ opacity: 0, x: tabDirection * 18 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: tabDirection * -18 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            className="min-w-0"
+          >
+            {renderTab()}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       <footer className="strategy-review-footer border-t border-border px-4 py-4 sm:px-6">
@@ -2828,10 +3037,15 @@ function ResultsPanel({
   const openQaNotes = campaign?.notes?.filter((note) => !note.resolved).length ?? 0
 
   return (
-    <main className="min-w-0 flex-1 bg-[#f8f3f8] lg:max-h-[calc(100dvh-64px)] lg:overflow-y-auto" id="generated-results">
-      <div className={`mx-auto px-4 py-6 transition-[max-width] duration-300 sm:px-7 lg:px-8 lg:py-8 xl:px-10 ${hasStrategyReview ? 'max-w-[1380px]' : hasResults ? 'max-w-[1240px]' : 'max-w-[960px]'}`}>
+    <main
+      className="min-w-0 flex-1 bg-[#f8f3f8] lg:max-h-[calc(100dvh-64px)] lg:overflow-y-auto"
+      id="generated-results"
+    >
+      <div
+        className={`mx-auto px-4 py-6 transition-[max-width] duration-300 sm:px-7 lg:px-8 lg:py-8 xl:px-10 ${hasStrategyReview ? "max-w-[1480px]" : hasResults ? "max-w-[1480px]" : "max-w-[1480px]"}`}
+      >
         {hasResults ? (
-          <header className="mb-6 overflow-hidden rounded-[28px] bg-[#2b174f] text-white shadow-[0_24px_60px_rgba(43,23,79,0.18)]">
+          <header className="campaign-ready-header mb-6 overflow-hidden rounded-[28px] text-white">
             <div className="relative px-5 py-6 sm:px-7 sm:py-7 lg:px-8">
               <div className="pointer-events-none absolute -right-16 -top-24 size-72 rounded-full border border-[#d8ff9d]/20 bg-[#d8ff9d]/10" />
               <div className="pointer-events-none absolute -bottom-32 right-1/3 size-56 rounded-full border border-white/10" />
@@ -2840,16 +3054,29 @@ function ResultsPanel({
                   <div className="flex flex-wrap items-center gap-2 text-xs text-white/60">
                     <span>{projectName}</span>
                     <ChevronRight className="size-3.5" aria-hidden="true" />
-                    <span className="font-semibold text-[#d8ff9d]">Campaign ready</span>
+                    <span className="font-semibold text-[#d8ff9d]">
+                      Campaign ready
+                    </span>
                   </div>
                   <div className="mt-5 flex items-center gap-2">
                     <span className="flex size-7 items-center justify-center rounded-full bg-[#d8ff9d] text-[#2b174f]">
-                      <Check className="size-4" strokeWidth={2.5} aria-hidden="true" />
+                      <Check
+                        className="size-4"
+                        strokeWidth={2.5}
+                        aria-hidden="true"
+                      />
                     </span>
-                    <span className="text-[11px] font-bold uppercase tracking-[0.17em] text-[#d8ff9d]">Generation complete</span>
+                    <span className="text-[11px] font-bold uppercase tracking-[0.17em] text-[#d8ff9d]">
+                      Generation complete
+                    </span>
                   </div>
-                  <h2 className="mt-3 font-display text-[38px] leading-[0.98] tracking-[-0.9px] sm:text-[48px]">Your campaign is ready to shape.</h2>
-                  <p className="mt-3 max-w-xl text-sm leading-6 text-white/70">Review the strategy, clear any QA notes, then edit or copy each post when you are ready to publish.</p>
+                  <h2 className="mt-3 font-display text-[38px] leading-[0.98] tracking-[-0.9px] sm:text-[48px]">
+                    Your campaign is ready to shape.
+                  </h2>
+                  <p className="mt-3 max-w-xl text-sm leading-6 text-white/70">
+                    Review the strategy, clear any QA notes, then edit or copy
+                    each post when you are ready to publish.
+                  </p>
                 </div>
                 <div className="flex flex-wrap gap-2 lg:justify-end">
                   <button
@@ -2865,65 +3092,146 @@ function ResultsPanel({
             <dl className="grid border-t border-white/10 bg-white/[0.06] sm:grid-cols-2 lg:grid-cols-4">
               <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4 sm:border-r lg:border-b-0 lg:px-6">
                 <Layers3 className="size-5 text-[#d8ff9d]" aria-hidden="true" />
-                <div><dt className="text-[10px] font-bold uppercase tracking-[0.13em] text-white/45">Posts</dt><dd className="mt-0.5 text-sm font-semibold">{totalPosts} ready</dd></div>
+                <div>
+                  <dt className="text-[10px] font-bold uppercase tracking-[0.13em] text-white/45">
+                    Posts
+                  </dt>
+                  <dd className="mt-0.5 text-sm font-semibold">
+                    {totalPosts} ready
+                  </dd>
+                </div>
               </div>
               <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4 lg:border-b-0 lg:border-r lg:px-6">
                 <Camera className="size-5 text-[#d8ff9d]" aria-hidden="true" />
-                <div><dt className="text-[10px] font-bold uppercase tracking-[0.13em] text-white/45">Channels</dt><dd className="mt-0.5 text-sm font-semibold">{selectedPlatforms.length} selected</dd></div>
+                <div>
+                  <dt className="text-[10px] font-bold uppercase tracking-[0.13em] text-white/45">
+                    Channels
+                  </dt>
+                  <dd className="mt-0.5 text-sm font-semibold">
+                    {selectedPlatforms.length} selected
+                  </dd>
+                </div>
               </div>
               <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4 sm:border-b-0 sm:border-r lg:px-6">
-                <CalendarDays className="size-5 text-[#d8ff9d]" aria-hidden="true" />
-                <div><dt className="text-[10px] font-bold uppercase tracking-[0.13em] text-white/45">Duration</dt><dd className="mt-0.5 text-sm font-semibold">{values.duration}</dd></div>
+                <CalendarDays
+                  className="size-5 text-[#d8ff9d]"
+                  aria-hidden="true"
+                />
+                <div>
+                  <dt className="text-[10px] font-bold uppercase tracking-[0.13em] text-white/45">
+                    Duration
+                  </dt>
+                  <dd className="mt-0.5 text-sm font-semibold">
+                    {values.duration}
+                  </dd>
+                </div>
               </div>
               <div className="flex items-center gap-3 px-5 py-4 lg:px-6">
-                <ShieldCheck className="size-5 text-[#d8ff9d]" aria-hidden="true" />
-                <div><dt className="text-[10px] font-bold uppercase tracking-[0.13em] text-white/45">QA status</dt><dd className="mt-0.5 text-sm font-semibold">{openQaNotes > 0 ? `${openQaNotes} to review` : 'All clear'}</dd></div>
+                <ShieldCheck
+                  className="size-5 text-[#d8ff9d]"
+                  aria-hidden="true"
+                />
+                <div>
+                  <dt className="text-[10px] font-bold uppercase tracking-[0.13em] text-white/45">
+                    QA status
+                  </dt>
+                  <dd className="mt-0.5 text-sm font-semibold">
+                    {openQaNotes > 0 ? `${openQaNotes} to review` : "All clear"}
+                  </dd>
+                </div>
               </div>
             </dl>
           </header>
         ) : (
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-[#776e7d]">
-              <span>{projectName}</span>
-              <span aria-hidden="true">/</span>
-               <span className="font-medium text-[#4f378a]">{hasStrategyReview ? 'Strategy review' : hasResults ? 'Campaign generation' : 'Strategy workspace'}</span>
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-[#776e7d]">
+                <span>{projectName}</span>
+                <span aria-hidden="true">/</span>
+                <span className="font-medium text-[#4f378a]">
+                  {hasStrategyReview
+                    ? "Strategy review"
+                    : hasResults
+                      ? "Campaign generation"
+                      : "Strategy workspace"}
+                </span>
+              </div>
+              <h2 className="font-display text-[34px] leading-none tracking-[-0.75px] text-[#201a25] sm:text-[40px]">
+                {hasResults
+                  ? "Your campaign, ready to shape."
+                  : hasStrategyReview
+                    ? "Review the thinking before the making."
+                    : "Build a campaign with intention."}
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#716777]">
+                {hasResults
+                  ? "Edit captions in place, copy what works, and keep every iteration in this project."
+                  : hasStrategyReview
+                    ? "The plan below is the handoff between your brief and the content team. Approve it when the direction feels right."
+                    : "Fill the brief and let the strategy team create a considered plan before any content is generated."}
+              </p>
             </div>
-            <h2 className="font-display text-[34px] leading-none tracking-[-0.75px] text-[#201a25] sm:text-[40px]">
-              {hasResults ? 'Your campaign, ready to shape.' : hasStrategyReview ? 'Review the thinking before the making.' : 'Build a campaign with intention.'}
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#716777]">
-              {hasResults
-                ? 'Edit captions in place, copy what works, and keep every iteration in this project.'
-                : hasStrategyReview
-                  ? 'The plan below is the handoff between your brief and the content team. Approve it when the direction feels right.'
-                  : 'Fill the brief and let the strategy team create a considered plan before any content is generated.'}
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <div className="flex -space-x-1.5" aria-label={`Selected platforms: ${selectedPlatforms.map((platform) => platform.label).join(', ')}`}>
-              {selectedPlatforms.map(({ id, label }) => {
-                const Icon = PLATFORM_ICONS[id]
-                return (
-                  <span key={id} title={label} className="flex size-8 items-center justify-center rounded-full border-2 border-[#f8f3f8] bg-white text-[#4f378a] shadow-sm">
-                    {Icon ? <Icon className="size-3.5" /> : null}
-                  </span>
-                )
-              })}
+            <div className="flex shrink-0 items-center gap-2">
+              <div
+                className="flex -space-x-1.5"
+                aria-label={`Selected platforms: ${selectedPlatforms.map((platform) => platform.label).join(", ")}`}
+              >
+                {selectedPlatforms.map(({ id, label }) => {
+                  const Icon = PLATFORM_ICONS[id];
+                  return (
+                    <span
+                      key={id}
+                      title={label}
+                      className="flex size-8 items-center justify-center rounded-full border-2 border-[#f8f3f8] bg-white text-[#4f378a] shadow-sm"
+                    >
+                      {Icon ? <Icon className="size-3.5" /> : null}
+                    </span>
+                  );
+                })}
+              </div>
+              <span className="rounded-full border border-[#d9d0dc] bg-white px-3 py-1.5 text-xs font-semibold text-[#5d5462]">
+                {hasStrategyReview ? "Plan ready" : `${totalPosts} posts`}
+              </span>
             </div>
-            <span className="rounded-full border border-[#d9d0dc] bg-white px-3 py-1.5 text-xs font-semibold text-[#5d5462]">{hasStrategyReview ? 'Plan ready' : `${totalPosts} posts`}</span>
           </div>
-        </div>
         )}
 
-        {error ? <ErrorBanner message={error} onDismiss={onDismissError} onRetry={onRetryError} title={phase === 'strategy' || (!campaign && !strategy) ? 'Strategy generation failed' : 'Content generation failed'} /> : null}
+        {error ? (
+          <ErrorBanner
+            message={error}
+            onDismiss={onDismissError}
+            onRetry={onRetryError}
+            title={
+              phase === "strategy" || (!campaign && !strategy)
+                ? "Strategy generation failed"
+                : "Content generation failed"
+            }
+          />
+        ) : null}
 
-        {!isGenerating ? <WorkflowBilling billing={runState?.billing} executions={runState?.executions} /> : null}
+        {!isGenerating ? (
+          <WorkflowBilling
+            billing={runState?.billing}
+            executions={runState?.executions}
+          />
+        ) : null}
 
         <AnimatePresence mode="wait">
           {isGenerating ? (
-            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4" aria-live="polite" aria-label="Generating campaign posts">
-              <WorkflowProgress runState={runState} generateImages={values.generateImages} workflowKind={workflowKind} />
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="space-y-4"
+              aria-live="polite"
+              aria-label="Generating campaign posts"
+            >
+              <WorkflowProgress
+                runState={runState}
+                generateImages={values.generateImages}
+                workflowKind={workflowKind}
+              />
               <div className="rounded-[20px] border border-[#dfd6e1] bg-[#fffaff] p-6">
                 <div className="h-3 w-32 rounded bg-[#e7dfe9]" />
                 <div className="mt-4 h-3 w-3/4 rounded bg-[#eee7ef]" />
@@ -2934,7 +3242,10 @@ function ResultsPanel({
                 </div>
               </div>
               {[0, 1, 2].map((item) => (
-                <div key={item} className="h-72 animate-pulse overflow-hidden rounded-[20px] border border-[#dfd6e1] bg-[#fffaff] p-6">
+                <div
+                  key={item}
+                  className="h-72 animate-pulse overflow-hidden rounded-[20px] border border-[#dfd6e1] bg-[#fffaff] p-6"
+                >
                   <div className="h-3 w-24 rounded bg-[#e7dfe9]" />
                   <div className="mt-12 h-7 w-3/5 rounded bg-[#e7dfe9]" />
                   <div className="mt-5 h-3 w-full rounded bg-[#eee7ef]" />
@@ -2943,18 +3254,49 @@ function ResultsPanel({
               ))}
             </motion.div>
           ) : hasStrategyReview ? (
-            <StrategyReview strategy={strategy} strategyId={strategyReview?.id ?? null} review={strategyReview} onConfirm={onConfirmStrategy} onRequestChanges={onRequestStrategyChanges} onRegenerateSection={onRegenerateStrategySection} onEdit={onEditStrategy} onStrategyChange={onStrategyChange} isSubmitting={false} creditUsage={creditUsage} />
+            <StrategyReview
+              strategy={strategy}
+              strategyId={strategyReview?.id ?? null}
+              review={strategyReview}
+              onConfirm={onConfirmStrategy}
+              onRequestChanges={onRequestStrategyChanges}
+              onRegenerateSection={onRegenerateStrategySection}
+              onEdit={onEditStrategy}
+              onStrategyChange={onStrategyChange}
+              isSubmitting={false}
+              creditUsage={creditUsage}
+            />
           ) : hasResults ? (
-            <motion.div key="results" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6" aria-live="polite">
-              <nav aria-label="Campaign sections" className="flex gap-2 overflow-x-auto rounded-2xl border border-[#ded4e2] bg-[#fffaff] p-2 shadow-[0_6px_18px_rgba(46,32,51,0.04)]">
-                <a href="#campaign-strategy" className="flex h-10 shrink-0 items-center gap-2 rounded-xl bg-[#f2eafa] px-3.5 text-sm font-semibold text-[#381e72] transition-colors hover:bg-[#e9def3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
+            <motion.div
+              key="results"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+              aria-live="polite"
+            >
+              <nav
+                aria-label="Campaign sections"
+                className="flex gap-2 overflow-x-auto rounded-2xl border border-[#ded4e2] bg-[#fffaff] p-2 shadow-[0_6px_18px_rgba(46,32,51,0.04)]"
+              >
+                <a
+                  href="#campaign-strategy"
+                  className="flex h-10 shrink-0 items-center gap-2 rounded-xl bg-[#f2eafa] px-3.5 text-sm font-semibold text-[#381e72] transition-colors hover:bg-[#e9def3] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                >
                   <Lightbulb className="size-4" aria-hidden="true" /> Strategy
                 </a>
-                <a href="#campaign-qa" className="flex h-10 shrink-0 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-[#625b71] transition-colors hover:bg-[#f3edf5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
-                  <ShieldCheck className="size-4" aria-hidden="true" /> QA review
+                <a
+                  href="#campaign-qa"
+                  className="flex h-10 shrink-0 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-[#625b71] transition-colors hover:bg-[#f3edf5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                >
+                  <ShieldCheck className="size-4" aria-hidden="true" /> QA
+                  review
                 </a>
-                <a href="#campaign-posts" className="flex h-10 shrink-0 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-[#625b71] transition-colors hover:bg-[#f3edf5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]">
-                  <CalendarDays className="size-4" aria-hidden="true" /> Content calendar
+                <a
+                  href="#campaign-posts"
+                  className="flex h-10 shrink-0 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold text-[#625b71] transition-colors hover:bg-[#f3edf5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                >
+                  <CalendarDays className="size-4" aria-hidden="true" /> Content
+                  calendar
                 </a>
               </nav>
 
@@ -2963,12 +3305,26 @@ function ResultsPanel({
                 <QANotes notes={campaign?.notes ?? []} />
               </div>
 
-              <section id="campaign-posts" aria-labelledby="campaign-posts-heading" className="scroll-mt-6">
+              <section
+                id="campaign-posts"
+                aria-labelledby="campaign-posts-heading"
+                className="scroll-mt-6"
+              >
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#716777]">Content calendar</p>
-                    <h3 id="campaign-posts-heading" className="mt-1 font-display text-[30px] leading-tight tracking-[-0.55px] text-[#201a25]">Review every post</h3>
-                    <p className="mt-1 text-sm leading-6 text-[#716777]">Captions are editable. Changes save to this campaign automatically when you leave the field.</p>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#716777]">
+                      Content calendar
+                    </p>
+                    <h3
+                      id="campaign-posts-heading"
+                      className="mt-1 font-display text-[30px] leading-tight tracking-[-0.55px] text-[#201a25]"
+                    >
+                      Review every post
+                    </h3>
+                    <p className="mt-1 text-sm leading-6 text-[#716777]">
+                      Captions are editable. Changes save to this campaign
+                      automatically when you leave the field.
+                    </p>
                   </div>
                   <span className="inline-flex h-9 shrink-0 items-center self-start rounded-full border border-[#d8cedc] bg-[#fffaff] px-3 text-xs font-semibold text-[#5d5462] sm:self-auto">
                     {totalPosts} posts · {selectedPlatforms.length} channels
@@ -2977,7 +3333,7 @@ function ResultsPanel({
                 <div className="space-y-4">
                   {(campaign?.calendar ?? []).map((entry, index) => (
                     <PostCard
-                      key={`${entry.platform}-${entry.date ?? 'unscheduled'}-${index}-${entry.caption}`}
+                      key={`${entry.platform}-${entry.date ?? "unscheduled"}-${index}-${entry.caption}`}
                       post={entry}
                       index={index}
                       showImage={values.generateImages}
@@ -2989,7 +3345,12 @@ function ResultsPanel({
               </section>
             </motion.div>
           ) : (
-            <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center rounded-[24px] border border-dashed border-[#c8bcd0] bg-[#fffaff]/70 px-6 py-20 text-center">
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center justify-center rounded-[24px] border border-dashed border-[#c8bcd0] bg-[#fffaff]/70 px-6 py-20 text-center"
+            >
               <span className="flex size-14 items-center justify-center rounded-2xl bg-[#f3edf5] text-[#4f378a]">
                 <Sparkles className="size-6" />
               </span>
@@ -3003,13 +3364,17 @@ function ResultsPanel({
                 Make your content
                 <ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" />
               </button>
-              <p className="mt-3 max-w-md text-sm leading-6 text-[#746b79]">{canStartCampaign ? 'Open the guided brief, complete each step, and review your strategy before content is created.' : 'Create or select a campaign chat to begin.'}</p>
+              <p className="mt-3 max-w-md text-sm leading-6 text-[#746b79]">
+                {canStartCampaign
+                  ? "Open the guided brief, complete each step, and review your strategy before content is created."
+                  : "Create or select a campaign chat to begin."}
+              </p>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
     </main>
-  )
+  );
 }
 
 function fieldErrorsFromZod(issue) {
@@ -3798,6 +4163,23 @@ export function GeneratePage() {
 
   const handleEditStrategy = () => {
     if (isGenerating) return
+
+    // The brief that produced this strategy is the best source, then whatever is
+    // already typed in the form. Only when both are empty — a chat reopened from
+    // history — is the brief rebuilt from the strategy output itself.
+    const briefValues = hasBriefContent(submittedValues)
+      ? submittedValues
+      : hasBriefContent(values)
+        ? values
+        : strategy
+          ? valuesFromStrategy(strategy, currentProject.name)
+          : null
+
+    if (briefValues) {
+      setValues({ ...briefValues, platforms: [...briefValues.platforms] })
+      setErrors({})
+    }
+
     setBriefOpen(true)
     window.setTimeout(() => document.querySelector('#product')?.focus(), 50)
   }

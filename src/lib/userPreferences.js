@@ -1,11 +1,17 @@
 const preferenceStorageKey = 'aetherflow:user-preferences:v1'
 const hexColorPattern = /^#[0-9a-f]{6}$/i
 const supportedThemes = new Set(['light', 'dark', 'system'])
+const supportedTextSizes = new Set(['compact', 'comfortable', 'large'])
+const textSizeScale = {
+  compact: '93.75%',
+  comfortable: '100%',
+  large: '112.5%',
+}
 
 export const defaultPreferences = Object.freeze({
-  reduceMotion: false,
   theme: 'system',
   accentColor: '#4f378a',
+  textSize: 'comfortable',
 })
 
 let activePreferences = defaultPreferences
@@ -13,11 +19,13 @@ let colorSchemeQuery
 
 function normalizePreferences(preferences = {}) {
   return {
-    reduceMotion: Boolean(preferences.reduceMotion),
     theme: supportedThemes.has(preferences.theme) ? preferences.theme : defaultPreferences.theme,
     accentColor: hexColorPattern.test(preferences.accentColor || '')
       ? preferences.accentColor.toLowerCase()
       : defaultPreferences.accentColor,
+    textSize: supportedTextSizes.has(preferences.textSize)
+      ? preferences.textSize
+      : defaultPreferences.textSize,
   }
 }
 
@@ -42,7 +50,8 @@ function applyTheme(preferences) {
   root.classList.toggle('dark', currentTheme === 'dark')
   root.dataset.theme = preferences.theme
   root.dataset.resolvedTheme = currentTheme
-  root.dataset.reduceMotion = String(preferences.reduceMotion)
+  root.dataset.textSize = preferences.textSize
+  root.style.fontSize = textSizeScale[preferences.textSize]
   root.style.colorScheme = currentTheme
   root.style.setProperty('--aether-accent', preferences.accentColor)
   root.style.setProperty('--aether-on-accent', accentForeground(preferences.accentColor))

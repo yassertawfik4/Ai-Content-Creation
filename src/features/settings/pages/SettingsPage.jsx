@@ -8,30 +8,29 @@ import {
   Check,
   ChevronRight,
   CircleUserRound,
-  Clipboard,
+  Coins,
+  CreditCard,
   Eye,
   EyeOff,
   KeyRound,
   Layers3,
-  Laptop,
   Loader2,
   LockKeyhole,
   LogOut,
-  Moon,
   MonitorCog,
   Palette,
   PlugZap,
   Save,
   ShieldCheck,
   Sparkles,
-  Sun,
+  Type,
   UserRound,
-  WandSparkles,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm, useWatch } from 'react-hook-form'
 import { useAuth } from '@/hooks/useAuth'
 import { changePassword, getErrorMessage, updateUser } from '@/lib/authApi'
+import { createBillingPortal, getCreditUsage, getSubscription } from '@/lib/billingApi'
 import { readUserPreferences, saveUserPreferences } from '@/lib/userPreferences'
 import {
   passwordSettingsSchema,
@@ -41,10 +40,10 @@ import {
 const inputClassName =
   'h-12 w-full rounded-2xl border border-[#d9cfe1] bg-white px-4 text-sm text-[#2f2735] shadow-[0_1px_2px_rgba(29,27,32,0.03)] outline-none transition placeholder:text-[#9a909f] focus:border-[#675094] focus:ring-4 focus:ring-[#675094]/10 disabled:bg-[#f5f1f7] disabled:text-[#7b7180]'
 
-const themeOptions = [
-  { value: 'light', label: 'Light', icon: Sun },
-  { value: 'dark', label: 'Dark', icon: Moon },
-  { value: 'system', label: 'System', icon: Laptop },
+const textSizeOptions = [
+  { value: 'compact', label: 'Compact' },
+  { value: 'comfortable', label: 'Comfortable' },
+  { value: 'large', label: 'Large' },
 ]
 
 const accentPresets = [
@@ -168,8 +167,9 @@ export function SettingsPage() {
   const [profileStatus, setProfileStatus] = useState(null)
   const [passwordStatus, setPasswordStatus] = useState(null)
   const [preferences, setPreferences] = useState(readUserPreferences)
-  const [copied, setCopied] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+  const [billing, setBilling] = useState({ subscription: null, usage: null, loading: true, error: '' })
+  const [openingPortal, setOpeningPortal] = useState(false)
 
   const profileForm = useForm({
     resolver: zodResolver(profileSettingsSchema),
@@ -188,6 +188,21 @@ export function SettingsPage() {
   useEffect(() => {
     profileForm.reset({ name: user?.name || '' })
   }, [profileForm, user?.name])
+
+  useEffect(() => {
+    let active = true
+    getSubscription()
+      .then(async (subscription) => {
+        const usage = await getCreditUsage()
+        if (active) setBilling({ subscription, usage, loading: false, error: '' })
+      })
+      .catch((error) => {
+        if (active) setBilling({ subscription: null, usage: null, loading: false, error: getErrorMessage(error) })
+      })
+    return () => {
+      active = false
+    }
+  }, [])
 
   const updatePreferences = (updates) => {
     setPreferences((current) => saveUserPreferences({ ...current, ...updates }))
@@ -244,18 +259,22 @@ export function SettingsPage() {
     }
   })
 
-  const copyAccountId = async () => {
-    if (!user?.id) return
-    await navigator.clipboard.writeText(user.id)
-    setCopied(true)
-    window.setTimeout(() => setCopied(false), 1800)
-  }
-
   const handleLogout = async () => {
     if (loggingOut) return
     setLoggingOut(true)
     await logout()
     navigate('/')
+  }
+
+  const openPaymentSettings = async () => {
+    setOpeningPortal(true)
+    try {
+      const { url } = await createBillingPortal()
+      window.location.assign(url)
+    } catch (error) {
+      setBilling((current) => ({ ...current, error: getErrorMessage(error) }))
+      setOpeningPortal(false)
+    }
   }
 
   const joinedDate = user?.createdAt
@@ -305,6 +324,7 @@ export function SettingsPage() {
             <nav className="mt-3 space-y-1" aria-label="Settings sections">
               {[
                 ['profile', UserRound, 'Profile'],
+                ['billing', CreditCard, 'Plan & credits'],
                 ['security', KeyRound, 'Password & security'],
                 ['preferences', MonitorCog, 'Preferences'],
                 ['account', CircleUserRound, 'Account details'],
@@ -390,6 +410,90 @@ export function SettingsPage() {
           </SectionCard>
 
           <SectionCard
+            id="billing"
+            eyebrow="Subscription"
+            title="Plan, payment & credits"
+            description="See the plan on your account, your billing cycle, and exactly how many generation credits you have used."
+            icon={CreditCard}
+          >
+            {billing.loading ? (
+              <div className="flex min-h-32 items-center justify-center gap-2 text-sm text-[#716777]">
+                <Loader2 className="size-4 animate-spin" /> Loading billing details…
+              </div>
+            ) : billing.error ? (
+              <div role="alert" className="rounded-2xl border border-[#efc5cf] bg-[#fff2f5] p-4 text-sm text-[#8f2942]">{billing.error}</div>
+            ) : (
+              <div className="space-y-5">
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,.95fr)]">
+                  <div className="relative overflow-hidden rounded-[22px] bg-[#381e72] p-5 text-white shadow-[0_16px_34px_rgba(56,30,114,0.2)]">
+                    <span className="absolute -right-12 -top-16 size-44 rounded-full bg-[#b7f36b]/15" aria-hidden="true" />
+                    <div className="relative flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-[.15em] text-[#d9ffa8]">Current plan</p>
+                        <p className="mt-2 font-display text-3xl font-bold">{billing.usage?.plan?.name ?? billing.subscription?.plan?.name ?? 'Free'}</p>
+                        <p className="mt-1 text-xs text-white/60">
+                          {billing.subscription?.billingInterval
+                            ? `${String(billing.subscription.billingInterval).toLowerCase() === 'yearly' ? 'Yearly' : 'Monthly'} billing`
+                            : 'Included with your account'}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-white/12 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.12em] text-white">
+                        {billing.subscription?.status === 'ACTIVE' ? 'Active' : billing.subscription?.status?.replaceAll('_', ' ') ?? 'Included'}
+                      </span>
+                    </div>
+                    {billing.subscription?.currentPeriodEnd ? (
+                      <p className="relative mt-6 border-t border-white/12 pt-4 text-xs text-white/65">
+                        Current billing period ends {new Date(billing.subscription.currentPeriodEnd).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="rounded-[22px] border border-[#e3d9e7] bg-white p-5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 text-sm font-bold text-[#392f3e]"><Coins className="size-4 text-[#5d4597]" /> Generation credits</div>
+                      <span className="text-xs font-semibold text-[#796f7e]">Monthly allowance</span>
+                    </div>
+                    <div className="mt-5 grid grid-cols-3 gap-3 text-center">
+                      {[
+                        ['Available', billing.usage?.remaining ?? 0],
+                        ['Used', billing.usage?.used ?? 0],
+                        ['Total', billing.usage?.limit ?? 0],
+                      ].map(([label, value]) => (
+                        <div key={label} className="rounded-2xl bg-[#f7f1f8] px-2 py-3">
+                          <p className="text-xl font-bold text-[#332a38]">{Number(value).toLocaleString()}</p>
+                          <p className="mt-1 text-[10px] font-bold uppercase tracking-[.1em] text-[#817487]">{label}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-5 h-2 overflow-hidden rounded-full bg-[#e9e0ec]" aria-label={`${billing.usage?.used ?? 0} of ${billing.usage?.limit ?? 0} credits used`}>
+                      <div className="h-full rounded-full bg-[#5d4597] transition-[width]" style={{ width: `${billing.usage?.limit ? Math.min(100, ((billing.usage.used ?? 0) / billing.usage.limit) * 100) : 0}%` }} />
+                    </div>
+                    <p className="mt-3 text-xs text-[#766b7b]">Credits reset {billing.usage?.periodEnd ? new Date(billing.usage.periodEnd).toLocaleDateString(undefined, { dateStyle: 'medium' }) : 'monthly'}.</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3 rounded-2xl border border-[#e3d9e7] bg-[#faf6fb] p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#5d4597] shadow-sm"><ShieldCheck className="size-5" /></span>
+                    <div><p className="text-sm font-semibold text-[#392f3e]">Payments secured by Stripe</p><p className="mt-1 text-xs leading-5 text-[#766b7b]">Card details and invoices are handled securely on Stripe’s payment pages.</p></div>
+                  </div>
+                  <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                    {billing.subscription?.stripeCustomerId ? (
+                      <button type="button" onClick={openPaymentSettings} disabled={openingPortal} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#d3c5dd] bg-white px-4 text-sm font-bold text-[#4f378a] transition hover:border-[#aa95bb] disabled:cursor-wait disabled:opacity-60">
+                        {openingPortal ? <Loader2 className="size-4 animate-spin" /> : <CreditCard className="size-4" />}
+                        {openingPortal ? 'Opening…' : 'Payment & invoices'}
+                      </button>
+                    ) : null}
+                    <Link to="/billing" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#4f378a] px-4 text-sm font-bold text-white shadow-sm transition hover:bg-[#5d4597]">
+                      Manage plan <ChevronRight className="size-4" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
+          </SectionCard>
+
+          <SectionCard
             id="security"
             eyebrow="Security"
             title="Change your password"
@@ -472,35 +576,6 @@ export function SettingsPage() {
             <div className="space-y-4">
               <div className="rounded-2xl border border-[#e3d9e7] bg-white p-4 sm:p-5">
                 <div className="flex items-start gap-3">
-                  <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#f0e9f4] text-[#5d4772]">
-                    <Sun className="size-5" />
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold text-[#362d3b]">Theme</p>
-                    <p className="mt-1 text-xs leading-5 text-[#766b7b]">Use a light canvas, a dark workspace, or follow your device.</p>
-                  </div>
-                </div>
-                <div className="mt-4 grid grid-cols-3 gap-2" aria-label="Color theme">
-                  {themeOptions.map(({ value, label, icon: Icon }) => {
-                    const selected = preferences.theme === value
-                    return (
-                      <button
-                        key={value}
-                        type="button"
-                        aria-pressed={selected}
-                        onClick={() => updatePreferences({ theme: value })}
-                        className={`flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#675094] focus-visible:ring-offset-2 ${selected ? 'border-[#4f378a] bg-[#f0e9f7] text-[#4f378a] shadow-sm' : 'border-[#e4dae8] bg-[#faf7fb] text-[#655b6a] hover:border-[#c8b8d1] hover:bg-white'}`}
-                      >
-                        <Icon className="size-[17px]" />
-                        <span>{label}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-[#e3d9e7] bg-white p-4 sm:p-5">
-                <div className="flex items-start gap-3">
                   <span
                     className="flex size-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm"
                     style={{ backgroundColor: preferences.accentColor }}
@@ -552,24 +627,44 @@ export function SettingsPage() {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-4 rounded-2xl border border-[#e3d9e7] bg-white p-4 sm:flex-row sm:items-center sm:p-5">
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#f0e9f4] text-[#5d4772]">
-                  <WandSparkles className="size-5" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-[#362d3b]">Reduce interface motion</p>
-                  <p className="mt-1 text-xs leading-5 text-[#766b7b]">Minimizes page transitions and decorative animation throughout Sada.</p>
+              <div className="rounded-2xl border border-[#e3d9e7] bg-white p-4 sm:p-5">
+                <div className="flex items-start gap-3">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#f0e9f4] text-[#5d4772]">
+                    <Type className="size-5" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-[#362d3b]">Text size</p>
+                    <p className="mt-1 text-xs leading-5 text-[#766b7b]">Scale the interface text to your comfort.</p>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={preferences.reduceMotion}
-                  onClick={() => updatePreferences({ reduceMotion: !preferences.reduceMotion })}
-                  className={`relative h-7 w-12 shrink-0 self-end rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#675094] focus-visible:ring-offset-2 sm:self-auto ${preferences.reduceMotion ? 'bg-[#4f378a]' : 'bg-[#cfc4d3]'}`}
+                <div
+                  className="mt-4 inline-flex max-w-full overflow-hidden rounded-xl border border-[#ded5e2] bg-[#faf7fb] p-1"
+                  role="group"
+                  aria-label="Text size"
                 >
-                  <span className={`absolute left-0 top-1 size-5 rounded-full bg-white shadow-sm transition-transform ${preferences.reduceMotion ? 'translate-x-6' : 'translate-x-1'}`} />
-                  <span className="sr-only">Reduce interface motion</span>
-                </button>
+                  {textSizeOptions.map(({ value, label }) => {
+                    const selected = preferences.textSize === value
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        aria-pressed={selected}
+                        onClick={() => updatePreferences({ textSize: value })}
+                        className={`relative min-h-9 rounded-lg px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#675094] focus-visible:ring-inset sm:px-4 ${selected ? 'text-white' : 'text-[#766b7b] hover:text-[#362d3b]'}`}
+                      >
+                        {selected ? (
+                          <motion.span
+                            layoutId="settings-text-size-pill"
+                            className="pointer-events-none absolute inset-0 rounded-lg bg-[#241d29] shadow-[0_2px_7px_rgba(36,29,41,0.28)] ring-1 ring-[#4f378a]"
+                            transition={{ type: 'spring', stiffness: 520, damping: 38, mass: 0.72 }}
+                            aria-hidden="true"
+                          />
+                        ) : null}
+                        <span className="relative z-10">{label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           </SectionCard>
@@ -581,26 +676,9 @@ export function SettingsPage() {
             description="Useful identity information and shortcuts for your workspace."
             icon={CircleUserRound}
           >
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-[#e3d9e7] bg-white p-4">
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#817487]">Member since</p>
-                <p className="mt-2 text-base font-semibold text-[#332a38]">{joinedDate}</p>
-              </div>
-              <div className="rounded-2xl border border-[#e3d9e7] bg-white p-4">
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#817487]">Account ID</p>
-                <div className="mt-2 flex items-center gap-2">
-                  <code className="min-w-0 flex-1 truncate text-xs text-[#4e4453]">{user?.id || 'Unavailable'}</code>
-                  <button
-                    type="button"
-                    onClick={copyAccountId}
-                    disabled={!user?.id}
-                    className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-[#f1eaf4] text-[#5e4775] transition hover:bg-[#e8ddef]"
-                    aria-label="Copy account ID"
-                  >
-                    {copied ? <Check className="size-4" /> : <Clipboard className="size-4" />}
-                  </button>
-                </div>
-              </div>
+            <div className="rounded-2xl border border-[#e3d9e7] bg-white p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#817487]">Member since</p>
+              <p className="mt-2 text-base font-semibold text-[#332a38]">{joinedDate}</p>
             </div>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-3">

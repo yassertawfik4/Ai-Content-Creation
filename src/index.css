@@ -12,6 +12,9 @@
   --aether-surface: color-mix(in srgb, var(--aether-accent) 2%, #ffffff);
   --aether-surface-muted: color-mix(in srgb, var(--aether-accent) 9%, #ffffff);
   --aether-border: color-mix(in srgb, var(--aether-accent) 18%, #e8e0ea);
+  /* Nested surfaces separate by fill, not by outline — a full-strength border on
+     every level of the strategy workspace stacks into visual noise. */
+  --aether-border-soft: color-mix(in srgb, var(--aether-border) 45%, transparent);
   --background: var(--aether-canvas);
   --foreground: oklch(0.145 0 0);
   --card: var(--aether-surface);
@@ -51,6 +54,7 @@
   --aether-surface: color-mix(in srgb, var(--aether-accent) 9%, #211b24);
   --aether-surface-muted: color-mix(in srgb, var(--aether-accent) 16%, #29222d);
   --aether-border: color-mix(in srgb, var(--aether-accent) 24%, #44394a);
+  --aether-border-soft: color-mix(in srgb, var(--aether-border) 55%, transparent);
   --background: var(--aether-canvas);
   --foreground: oklch(0.985 0 0);
   --card: var(--aether-surface);
@@ -147,15 +151,6 @@
   [aria-disabled="true"] {
     cursor: not-allowed;
   }
-}
-
-html[data-reduce-motion='true'] *,
-html[data-reduce-motion='true'] *::before,
-html[data-reduce-motion='true'] *::after {
-  scroll-behavior: auto !important;
-  animation-duration: 0.01ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0.01ms !important;
 }
 
 /* Bridge the original Aether violet utilities to the user's saved accent. */
@@ -448,8 +443,10 @@ html[data-reduce-motion='true'] *::after {
     linear-gradient(145deg, color-mix(in srgb, var(--aether-accent) 4%, var(--aether-surface)), var(--aether-surface) 52%);
 }
 
+/* The panel already reads as a card against the shell's tinted gradient, so it
+   carries no outline of its own. */
 .strategy-agent-panel {
-  border-color: var(--aether-border);
+  border-color: transparent;
   background-color: var(--aether-surface);
 }
 
@@ -491,7 +488,34 @@ html[data-reduce-motion='true'] *::after {
 
 .strategy-tab-rail {
   border-color: var(--aether-border);
-  background: color-mix(in srgb, var(--aether-accent) 4%, var(--aether-surface));
+  background: transparent;
+}
+
+/* A single track groups the arrows and the three visible tabs into one control. */
+.strategy-tab-slider {
+  border: 1px solid color-mix(in srgb, var(--aether-accent) 12%, transparent);
+  background-color: color-mix(in srgb, var(--aether-accent) 4%, transparent);
+}
+
+.strategy-tab-arrow {
+  border: 1px solid color-mix(in srgb, var(--aether-accent) 16%, transparent);
+  background-color: var(--aether-surface);
+  color: color-mix(in srgb, var(--aether-accent) 70%, var(--muted-foreground));
+}
+
+.strategy-tab-arrow:hover {
+  border-color: color-mix(in srgb, var(--aether-accent) 34%, transparent);
+  background-color: color-mix(in srgb, var(--aether-accent) 10%, var(--aether-surface));
+  color: var(--aether-accent);
+}
+
+.strategy-tab-arrow:active {
+  transform: scale(0.92);
+}
+
+.strategy-tab-arrow:focus-visible {
+  outline: 2px solid var(--aether-accent);
+  outline-offset: 2px;
 }
 
 .strategy-nav-progress {
@@ -503,7 +527,14 @@ html[data-reduce-motion='true'] *::after {
   color: var(--muted-foreground);
 }
 
-.strategy-tab:hover {
+/* The two neighbours read as background: quieter, and they de-emphasise their
+   own label so the centred tab keeps the visual weight. */
+.strategy-tab-peek {
+  opacity: 0.55;
+}
+
+.strategy-tab-peek:hover {
+  opacity: 1;
   background-color: color-mix(in srgb, var(--aether-accent) 9%, var(--aether-surface));
   color: var(--aether-accent);
 }
@@ -513,10 +544,15 @@ html[data-reduce-motion='true'] *::after {
   outline-offset: 2px;
 }
 
+/* The accent pill is its own layer so it can slide between tabs on selection
+   rather than cross-fading in place. */
+.strategy-tab-fill {
+  background: linear-gradient(135deg, var(--aether-accent), color-mix(in srgb, var(--aether-accent) 84%, black));
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--aether-accent) 30%, transparent);
+}
+
 .strategy-tab.is-active {
-  background-color: var(--aether-accent);
   color: var(--aether-on-accent);
-  box-shadow: 0 7px 18px color-mix(in srgb, var(--aether-accent) 22%, transparent);
 }
 
 .strategy-tab-icon,
@@ -531,25 +567,26 @@ html[data-reduce-motion='true'] *::after {
   color: var(--aether-on-accent);
 }
 
-.strategy-field-group,
 .strategy-overview-card {
-  border-color: var(--aether-border);
+  border-color: var(--aether-border-soft);
   background-color: color-mix(in srgb, var(--aether-accent) 2%, var(--aether-surface));
 }
 
+/* Groups of fields are separated by fill alone — one less rectangle around every
+   input inside them. */
 .strategy-field-group {
-  box-shadow: inset 0 1px 0 color-mix(in srgb, white 38%, transparent);
+  border-color: transparent;
+  background-color: color-mix(in srgb, var(--aether-accent) 4%, var(--aether-surface));
 }
 
 .strategy-field-group > div:first-child {
-  border-bottom: 1px solid color-mix(in srgb, var(--aether-border) 78%, transparent);
   padding-bottom: 0.875rem;
 }
 
 .strategy-mini-card,
 .strategy-expandable,
 .strategy-feedback {
-  border-color: var(--aether-border);
+  border-color: var(--aether-border-soft);
   background-color: var(--aether-surface);
 }
 
@@ -567,12 +604,14 @@ html[data-reduce-motion='true'] *::after {
   background-color: color-mix(in srgb, var(--aether-accent) 4%, var(--aether-surface));
 }
 
+/* Fields read as filled wells rather than outlined boxes; the accent edge only
+   appears on hover and focus, where it actually communicates state. */
 .strategy-field-control {
-  border: 1px solid var(--aether-border);
+  border: 1px solid transparent;
   border-radius: 0.75rem;
   background-color: var(--aether-surface);
   color: var(--foreground);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, white 34%, transparent);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--aether-accent) 8%, transparent);
   transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
 }
 
@@ -583,8 +622,8 @@ html[data-reduce-motion='true'] *::after {
 }
 
 .strategy-field-label-icon {
-  border: 1px solid color-mix(in srgb, var(--aether-accent) 12%, var(--aether-border));
-  background-color: color-mix(in srgb, var(--aether-accent) 8%, var(--aether-surface));
+  border: 1px solid transparent;
+  background-color: color-mix(in srgb, var(--aether-accent) 10%, var(--aether-surface));
   color: var(--aether-accent);
   transition: border-color 180ms ease, background-color 180ms ease, color 180ms ease, box-shadow 180ms ease;
 }
@@ -601,7 +640,7 @@ html[data-reduce-motion='true'] *::after {
 }
 
 .strategy-field-control:hover {
-  border-color: color-mix(in srgb, var(--aether-accent) 42%, var(--aether-border));
+  border-color: color-mix(in srgb, var(--aether-accent) 30%, transparent);
 }
 
 .strategy-field-control:focus {
@@ -611,13 +650,13 @@ html[data-reduce-motion='true'] *::after {
 
 .strategy-persona-overview,
 .strategy-persona-cluster {
-  border-color: var(--aether-border);
+  border-color: var(--aether-border-soft);
   background-color: color-mix(in srgb, var(--aether-accent) 2%, var(--aether-surface));
 }
 
 .strategy-persona-chip {
   max-width: 100%;
-  border: 1px solid color-mix(in srgb, var(--aether-accent) 16%, var(--aether-border));
+  border: 1px solid transparent;
   background-color: color-mix(in srgb, var(--aether-accent) 5%, var(--aether-surface));
 }
 
@@ -639,7 +678,7 @@ html[data-reduce-motion='true'] *::after {
 }
 
 .strategy-persona-cluster-icon {
-  border: 1px solid color-mix(in srgb, var(--aether-accent) 18%, var(--aether-border));
+  border: 1px solid transparent;
   background-color: color-mix(in srgb, var(--aether-accent) 8%, var(--aether-surface));
   color: var(--aether-accent);
 }
@@ -664,10 +703,40 @@ html[data-reduce-motion='true'] *::after {
   background-color: color-mix(in srgb, var(--aether-on-accent) 10%, transparent);
 }
 
-.strategy-score-value {
-  border-color: color-mix(in srgb, var(--aether-on-accent) 40%, transparent);
-  background-color: var(--aether-on-accent);
-  color: var(--aether-accent);
+.strategy-score-track {
+  stroke: color-mix(in srgb, var(--aether-on-accent) 20%, transparent);
+}
+
+.strategy-score-arc {
+  stroke: var(--aether-on-accent);
+  transition: stroke-dashoffset 420ms ease-out;
+}
+
+.strategy-hero-chip {
+  border: 1px solid color-mix(in srgb, var(--aether-on-accent) 26%, transparent);
+  background-color: color-mix(in srgb, var(--aether-on-accent) 12%, transparent);
+}
+
+.strategy-hero-stat {
+  border: 1px solid color-mix(in srgb, var(--aether-on-accent) 16%, transparent);
+  background-color: color-mix(in srgb, var(--aether-on-accent) 8%, transparent);
+}
+
+.strategy-hero-divider {
+  border-top: 1px solid color-mix(in srgb, var(--aether-on-accent) 18%, transparent);
+}
+
+.strategy-hero-toggle {
+  color: color-mix(in srgb, var(--aether-on-accent) 82%, var(--aether-accent));
+}
+
+.strategy-hero-toggle:hover {
+  color: var(--aether-on-accent);
+}
+
+.strategy-hero-toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--aether-on-accent) 60%, transparent);
+  outline-offset: 3px;
 }
 
 .strategy-hero-orb {
@@ -681,6 +750,56 @@ html[data-reduce-motion='true'] *::after {
 
 .strategy-ready-icon {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--aether-accent) 12%, transparent);
+}
+
+.campaign-ready-header {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--aether-accent) 78%, #120e18),
+    color-mix(in srgb, var(--aether-accent) 64%, #120e18)
+  );
+  box-shadow: 0 24px 60px color-mix(in srgb, var(--aether-accent) 24%, transparent);
+  transition: background 240ms ease, box-shadow 240ms ease;
+}
+
+.checkout-background-glow {
+  background-image:
+    radial-gradient(circle at 15% 15%, rgba(183, 243, 107, 0.32), transparent 24%),
+    radial-gradient(circle at 88% 80%, color-mix(in srgb, var(--aether-accent) 20%, transparent), transparent 30%);
+}
+
+.checkout-order-summary {
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--aether-accent) 78%, #120e18),
+    color-mix(in srgb, var(--aether-accent) 62%, #120e18)
+  );
+  box-shadow: 0 28px 80px color-mix(in srgb, var(--aether-accent) 28%, transparent);
+  transition: background 240ms ease, box-shadow 240ms ease;
+}
+
+.checkout-payment-button {
+  --tw-ring-offset-color: color-mix(in srgb, var(--aether-accent) 66%, #120e18);
+}
+
+.knowledge-ask-panel {
+  border-color: color-mix(in srgb, var(--aether-accent) 50%, #120e18);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--aether-accent) 80%, #120e18),
+    color-mix(in srgb, var(--aether-accent) 64%, #120e18)
+  );
+  box-shadow: 0 18px 38px color-mix(in srgb, var(--aether-accent) 24%, transparent);
+  transition: background 240ms ease, border-color 240ms ease, box-shadow 240ms ease;
+}
+
+.knowledge-ask-submit {
+  --tw-ring-offset-color: color-mix(in srgb, var(--aether-accent) 66%, #120e18);
+  color: color-mix(in srgb, var(--aether-accent) 78%, #120e18);
+}
+
+.knowledge-ask-question {
+  color: color-mix(in srgb, var(--aether-accent) 76%, #120e18);
 }
 
 .strategy-primary-action {
@@ -720,7 +839,7 @@ html[data-reduce-motion='true'] *::after {
 
 .strategy-quality-metric,
 .strategy-quality-section {
-  border-color: var(--aether-border);
+  border-color: var(--aether-border-soft);
   background-color: color-mix(in srgb, var(--aether-surface) 94%, transparent);
   box-shadow: 0 8px 24px color-mix(in srgb, var(--aether-accent) 5%, transparent), inset 0 1px 0 color-mix(in srgb, white 34%, transparent);
 }
@@ -760,7 +879,7 @@ html[data-reduce-motion='true'] *::after {
 }
 
 .strategy-audit-list-item {
-  border-color: color-mix(in srgb, var(--aether-border) 72%, transparent);
+  border-color: transparent;
   background-color: color-mix(in srgb, var(--aether-accent) 3%, var(--aether-surface));
 }
 
@@ -773,7 +892,7 @@ html[data-reduce-motion='true'] *::after {
 }
 
 .strategy-evidence-list {
-  border-color: var(--aether-border);
+  border-color: var(--aether-border-soft);
   background-color: color-mix(in srgb, var(--aether-accent) 2%, var(--aether-surface));
 }
 
@@ -791,7 +910,7 @@ html[data-reduce-motion='true'] *::after {
 }
 
 .strategy-evidence-icon {
-  border: 1px solid color-mix(in srgb, var(--aether-accent) 20%, var(--aether-border));
+  border: 1px solid transparent;
   background-color: color-mix(in srgb, var(--aether-accent) 7%, var(--aether-surface));
   color: var(--aether-accent);
   transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
@@ -831,6 +950,7 @@ html[data-reduce-motion='true'] *::after {
 
 @media (prefers-reduced-motion: reduce) {
   .strategy-tab,
+  .strategy-tab-arrow,
   .strategy-nav-progress,
   .strategy-expandable > summary,
   .strategy-feedback > summary,
@@ -840,7 +960,8 @@ html[data-reduce-motion='true'] *::after {
   .strategy-secondary-action,
   .strategy-evidence-row,
   .strategy-evidence-icon,
-  .strategy-quality-progress {
+  .strategy-quality-progress,
+  .strategy-score-arc {
     transition-duration: 0.01ms;
   }
 }
