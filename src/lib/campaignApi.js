@@ -22,13 +22,27 @@ async function readError(res) {
   try {
     const data = await res.json()
     if (Array.isArray(data?.details)) {
-      return data.details.map((issue) => issue?.message ?? JSON.stringify(issue)).join('; ')
+      return {
+        message: data.details.map((issue) => issue?.message ?? JSON.stringify(issue)).join('; '),
+        data,
+      }
     }
-    if (data?.error) return data.error
-    return `Request failed with status ${res.status}`
+    const message = Array.isArray(data?.message)
+      ? data.message.filter(Boolean).join('; ')
+      : data?.message || data?.error || `Request failed with status ${res.status}`
+    return { message, data }
   } catch {
-    return `Request failed with status ${res.status}`
+    return { message: `Request failed with status ${res.status}`, data: null }
   }
+}
+
+async function workflowError(res) {
+  const { message, data } = await readError(res)
+  const error = new Error(message)
+  error.status = res.status
+  error.code = data?.code
+  error.credits = data?.credits
+  return error
 }
 
 async function apiFetch(path, options = {}) {
@@ -56,7 +70,7 @@ export async function startCampaign(brief, { signal } = {}) {
   })
 
   if (!res.ok) {
-    throw new Error(await readError(res))
+    throw await workflowError(res)
   }
 
   const data = await res.json()
@@ -74,7 +88,7 @@ async function startWorkflow(kind, input, { signal, projectId, chatId } = {}) {
     signal,
   })
 
-  if (!res.ok) throw new Error(await readError(res))
+  if (!res.ok) throw await workflowError(res)
 
   const data = await res.json()
   if (!data?.runId) throw new Error(`Server responded without a ${kind} run id`)
@@ -91,7 +105,7 @@ export function startContent(input, options = {}) {
 
 export async function listProjects({ signal } = {}) {
   const res = await apiFetch('/projects', { headers: { Accept: 'application/json' }, signal })
-  if (!res.ok) throw new Error(await readError(res))
+  if (!res.ok) throw await workflowError(res)
   const data = await res.json()
   return Array.isArray(data?.projects) ? data.projects : []
 }
@@ -103,7 +117,7 @@ export async function createProject(name, { signal } = {}) {
     body: JSON.stringify({ name }),
     signal,
   })
-  if (!res.ok) throw new Error(await readError(res))
+  if (!res.ok) throw await workflowError(res)
   const data = await res.json()
   if (!data?.project) throw new Error('Server responded without a project')
   return data.project
@@ -116,7 +130,7 @@ export async function renameProject(projectId, name, { signal } = {}) {
     body: JSON.stringify({ name }),
     signal,
   })
-  if (!res.ok) throw new Error(await readError(res))
+  if (!res.ok) throw await workflowError(res)
   const data = await res.json()
   if (!data?.project) throw new Error('Server responded without a project')
   return data.project
@@ -124,7 +138,7 @@ export async function renameProject(projectId, name, { signal } = {}) {
 
 export async function deleteProject(projectId, { signal } = {}) {
   const res = await apiFetch(`/projects/${encodeURIComponent(projectId)}`, { method: 'DELETE', signal })
-  if (!res.ok) throw new Error(await readError(res))
+  if (!res.ok) throw await workflowError(res)
 }
 
 export async function listChats(projectId, { signal } = {}) {
@@ -132,7 +146,7 @@ export async function listChats(projectId, { signal } = {}) {
     headers: { Accept: 'application/json' },
     signal,
   })
-  if (!res.ok) throw new Error(await readError(res))
+  if (!res.ok) throw await workflowError(res)
   const data = await res.json()
   return Array.isArray(data?.chats) ? data.chats : []
 }
@@ -144,7 +158,7 @@ export async function createChat(projectId, title, { signal } = {}) {
     body: JSON.stringify({ title }),
     signal,
   })
-  if (!res.ok) throw new Error(await readError(res))
+  if (!res.ok) throw await workflowError(res)
   const data = await res.json()
   if (!data?.chat) throw new Error('Server responded without a chat')
   return data.chat
@@ -155,7 +169,7 @@ export async function deleteChat(projectId, chatId, { signal } = {}) {
     method: 'DELETE',
     signal,
   })
-  if (!res.ok) throw new Error(await readError(res))
+  if (!res.ok) throw await workflowError(res)
 }
 
 export async function getProjectHistory(projectId, { signal } = {}) {
@@ -163,7 +177,7 @@ export async function getProjectHistory(projectId, { signal } = {}) {
     headers: { Accept: 'application/json' },
     signal,
   })
-  if (!res.ok) throw new Error(await readError(res))
+  if (!res.ok) throw await workflowError(res)
   const data = await res.json()
   return Array.isArray(data?.history) ? data.history : []
 }
@@ -173,7 +187,7 @@ export async function getChatHistory(projectId, chatId, { signal } = {}) {
     headers: { Accept: 'application/json' },
     signal,
   })
-  if (!res.ok) throw new Error(await readError(res))
+  if (!res.ok) throw await workflowError(res)
   const data = await res.json()
   return Array.isArray(data?.history) ? data.history : []
 }
@@ -184,7 +198,7 @@ export async function getCampaign(runId, { signal } = {}) {
     signal,
   })
   if (!res.ok) {
-    throw new Error(await readError(res))
+    throw await workflowError(res)
   }
   return res.json()
 }
@@ -196,7 +210,7 @@ export async function cancelCampaign(runId, { signal } = {}) {
     signal,
   })
   if (!res.ok) {
-    throw new Error(await readError(res))
+    throw await workflowError(res)
   }
   return res.json()
 }
@@ -206,7 +220,7 @@ async function getWorkflow(kind, runId, { signal } = {}) {
     headers: { Accept: 'application/json' },
     signal,
   })
-  if (!res.ok) throw new Error(await readError(res))
+  if (!res.ok) throw await workflowError(res)
   return res.json()
 }
 
@@ -216,7 +230,7 @@ async function cancelWorkflow(kind, runId, { signal } = {}) {
     headers: { Accept: 'application/json' },
     signal,
   })
-  if (!res.ok) throw new Error(await readError(res))
+  if (!res.ok) throw await workflowError(res)
   return res.json()
 }
 

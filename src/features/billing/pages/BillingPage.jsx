@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   ArrowRight,
   Check,
   CheckCircle2,
+  Coins,
   CreditCard,
   Loader2,
   ShieldCheck,
@@ -15,18 +16,11 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
   cancelSubscription,
-  changePlan,
-  createCheckout,
   getErrorMessage,
+  getCreditUsage,
   getSubscription,
-  listPlans,
 } from '@/lib/billingApi'
-
-const PLAN_DETAILS = {
-  free: { eyebrow: 'Starter', features: ['3 campaigns / month', 'Live captions & hashtags', 'Community support'] },
-  pro: { eyebrow: 'Popular', features: ['Unlimited campaigns', 'AI image generation', 'Advanced analytics', 'Priority support'] },
-  business: { eyebrow: 'Team', features: ['Everything in Pro', 'Team workspaces', 'API access', 'Dedicated success manager'] },
-}
+import { PRICING_PLANS } from '@/features/billing/plans'
 
 const STATUS_STYLES = {
   ACTIVE: 'bg-[#e6fbc7] text-[#315016]',
@@ -128,11 +122,14 @@ function NoticePopup({ title, body, onClose }) {
 }
 
 export function BillingPage() {
-  const [plans, setPlans] = useState([])
+  const plans = PRICING_PLANS
   const [subscription, setSubscription] = useState(null)
-  const [interval, setInterval] = useState('month')
+  const [creditUsage, setCreditUsage] = useState(null)
+  const [interval, setInterval] = useState(() => {
+    const requested = new URLSearchParams(window.location.search).get('interval')
+    return requested === 'year' ? 'year' : 'month'
+  })
   const [loading, setLoading] = useState(true)
-  const [busyPlan, setBusyPlan] = useState('')
   const [busyAction, setBusyAction] = useState('')
   const [error, setError] = useState('')
   const [popup, setPopup] = useState(() => {
@@ -155,6 +152,8 @@ export function BillingPage() {
   })
   const navigate = useNavigate()
   const { refreshSession } = useAuth()
+  const requestedPlanRef = useRef(new URLSearchParams(window.location.search).get('plan'))
+  const continuedCheckoutRef = useRef(false)
 
   useEffect(() => {
     if (popup) {
@@ -165,13 +164,13 @@ export function BillingPage() {
 
   const load = async () => {
     try {
-      const [planData, subscriptionData] = await Promise.all([
-        listPlans(),
+      const [subscriptionData, usageData] = await Promise.all([
         getSubscription(),
+        getCreditUsage(),
       ])
       setError('')
-      setPlans(Array.isArray(planData) ? planData : [])
       setSubscription(subscriptionData ?? null)
+      setCreditUsage(usageData ?? null)
       if (subscriptionData?.billingInterval) {
         const normalized = String(subscriptionData.billingInterval).toUpperCase()
         setInterval(normalized === 'MONTHLY' ? 'month' : 'year')
@@ -185,12 +184,12 @@ export function BillingPage() {
 
   useEffect(() => {
     let active = true
-    Promise.all([listPlans(), getSubscription()])
-      .then(([planData, subscriptionData]) => {
+    Promise.all([getSubscription(), getCreditUsage()])
+      .then(([subscriptionData, usageData]) => {
         if (!active) return
         setError('')
-        setPlans(Array.isArray(planData) ? planData : [])
         setSubscription(subscriptionData ?? null)
+        setCreditUsage(usageData ?? null)
         if (subscriptionData?.billingInterval) {
           const normalized = String(subscriptionData.billingInterval).toUpperCase()
           setInterval(normalized === 'MONTHLY' ? 'month' : 'year')
@@ -215,41 +214,19 @@ export function BillingPage() {
       : 'year'
 
   const choosePlan = async (planCode) => {
-    setError('')
-    setBusyPlan(planCode)
-    setBusyAction('checkout')
-    try {
-      const { url } = await createCheckout({ planCode, interval })
-      window.location.assign(url)
-    } catch (checkoutError) {
-      setError(getErrorMessage(checkoutError))
-      setBusyPlan('')
-      setBusyAction('')
+    if (planCode === 'free') {
+      navigate('/generate')
+      return
     }
+    navigate(`/checkout?plan=${encodeURIComponent(planCode)}&interval=${interval}`)
   }
 
   const switchPlan = async (planCode) => {
-    setError('')
-    setBusyPlan(planCode)
-    setBusyAction('change')
-    try {
-      const { url } = await changePlan({ planCode, interval })
-      if (url) {
-        window.location.assign(url)
-        return
-      }
-      await load()
-      setPopup({
-        kind: 'success',
-        title: 'Plan updated',
-        body: `You are now on the ${plans.find((plan) => plan.code === planCode)?.name ?? planCode} plan.`,
-      })
-    } catch (changeError) {
-      setError(getErrorMessage(changeError))
-    } finally {
-      setBusyPlan('')
-      setBusyAction('')
+    if (planCode === 'free') {
+      await handleCancel()
+      return
     }
+    navigate(`/checkout?plan=${encodeURIComponent(planCode)}&interval=${interval}`)
   }
 
   const handleCancel = async () => {
@@ -262,7 +239,7 @@ export function BillingPage() {
       setPopup({
         kind: 'notice',
         title: 'Subscription cancelled',
-        body: 'Your subscription has been cancelled and access will end at the period close.',
+        body: 'Your paid subscription ended and your account is now on the Free allowance.',
       })
     } catch (cancelError) {
       setError(getErrorMessage(cancelError))
@@ -270,6 +247,18 @@ export function BillingPage() {
       setBusyAction('')
     }
   }
+
+  useEffect(() => {
+    const requestedPlan = requestedPlanRef.current
+    if (loading || continuedCheckoutRef.current || !requestedPlan) return
+    if (!plans.some((plan) => plan.code === requestedPlan)) return
+
+    continuedCheckoutRef.current = true
+    navigate('/billing', { replace: true })
+    void choosePlan(requestedPlan)
+    // The request is captured once from the login redirect and must run once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, plans])
 
   const sortedPlans = useMemo(
     () => [...plans].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)),
@@ -317,6 +306,37 @@ export function BillingPage() {
           ) : null}
         </div>
 
+        {creditUsage ? (
+          <section className="grid gap-5 rounded-3xl border border-[#ded3e4] bg-[#fffaff] p-5 shadow-[0_12px_32px_rgba(46,32,51,0.06)] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-6" aria-labelledby="credit-balance-title">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-[#4f378a]">
+                <Coins className="size-4" /> <span id="credit-balance-title">Generation credits</span>
+              </div>
+              <p className="mt-2 text-2xl font-semibold tracking-[-0.4px] text-[#201a25]">
+                {creditUsage.remaining.toLocaleString()} of {creditUsage.limit.toLocaleString()} left
+              </p>
+              <p className="mt-1 text-xs leading-5 text-[#746b79]">
+                One credit starts one strategy, content workflow, or regeneration. Resets {new Date(creditUsage.periodEnd).toLocaleDateString()}.
+              </p>
+              <div className="mt-4 h-2 max-w-xl overflow-hidden rounded-full bg-[#ebe3ed]" aria-hidden="true">
+                <div
+                  className={`h-full rounded-full transition-[width] ${creditUsage.blockedReason ? 'bg-[#ad3150]' : 'bg-[#4f378a]'}`}
+                  style={{ width: `${creditUsage.limit ? Math.max(2, (creditUsage.remaining / creditUsage.limit) * 100) : 0}%` }}
+                />
+              </div>
+              {creditUsage.blockedReason === 'payment_required' ? (
+                <p role="alert" className="mt-3 text-sm font-semibold text-[#9f2949]">Update your subscription payment before generating again.</p>
+              ) : creditUsage.remaining === 0 ? (
+                <p role="status" className="mt-3 text-sm font-semibold text-[#9f2949]">No credits remain. Choose a larger plan to keep generating.</p>
+              ) : null}
+            </div>
+            <div className="rounded-2xl bg-[#f2eafa] px-5 py-4 text-center">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#746286]">Current allowance</p>
+              <p className="mt-1 font-display text-2xl text-[#381e72]">{creditUsage.plan.name}</p>
+            </div>
+          </section>
+        ) : null}
+
         {/* Interval toggle */}
         <div className="flex items-center gap-3">
           {['month', 'year'].map((value) => (
@@ -332,7 +352,7 @@ export function BillingPage() {
               }`}
             >
               {value === 'month' ? 'Monthly' : 'Yearly'}
-              {value === 'year' ? <span className={interval === 'year' ? 'text-[#b7f36b]' : 'text-[#6a9f27]'}>−20%</span> : null}
+              {value === 'year' ? <span className={interval === 'year' ? 'text-[#b7f36b]' : 'text-[#6a9f27]'}>Save 17%</span> : null}
             </button>
           ))}
         </div>
@@ -357,9 +377,10 @@ export function BillingPage() {
         ) : (
           <div className="grid gap-6 md:grid-cols-3">
             {sortedPlans.map((plan, index) => {
-              const detail = PLAN_DETAILS[plan.code] ?? { eyebrow: 'Plan', features: [] }
+              const detail = plan
               const isSamePlanSubscription = subscription && currentPlanCode === plan.code
-              const isCurrent = isSamePlanSubscription && isActiveStatus
+              const isCurrent = (isSamePlanSubscription && isActiveStatus) ||
+                (!isActiveStatus && creditUsage?.plan?.code === plan.code)
               const priceCents =
                 (isCurrent ? subscribedInterval : interval) === 'year'
                   ? plan.priceYearlyCents
@@ -367,7 +388,6 @@ export function BillingPage() {
               const priceInterval = isCurrent ? subscribedInterval : interval
               const hasPrice = priceCents != null
               const isSamePlan = currentPlanCode === plan.code
-              const busy = busyPlan === plan.code
               const highlight = plan.code === 'pro'
 
               return (
@@ -407,40 +427,48 @@ export function BillingPage() {
                     )}
                   </div>
 
+                  <div className="mt-5 rounded-2xl border border-[#e4d9e8] bg-[#f8f2f9] px-4 py-3">
+                    <div className="flex items-center gap-2 text-sm font-bold text-[#2b2030]">
+                      <Coins className="size-4 text-[#4f378a]" />
+                      {Number(plan.generationCredits ?? 0).toLocaleString()} credits / month
+                    </div>
+                    <p className="mt-1 text-[11px] leading-4 text-[#776e7d]">Shared across strategy, post creation, and regenerations.</p>
+                  </div>
+
                   <div className="mt-6 flex min-h-12">
                     {isCurrent ? (
                       <span className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#cfe2b2] bg-[#eff9df] text-sm font-semibold text-[#315016]">
-                        <Check className="size-4" /> Current plan · {subscribedInterval === 'year' ? 'Yearly' : 'Monthly'}
+                        <Check className="size-4" /> Current plan{plan.code === 'free' ? ' · Included' : ` · ${subscribedInterval === 'year' ? 'Yearly' : 'Monthly'}`}
                       </span>
                     ) : isSamePlan && subscription?.status === 'CANCELLED' ? (
                       <button
                         type="button"
                         onClick={() => choosePlan(plan.code)}
-                        disabled={busy || Boolean(busyPlan)}
+                        disabled={busyAction === 'cancel'}
                         className="group flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#381e72] px-4 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(56,30,114,0.22)] transition-all hover:bg-[#4f378a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#381e72] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {busy ? <Loader2 className="size-4 animate-spin text-[#b7f36b]" /> : <Sparkles className="size-4 text-[#b7f36b]" />}
-                        {busy ? 'Opening checkout…' : 'Resume subscription'}
+                        <Sparkles className="size-4 text-[#b7f36b]" />
+                        Resume subscription
                       </button>
-                    ) : subscription ? (
+                    ) : isActiveStatus ? (
                       <button
                         type="button"
                         onClick={() => switchPlan(plan.code)}
-                        disabled={busy || Boolean(busyPlan)}
+                        disabled={busyAction === 'cancel'}
                         className="group flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#381e72] px-4 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(56,30,114,0.22)] transition-all hover:bg-[#4f378a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#381e72] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {busy ? <Loader2 className="size-4 animate-spin text-[#b7f36b]" /> : <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />}
-                        {busy ? (busyAction === 'change' ? 'Switching…' : 'Redirecting…') : `Switch to ${plan.name}`}
+                        <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                        Switch to {plan.name}
                       </button>
                     ) : (
                       <button
                         type="button"
                         onClick={() => choosePlan(plan.code)}
-                        disabled={busy || Boolean(busyPlan)}
+                        disabled={busyAction === 'cancel'}
                         className="group flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#381e72] px-4 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(56,30,114,0.22)] transition-all hover:bg-[#4f378a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#381e72] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {busy ? <Loader2 className="size-4 animate-spin text-[#b7f36b]" /> : <Sparkles className="size-4 text-[#b7f36b]" />}
-                        {busy ? 'Opening checkout…' : subscription ? 'Choose' : plan.code === 'free' ? 'Start free' : 'Choose plan'}
+                        <Sparkles className="size-4 text-[#b7f36b]" />
+                        {plan.code === 'free' ? 'Start generating' : 'Choose plan'}
                       </button>
                     )}
                   </div>

@@ -1,10 +1,11 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import brandMark from '@/assets/auth/brand-mark.svg'
 import { RegisterForm } from '../components/RegisterForm'
 import { RegisterShowcasePanel } from '../components/RegisterShowcasePanel'
 
 export function RegisterPage() {
   const navigate = useNavigate()
+  const location = useLocation()
 
   return (
     <main className="flex min-h-dvh w-full bg-[#fef7ff] text-[#1d1b20] xl:h-dvh xl:overflow-hidden">
@@ -32,7 +33,7 @@ export function RegisterPage() {
             onSuccess={(values) =>
               navigate('/verify-email', {
                 replace: true,
-                state: { email: values.email },
+                state: { email: values.email, from: location.state?.from },
               })
             }
           />
@@ -41,6 +42,7 @@ export function RegisterPage() {
             Already have an account?{' '}
             <Link
               to="/login"
+              state={{ from: location.state?.from }}
               className="font-semibold text-[#4f378a] underline-offset-4 hover:underline"
             >
               Log in

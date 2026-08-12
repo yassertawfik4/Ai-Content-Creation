@@ -28,6 +28,9 @@ const ConnectorsPage = lazy(() =>
 const BillingPage = lazy(() =>
   import("@/features/billing/pages/BillingPage").then((module) => ({ default: module.BillingPage })),
 );
+const CheckoutPage = lazy(() =>
+  import("@/features/billing/pages/CheckoutPage").then((module) => ({ default: module.CheckoutPage })),
+);
 
 function App() {
   return (
@@ -42,6 +45,7 @@ function App() {
           <Route path="/generate" element={<ProtectedRoute><GeneratePage /></ProtectedRoute>} />
           <Route path="/connectors" element={<ProtectedRoute><ConnectorsPage /></ProtectedRoute>} />
           <Route path="/billing" element={<ProtectedRoute><BillingPage /></ProtectedRoute>} />
+          <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
         </Routes>
       </Suspense>
     </AuthProvider>

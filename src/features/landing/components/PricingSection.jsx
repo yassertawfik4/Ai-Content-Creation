@@ -1,49 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, Check, CheckCircle2, Loader2, Sparkles, X } from 'lucide-react'
+import { ArrowRight, Check, CheckCircle2, Coins, Loader2, LockKeyhole, Sparkles, X } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { listPlans, createCheckout, getSubscription, changePlan, cancelSubscription, getErrorMessage } from '@/lib/billingApi'
-
-const PLAN_DETAILS = {
-  free: {
-    eyebrow: 'Starter',
-    features: ['3 campaigns / month', 'Live captions & hashtags', 'Community support'],
-    highlight: false,
-  },
-  pro: {
-    eyebrow: 'Popular',
-    features: [
-      'Unlimited campaigns',
-      'AI image generation',
-      'Advanced analytics',
-      'Priority support',
-    ],
-    highlight: true,
-  },
-  business: {
-    eyebrow: 'Team',
-    features: [
-      'Everything in Pro',
-      'Team workspaces',
-      'API access',
-      'Dedicated success manager',
-    ],
-    highlight: false,
-  },
-}
-
-function formatCents(cents) {
-  if (cents == null) return null
-  return (cents / 100).toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
-  })
-}
+import { getSubscription, cancelSubscription, getErrorMessage } from '@/lib/billingApi'
+import { formatPlanPrice, getPlanPrice, PRICING_PLANS } from '@/features/billing/plans'
 
 export function PricingSection() {
-  const [plans, setPlans] = useState([])
   const [subscription, setSubscription] = useState(null)
   const [interval, setInterval] = useState('month')
   const [error, setError] = useState('')
@@ -74,20 +37,6 @@ export function PricingSection() {
       navigate('/#pricing', { replace: true })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  useEffect(() => {
-    let active = true
-    listPlans()
-      .then((data) => {
-        if (active) setPlans(Array.isArray(data) ? data : [])
-      })
-      .catch(() => {
-        if (active) setError('Could not load plans right now. Please try again later.')
-      })
-    return () => {
-      active = false
-    }
   }, [])
 
   useEffect(() => {
@@ -128,46 +77,17 @@ export function PricingSection() {
     }
   }
 
-  const startCheckout = async (planCode) => {
+  const startCheckout = (planCode) => {
+    const destination = planCode === 'free'
+      ? '/generate'
+      : `/checkout?plan=${encodeURIComponent(planCode)}&interval=${interval}`
     if (!isAuthenticated) {
-      navigate('/login', { state: { from: '/billing' } })
-      return
-    }
-    setError('')
-    setCheckingOut(planCode)
-    try {
-      const { url } = await createCheckout({ planCode, interval })
-      window.location.assign(url)
-    } catch (checkoutError) {
-      setError(getErrorMessage(checkoutError))
-      setCheckingOut('')
-    }
-  }
-
-  const switchPlan = async (planCode) => {
-    if (!isAuthenticated) {
-      navigate('/login', { state: { from: '/billing' } })
-      return
-    }
-    setError('')
-    setCheckingOut(planCode)
-    try {
-      const { url } = await changePlan({ planCode, interval })
-      if (url) {
-        window.location.assign(url)
-        return
-      }
-      await refreshSubscription()
-      setCheckingOut('')
-      setPopup({
-        kind: 'success',
-        title: 'Plan updated',
-        body: `You are now on the ${plans.find((p) => p.code === planCode)?.name ?? planCode} plan.`,
+      navigate('/login', {
+        state: { from: destination },
       })
-    } catch (switchError) {
-      setError(getErrorMessage(switchError))
-      setCheckingOut('')
+      return
     }
+    navigate(destination)
   }
 
   const handleCancel = async () => {
@@ -180,18 +100,13 @@ export function PricingSection() {
       setPopup({
         kind: 'notice',
         title: 'Subscription cancelled',
-        body: 'Your subscription has been cancelled and access will end at the period close.',
+        body: 'Your paid subscription ended and your account is now on the Free allowance.',
       })
     } catch (cancelError) {
       setError(getErrorMessage(cancelError))
       setCheckingOut('')
     }
   }
-
-  const sortedPlans = useMemo(
-    () => [...plans].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)),
-    [plans],
-  )
 
   return (
     <section id="pricing" className="bg-[#fef7ff] px-6 py-24 lg:py-28">
@@ -228,24 +143,24 @@ export function PricingSection() {
               }`}
             >
               {value === 'month' ? 'Monthly' : 'Yearly'}
-              {value === 'year' ? <span className={interval === 'year' ? 'text-[#b7f36b]' : 'text-[#6a9f27]'}>−20%</span> : null}
+              {value === 'year' ? <span className={interval === 'year' ? 'text-[#b7f36b]' : 'text-[#6a9f27]'}>Save 17%</span> : null}
             </button>
           ))}
         </div>
 
+        <div className="mx-auto mt-7 flex max-w-xl items-center justify-center gap-2 rounded-2xl border border-[#dfd3e7] bg-white/70 px-4 py-3 text-center text-sm text-[#625b71]">
+          <Coins className="size-4 shrink-0 text-[#4f378a]" />
+          One generation credit starts one strategy or one content workflow.
+        </div>
+
         {error ? (
-          <div className="mt-8 rounded-2xl border border-[#eccfd5] bg-[#fbe9ee] px-4 py-3 text-center text-sm text-[#8a2440]">
+          <div role="alert" aria-live="polite" className="mt-8 rounded-2xl border border-[#eccfd5] bg-[#fbe9ee] px-4 py-3 text-center text-sm text-[#8a2440]">
             {error}
           </div>
         ) : null}
 
         <div className="mt-12 grid gap-6 md:grid-cols-3">
-          {sortedPlans.map((plan, index) => {
-            const detail = PLAN_DETAILS[plan.code] ?? {
-              eyebrow: 'Plan',
-              features: [],
-              highlight: false,
-            }
+          {PRICING_PLANS.map((plan, index) => {
             const isActiveSubscription =
               subscription &&
               ['ACTIVE', 'TRIALING', 'PAST_DUE', 'UNPAID'].includes(subscription?.status)
@@ -256,10 +171,8 @@ export function PricingSection() {
                 ? 'month'
                 : 'year'
             const cardInterval = isSubscribedPlan ? subscribedInterval : interval
-            const priceCents =
-              cardInterval === 'year' ? plan.priceYearlyCents : plan.priceMonthlyCents
-            const hasPrice = priceCents != null
-            const priceLabel = formatCents(priceCents)
+            const priceCents = getPlanPrice(plan, cardInterval)
+            const priceLabel = formatPlanPrice(priceCents)
             const isFree = priceCents === 0
             const busy = checkingOut === plan.code
 
@@ -271,7 +184,7 @@ export function PricingSection() {
                 viewport={{ once: true, amount: 0.3 }}
                 transition={{ duration: 0.5, delay: index * 0.08, ease: 'easeOut' }}
                 className={`relative flex flex-col rounded-3xl p-7 transition-shadow ${
-                  detail.highlight
+                  plan.highlight
                     ? 'bg-[#381e72] text-white shadow-[0_24px_60px_rgba(56,30,114,0.3)]'
                     : 'border border-[#e2d9e6] bg-[#fffaff] shadow-[0_14px_38px_rgba(46,32,51,0.07)]'
                 }`}
@@ -280,46 +193,50 @@ export function PricingSection() {
                   <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-[#6a9f27] px-3.5 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-white shadow-md">
                     <span className="inline-flex items-center gap-1"><Check className="size-3" strokeWidth={3} /> Confirmed</span>
                   </span>
-                ) : detail.highlight ? (
+                ) : plan.highlight ? (
                   <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-[#b7f36b] px-3.5 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#1d3b05] shadow-md">
                     Most popular
                   </span>
                 ) : null}
 
                 <div className="flex items-baseline justify-between">
-                  <h3 className={`text-lg font-semibold ${detail.highlight ? 'text-white' : 'text-[#201a25]'}`}>
+                  <h3 className={`text-lg font-semibold ${plan.highlight ? 'text-white' : 'text-[#201a25]'}`}>
                     {plan.name}
                   </h3>
-                  <span className={`text-[11px] font-bold uppercase tracking-[0.14em] ${detail.highlight ? 'text-[#b7f36b]' : 'text-[#8d8195]'}`}>
-                    {detail.eyebrow}
+                  <span className={`text-[11px] font-bold uppercase tracking-[0.14em] ${plan.highlight ? 'text-[#b7f36b]' : 'text-[#8d8195]'}`}>
+                    {plan.eyebrow}
                   </span>
                 </div>
-                <p className={`mt-2 min-h-10 text-sm leading-5 ${detail.highlight ? 'text-white/75' : 'text-[#6a6170]'}`}>
+                <p className={`mt-2 min-h-10 text-sm leading-5 ${plan.highlight ? 'text-white/75' : 'text-[#6a6170]'}`}>
                   {plan.description}
                 </p>
 
                 <div className="mt-6 flex items-end gap-1.5">
-                  {hasPrice ? (
-                    <>
-                      <span className={`font-display text-4xl font-bold tracking-[-1px] ${detail.highlight ? 'text-white' : 'text-[#201a25]'}`}>
-                        {isFree ? '$0' : priceLabel}
-                      </span>
-                      <span className={`mb-1 text-sm ${detail.highlight ? 'text-white/60' : 'text-[#8a8190]'}`}>
-                        {isFree ? 'forever' : ` / ${cardInterval}`}
-                      </span>
-                    </>
-                  ) : (
-                    <span className={`text-sm ${detail.highlight ? 'text-white/60' : 'text-[#8a8190]'}`}>
-                      Contact us
+                  <span className={`font-display text-4xl font-bold tracking-[-1px] ${plan.highlight ? 'text-white' : 'text-[#201a25]'}`}>
+                    {isFree ? '$0' : priceLabel}
+                  </span>
+                  <span className={`mb-1 text-sm ${plan.highlight ? 'text-white/60' : 'text-[#8a8190]'}`}>
+                    {isFree ? 'forever' : ` / ${cardInterval}`}
+                  </span>
+                </div>
+
+                <div className={`mt-5 rounded-2xl border px-4 py-3 ${plan.highlight ? 'border-white/15 bg-white/10' : 'border-[#e4d9e8] bg-[#f8f2f9]'}`}>
+                  <div className="flex items-center gap-2">
+                    <Coins className={`size-4 ${plan.highlight ? 'text-[#d9ffa8]' : 'text-[#4f378a]'}`} />
+                    <span className={`text-sm font-bold ${plan.highlight ? 'text-white' : 'text-[#2b2030]'}`}>
+                      {Number(plan.generationCredits ?? 0).toLocaleString()} credits / month
                     </span>
-                  )}
+                  </div>
+                  <p className={`mt-1 text-[11px] leading-4 ${plan.highlight ? 'text-white/65' : 'text-[#776e7d]'}`}>
+                    Shared by strategy, post creation, and regenerations.
+                  </p>
                 </div>
 
                 {isSubscribedPlan ? (
                   <div className="mt-6 flex flex-col gap-2.5">
                     <span
                       className={`flex min-h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold ${
-                        detail.highlight
+                        plan.highlight
                           ? 'bg-[#d9ffa8]/25 text-[#d9ffa8]'
                           : 'border border-[#cfe2b2] bg-[#eff9df] text-[#315016]'
                       }`}
@@ -332,7 +249,7 @@ export function PricingSection() {
                       onClick={handleCancel}
                       disabled={Boolean(checkingOut)}
                       className={`flex min-h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
-                        detail.highlight
+                        plan.highlight
                           ? 'border border-[#c8a6b4] bg-white/5 text-[#ffc6d1] hover:bg-white/10 focus-visible:ring-white'
                           : 'border border-[#eccfd5] bg-white text-[#9f2949] hover:bg-[#fbe9ee] focus-visible:ring-[#ad3150]'
                       }`}
@@ -341,19 +258,19 @@ export function PricingSection() {
                       Cancel subscription
                     </button>
                   </div>
-                ) : isAuthenticated && isActiveSubscription ? (
+                ) : isAuthenticated && isActiveSubscription && isFree ? (
                   <button
                     type="button"
-                    onClick={() => switchPlan(plan.code)}
+                    onClick={handleCancel}
                     disabled={busy || Boolean(checkingOut)}
                     className={`group mt-6 flex min-h-12 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
-                      detail.highlight
+                      plan.highlight
                         ? 'bg-white text-[#381e72] shadow-[0_10px_26px_rgba(0,0,0,0.22)] hover:bg-[#f3edf5] focus-visible:ring-white'
                         : 'bg-[#381e72] text-white shadow-[0_10px_22px_rgba(56,30,114,0.22)] hover:bg-[#4f378a] focus-visible:ring-[#381e72]'
                     }`}
                   >
-                    {busy ? <Loader2 className={`size-4 animate-spin ${detail.highlight ? 'text-[#4f378a]' : 'text-[#b7f36b]'}`} /> : null}
-                    {isFree ? 'Switch to Free' : `Switch to ${plan.name}`}
+                    {busy ? <Loader2 className={`size-4 animate-spin ${plan.highlight ? 'text-[#4f378a]' : 'text-[#b7f36b]'}`} /> : null}
+                    Switch to Free
                     {!busy ? <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" /> : null}
                   </button>
                 ) : (
@@ -362,27 +279,30 @@ export function PricingSection() {
                   onClick={() => startCheckout(plan.code)}
                   disabled={busy || Boolean(checkingOut)}
                   className={`group mt-6 flex min-h-12 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
-                    detail.highlight
+                    plan.highlight
                       ? 'bg-white text-[#381e72] shadow-[0_10px_26px_rgba(0,0,0,0.22)] hover:bg-[#f3edf5] focus-visible:ring-white'
                       : 'bg-[#381e72] text-white shadow-[0_10px_22px_rgba(56,30,114,0.22)] hover:bg-[#4f378a] focus-visible:ring-[#381e72]'
                   }`}
                 >
-                  {busy ? <Loader2 className={`size-4 animate-spin ${detail.highlight ? 'text-[#4f378a]' : 'text-[#b7f36b]'}`} /> : null}
+                  {busy ? <Loader2 className={`size-4 animate-spin ${plan.highlight ? 'text-[#4f378a]' : 'text-[#b7f36b]'}`} /> : null}
                   {isFree ? 'Start free' : `Choose ${plan.name}`}
                   {!busy ? <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" /> : null}
                 </button>
                 )}
 
-                <ul className={`mt-7 space-y-3 ${detail.highlight ? 'text-white/90' : 'text-[#514a56]'}`}>
-                  {detail.features.map((feature) => (
+                <ul className={`mt-7 space-y-3 ${plan.highlight ? 'text-white/90' : 'text-[#514a56]'}`}>
+                  {plan.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-2.5 text-sm">
-                      <span className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full ${detail.highlight ? 'bg-[#b7f36b]/20 text-[#d9ffa8]' : 'bg-[#e6fbc7] text-[#315016]'}`}>
+                      <span className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full ${plan.highlight ? 'bg-[#b7f36b]/20 text-[#d9ffa8]' : 'bg-[#e6fbc7] text-[#315016]'}`}>
                         <Check className="size-3" strokeWidth={2.6} />
                       </span>
                       {feature}
                     </li>
                   ))}
                 </ul>
+                <p className={`mt-auto flex items-center gap-1.5 border-t pt-5 text-[11px] ${plan.highlight ? 'border-white/15 text-white/60' : 'border-[#ece4ee] text-[#817687]'}`}>
+                  <LockKeyhole className="size-3.5" /> Secure checkout. Cancel anytime.
+                </p>
               </motion.article>
             )
           })}
