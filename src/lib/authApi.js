@@ -1,5 +1,7 @@
 const DEFAULT_AUTH_BASE = '/api'
 
+export { getErrorMessage } from '@/lib/errors'
+
 export class AuthApiError extends Error {
   constructor(message, { code, status, data } = {}) {
     super(message)
@@ -14,13 +16,6 @@ export function getAuthBase() {
   const fromEnv = import.meta.env?.VITE_AUTH_API_BASE_URL
   const base = (fromEnv && String(fromEnv).trim()) || DEFAULT_AUTH_BASE
   return base.replace(/\/$/, '')
-}
-
-export function getErrorMessage(error) {
-  if (typeof error?.message === 'string' && error.message.trim()) {
-    return error.message
-  }
-  return 'Something went wrong. Please try again.'
 }
 
 function extractError(data, fallback) {

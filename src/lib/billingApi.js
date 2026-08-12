@@ -4,6 +4,8 @@
 
 const BASE = '/api/subscriptions'
 
+export { getErrorMessage } from '@/lib/errors'
+
 export class BillingApiError extends Error {
   constructor(message, { status, data } = {}) {
     super(message)
@@ -11,13 +13,6 @@ export class BillingApiError extends Error {
     this.status = status
     this.data = data
   }
-}
-
-export function getErrorMessage(error) {
-  if (typeof error?.message === 'string' && error.message.trim()) {
-    return error.message
-  }
-  return 'Something went wrong. Please try again.'
 }
 
 function extractError(data, fallback) {

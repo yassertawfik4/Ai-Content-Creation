@@ -1,70 +1,14 @@
-import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { GuestRoute, ProtectedRoute } from "@/components/ProtectedRoute";
-import { LoadingScreen } from "@/components/LoadingScreen";
-
-const LandingPage = lazy(() =>
-  import("@/features/landing/pages/LandingPage").then((module) => ({ default: module.LandingPage })),
-);
-const LoginPage = lazy(() =>
-  import("@/features/auth/pages/LoginPage").then((module) => ({ default: module.LoginPage })),
-);
-const RegisterPage = lazy(() =>
-  import("@/features/auth/pages/RegisterPage").then((module) => ({ default: module.RegisterPage })),
-);
-const VerifyEmailPage = lazy(() =>
-  import("@/features/auth/pages/VerifyEmailPage").then((module) => ({ default: module.VerifyEmailPage })),
-);
-const OtpLoginPage = lazy(() =>
-  import("@/features/auth/pages/OtpLoginPage").then((module) => ({ default: module.OtpLoginPage })),
-);
-const ForgotPasswordPage = lazy(() =>
-  import("@/features/auth/pages/ForgotPasswordPage").then((module) => ({ default: module.ForgotPasswordPage })),
-);
-const GeneratePage = lazy(() =>
-  import("@/features/generate/pages/GeneratePage").then((module) => ({ default: module.GeneratePage })),
-);
-const ConnectorsPage = lazy(() =>
-  import("@/features/connectors/pages/ConnectorsPage").then((module) => ({ default: module.ConnectorsPage })),
-);
-const PublishingPage = lazy(() =>
-  import("@/features/publishing/pages/PublishingPage").then((module) => ({ default: module.PublishingPage })),
-);
-const KnowledgePage = lazy(() =>
-  import("@/features/knowledge/pages/KnowledgePage").then((module) => ({ default: module.KnowledgePage })),
-);
-const SettingsPage = lazy(() =>
-  import("@/features/settings/pages/SettingsPage").then((module) => ({ default: module.SettingsPage })),
-);
-const BillingPage = lazy(() =>
-  import("@/features/billing/pages/BillingPage").then((module) => ({ default: module.BillingPage })),
-);
-const CheckoutPage = lazy(() =>
-  import("@/features/billing/pages/CheckoutPage").then((module) => ({ default: module.CheckoutPage })),
-);
+import { AuthProvider } from '@/contexts/AuthContext'
+import { AppErrorBoundary } from '@/components/errors/AppErrorBoundary'
+import { AppRoutes } from '@/app/router/AppRoutes'
 
 function App() {
   return (
-    <AuthProvider>
-      <Suspense fallback={<LoadingScreen />}>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
-          <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
-          <Route path="/verify-email" element={<GuestRoute><VerifyEmailPage /></GuestRoute>} />
-          <Route path="/otp-login" element={<GuestRoute><OtpLoginPage /></GuestRoute>} />
-          <Route path="/forgot-password" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
-          <Route path="/generate" element={<ProtectedRoute><GeneratePage /></ProtectedRoute>} />
-          <Route path="/connectors" element={<ProtectedRoute><ConnectorsPage /></ProtectedRoute>} />
-          <Route path="/publishing" element={<ProtectedRoute><PublishingPage /></ProtectedRoute>} />
-          <Route path="/knowledge" element={<ProtectedRoute><KnowledgePage /></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-          <Route path="/billing" element={<ProtectedRoute><BillingPage /></ProtectedRoute>} />
-          <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
-        </Routes>
-      </Suspense>
-    </AuthProvider>
+    <AppErrorBoundary>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </AppErrorBoundary>
   );
 }
 
