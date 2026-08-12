@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AlertCircle, Check, LoaderCircle, MailCheck, PenLine, RefreshCw, Send } from 'lucide-react'
 import { OtpInput } from '../components/OtpInput'
@@ -48,6 +48,30 @@ export function VerifyEmailPage() {
   const isBusy = isSending || isVerifying || isResending
 
   const startResendCooldown = () => countdown.restart(RESEND_COOLDOWN_SECONDS)
+  const startResendCooldownRef = useRef(startResendCooldown)
+
+  useEffect(() => {
+    startResendCooldownRef.current = startResendCooldown
+  })
+
+  const autoSent = useRef(false)
+
+  useEffect(() => {
+    const trimmed = email.trim()
+    if (!trimmed || autoSent.current) return undefined
+    autoSent.current = true
+    setStatus('resending')
+    sendVerificationOtp({ email: trimmed, type: 'email-verification' })
+      .then(() => {
+        setNotice('A new verification code was sent to your inbox.')
+        startResendCooldownRef.current()
+      })
+      .catch((err) => {
+        setFormError(getErrorMessage(err))
+      })
+      .finally(() => setStatus('idle'))
+    return undefined
+  }, [email])
 
   const handleSendToEmail = async (event) => {
     event.preventDefault()

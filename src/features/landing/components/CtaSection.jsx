@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 export function CtaSection() {
   return (
-    <section id="pricing" className="bg-[#fef7ff] px-6">
+    <section className="bg-[#fef7ff] px-6">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}

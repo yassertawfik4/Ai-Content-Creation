@@ -21,13 +21,18 @@ export function ProtectedRoute({ children }) {
 
 export function GuestRoute({ children }) {
   const { isAuthenticated, isLoading } = useAuth()
+  const location = useLocation()
 
   if (isLoading) {
     return <LoadingScreen />
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />
+    const from = location.state?.from
+    const destination = typeof from === 'string' && from.startsWith('/') && !from.startsWith('//')
+      ? from
+      : '/'
+    return <Navigate to={destination} replace />
   }
 
   return children

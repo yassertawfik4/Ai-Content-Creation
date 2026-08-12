@@ -13,13 +13,28 @@ export function getApiBase() {
 async function readError(res) {
   try {
     const data = await res.json()
-    if (Array.isArray(data?.message)) return data.message.join('; ')
-    if (typeof data?.message === 'string') return data.message
-    if (typeof data?.error === 'string') return data.error
+    if (Array.isArray(data?.details)) {
+      return {
+        message: data.details.map((issue) => issue?.message ?? JSON.stringify(issue)).join('; '),
+        data,
+      }
+    }
+    const message = Array.isArray(data?.message)
+      ? data.message.filter(Boolean).join('; ')
+      : data?.message || data?.error || `Request failed with status ${res.status}`
+    return { message, data }
   } catch {
-    // Keep the status fallback below for non-JSON responses.
+    return { message: `Request failed with status ${res.status}`, data: null }
   }
-  return `Request failed with status ${res.status}`
+}
+
+async function workflowError(res) {
+  const { message, data } = await readError(res)
+  const error = new Error(message)
+  error.status = res.status
+  error.code = data?.code
+  error.credits = data?.credits
+  return error
 }
 
 async function apiFetch(path, options = {}) {
@@ -40,7 +55,7 @@ async function apiFetch(path, options = {}) {
 
 async function request(path, options = {}) {
   const res = await apiFetch(path, options)
-  if (!res.ok) throw new Error(await readError(res))
+  if (!res.ok) throw await workflowError(res)
   if (res.status === 204) return undefined
   return res.json()
 }
