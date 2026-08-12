@@ -91,7 +91,21 @@ export function changePlan({ planCode, interval }, { signal } = {}) {
   })
 }
 
+/** Returns Stripe's non-mutating prorated amount for an existing subscription. */
+export function previewPlanChange({ planCode, interval }, { signal } = {}) {
+  return billingFetch('/plan/preview', {
+    method: 'POST',
+    body: JSON.stringify({ planCode, interval }),
+    signal,
+  })
+}
+
 /** Immediately cancels the current subscription. */
 export function cancelSubscription({ signal } = {}) {
   return billingFetch('/cancel', { method: 'POST', signal })
+}
+
+/** Opens Stripe's secure portal for payment methods and invoice history. */
+export function createBillingPortal({ signal } = {}) {
+  return billingFetch('/portal', { method: 'POST', signal })
 }

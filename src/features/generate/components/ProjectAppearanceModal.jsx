@@ -43,7 +43,7 @@ function ProjectAppearanceForm({ project, defaultName, onClose, onSubmit }) {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 10, scale: 0.99 }}
       transition={{ duration: 0.22, ease: 'easeOut' }}
-      className="w-full max-w-[440px] overflow-hidden rounded-[24px] border border-[#ece8ef] bg-white shadow-[0_30px_90px_rgba(31,20,40,0.28)]"
+      className="w-full max-w-[640px] overflow-hidden rounded-[24px] border border-[#ece8ef] bg-white shadow-[0_30px_90px_rgba(31,20,40,0.28)]"
     >
       <div className="flex items-start justify-between gap-3 px-6 pt-5">
         <div>
