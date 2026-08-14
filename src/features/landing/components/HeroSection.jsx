@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
+import { AnimatedText } from './AnimatedText'
 import { HeroBackground } from './HeroBackground'
 
 const container = {
@@ -13,6 +14,67 @@ const container = {
 const item = {
   hidden: { opacity: 0, y: 24 },
   show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+}
+
+const headlineItem = {
+  hidden: { y: 24 },
+  show: { y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+}
+
+const headlineText = 'Put AI agents to work for'
+const headlineWords = (() => {
+  let characterIndex = 0
+
+  return headlineText.split(' ').map((word) => {
+    const letters = Array.from(word, (character) => ({
+      character,
+      index: characterIndex++,
+    }))
+
+    characterIndex += 1
+    return { word, letters }
+  })
+})()
+
+const typewriterLetterVariants = {
+  hidden: { opacity: 0, y: '0.12em' },
+  show: (index) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.12,
+      delay: 0.38 + index * 0.045,
+      ease: 'easeOut',
+    },
+  }),
+}
+
+function TypewriterHeadline() {
+  const prefersReducedMotion = useReducedMotion()
+
+  return (
+    <span aria-label={headlineText}>
+      {headlineWords.map(({ word, letters }, wordIndex) => (
+        <Fragment key={word}>
+          <span aria-hidden="true" className="inline-block whitespace-nowrap">
+            {letters.map(({ character, index }) => (
+              <motion.span
+                key={`${character}-${index}`}
+                custom={index}
+                variants={typewriterLetterVariants}
+                initial={prefersReducedMotion ? false : 'hidden'}
+                animate="show"
+                className="inline-block"
+              >
+                {character}
+              </motion.span>
+            ))}
+          </span>
+          {wordIndex < headlineWords.length - 1 ? ' ' : null}
+        </Fragment>
+      ))}
+    </span>
+  )
 }
 
 // Interactive highlight tag: on hover the box straightens & pops, a gloss
@@ -159,20 +221,24 @@ export function HeroSection() {
 
         {/* Headline */}
         <motion.h1
-          variants={item}
+          variants={headlineItem}
           className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-5xl font-bold leading-[1.05] tracking-tight text-[#1d1b20] sm:text-6xl lg:text-[84px] lg:tracking-[-2.1px]"
         >
-          <span>Put AI agents to work for</span>
+          <TypewriterHeadline />
           <MarketingTag />
         </motion.h1>
 
         {/* Subheadline */}
         <motion.p
-          variants={item}
+          variants={headlineItem}
           className="mt-8 max-w-[768px] text-lg leading-relaxed text-[#494551] sm:text-2xl"
         >
-          Deploy a team of specialized AI agents that research, create, and
-          optimize your entire marketing funnel with machine precision.
+          <AnimatedText
+            text="Deploy a team of specialized AI agents that research, create, and optimize your entire marketing funnel with machine precision."
+            delay={1.45}
+            stagger={0.014}
+            trigger="mount"
+          />
         </motion.p>
 
         {/* Buttons */}
