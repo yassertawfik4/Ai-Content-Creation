@@ -1,6 +1,6 @@
 import { ChevronDown, CreditCard, Loader2, LogOut, Menu, Settings, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -18,6 +18,7 @@ export function Navbar() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
   const accountMenuRef = useRef(null);
   const accountButtonRef = useRef(null);
@@ -60,6 +61,18 @@ export function Navbar() {
         .toUpperCase()
     : "";
 
+  const isLinkActive = (link) => {
+    if (link.href === "/#pricing") {
+      return location.pathname === "/" && location.hash === "#pricing";
+    }
+
+    if (link.to === "/") {
+      return location.pathname === "/" && location.hash !== "#pricing";
+    }
+
+    return location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
+  };
+
   return (
     <motion.nav
       initial={{ y: -20, opacity: 0 }}
@@ -78,12 +91,18 @@ export function Navbar() {
         </Link>
 
         <div className="hidden items-center gap-8 md:flex">
-          {navLinks.map((link) => (
-            link.to ? (
+          {navLinks.map((link) => {
+            const isActive = isLinkActive(link);
+            const linkClassName = `text-base font-medium transition-colors hover:text-[#381e72] ${
+              isActive ? "font-semibold text-[#381e72]" : "text-[#494551]"
+            }`;
+
+            return link.to ? (
               <Link
                 key={link.to}
                 to={link.to}
-                className="text-base font-medium text-[#494551] transition-colors hover:text-[#381e72]"
+                className={linkClassName}
+                aria-current={isActive ? "page" : undefined}
               >
                 {link.label}
               </Link>
@@ -91,12 +110,13 @@ export function Navbar() {
               <a
                 key={link.href}
                 href={link.href}
-                className="text-base font-medium text-[#494551] transition-colors hover:text-[#381e72]"
+                className={linkClassName}
+                aria-current={isActive ? "page" : undefined}
               >
                 {link.label}
               </a>
-            )
-          ))}
+            );
+          })}
         </div>
 
         <div className="hidden items-center gap-2 md:flex">
@@ -106,7 +126,7 @@ export function Navbar() {
                 ref={accountButtonRef}
                 type="button"
                 onClick={() => setAccountOpen((current) => !current)}
-                className="flex min-h-11 items-center gap-2 rounded-xl px-2 transition-colors hover:bg-[#eee7f2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                className="account-trigger flex min-h-11 items-center gap-2 rounded-xl px-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
                 aria-label="Open account menu"
                 aria-haspopup="menu"
                 aria-expanded={accountOpen}
@@ -115,10 +135,10 @@ export function Navbar() {
                 <span className="user-avatar flex size-9 items-center justify-center rounded-full text-xs font-bold">
                   {initials || "A"}
                 </span>
-                <span className="max-w-[160px] truncate text-base font-medium text-[#494551]">
+                <span className="account-trigger-label max-w-[160px] truncate text-base font-medium">
                   {user?.name ?? "Account"}
                 </span>
-                <ChevronDown className={`size-3.5 text-[#6f6575] transition-transform duration-200 ${accountOpen ? "rotate-180" : ""}`} aria-hidden="true" />
+                <ChevronDown className={`account-trigger-icon size-3.5 transition-transform duration-200 ${accountOpen ? "rotate-180" : ""}`} aria-hidden="true" />
               </button>
 
               <AnimatePresence>
@@ -207,13 +227,21 @@ export function Navbar() {
             className="overflow-hidden border-t border-[#cbc4d2]/40 bg-[#fef7ff]/95 backdrop-blur-2xl md:hidden"
           >
             <div className="flex flex-col gap-2 px-6 py-4">
-              {navLinks.map((link) => (
-                link.to ? (
+              {navLinks.map((link) => {
+                const isActive = isLinkActive(link);
+                const linkClassName = `rounded-lg px-3 py-3 text-base transition-colors hover:bg-[#f2ecf3] hover:text-[#381e72] ${
+                  isActive
+                    ? "bg-[#eee7f2] font-semibold text-[#381e72]"
+                    : "text-[#494551]"
+                }`;
+
+                return link.to ? (
                   <Link
                     key={link.to}
                     to={link.to}
                     onClick={() => setMobileOpen(false)}
-                    className="rounded-lg px-3 py-3 text-base text-[#494551] transition-colors hover:bg-[#f2ecf3] hover:text-[#381e72]"
+                    className={linkClassName}
+                    aria-current={isActive ? "page" : undefined}
                   >
                     {link.label}
                   </Link>
@@ -222,12 +250,13 @@ export function Navbar() {
                     key={link.href}
                     href={link.href}
                     onClick={() => setMobileOpen(false)}
-                    className="rounded-lg px-3 py-3 text-base text-[#494551] transition-colors hover:bg-[#f2ecf3] hover:text-[#381e72]"
+                    className={linkClassName}
+                    aria-current={isActive ? "page" : undefined}
                   >
                     {link.label}
                   </a>
-                )
-              ))}
+                );
+              })}
               <hr className="my-2 border-[#cbc4d2]/40" />
               {isAuthenticated ? (
                 <>

@@ -86,10 +86,12 @@ export function AppHeader() {
 
       <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-5 md:flex lg:gap-7 xl:gap-8">
         {navLinks.map((link) => {
-          const isActive = link.to ? location.pathname === link.to : false
+          const isActive = link.to === '/'
+            ? location.pathname === '/'
+            : location.pathname === link.to || location.pathname.startsWith(`${link.to}/`)
           const className = `whitespace-nowrap text-[15px] transition-colors lg:text-base ${isActive ? 'font-semibold text-[#381e72]' : 'text-[#6a6170] hover:text-[#381e72]'}`
           return link.to ? (
-            <Link key={link.to} to={link.to} className={className}>
+            <Link key={link.to} to={link.to} className={className} aria-current={isActive ? 'page' : undefined}>
               {link.label}
             </Link>
           ) : (
@@ -106,7 +108,7 @@ export function AppHeader() {
             ref={profileButtonRef}
             type="button"
             onClick={() => setProfileMenuOpen((current) => !current)}
-            className="flex h-11 items-center gap-1 rounded-xl px-1 text-[#625b71] transition-colors hover:bg-[#f3edf5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+            className="account-trigger flex h-11 items-center gap-1 rounded-xl px-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
             aria-label="Open account menu"
             aria-haspopup="menu"
             aria-expanded={profileMenuOpen}
