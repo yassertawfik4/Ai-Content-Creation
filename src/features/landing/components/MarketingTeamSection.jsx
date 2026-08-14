@@ -6,46 +6,46 @@ const agents = [
   {
     name: 'The Researcher',
     badge: 'RESEARCHER',
-    badgeClass: 'bg-[#e8def9] text-[#686177]',
+    badgeClass: 'agent-badge-subtle',
     description:
       'Scours the web for trends, competitor data, and high-intent keywords to fuel your strategy with real-time intelligence.',
     features: ['Trend mapping', 'Competitor analysis'],
     icon: Search,
     preview: (
-      <div className="flex size-full flex-col gap-3 bg-gradient-to-br from-[#f8f2f9] to-[#e8def9] p-6">
+      <div className="agent-preview-researcher flex size-full flex-col gap-3 p-6">
         <div className="mt-8 flex items-end gap-2">
           {[40, 70, 55, 90, 65, 80].map((h, i) => (
             <div
               key={i}
-              className="flex-1 rounded-t bg-[#381e72]/70"
+              className="agent-chart-bar flex-1 rounded-t"
               style={{ height: `${h}px` }}
             />
           ))}
         </div>
-        <div className="h-2 w-3/4 rounded-full bg-[#381e72]/20" />
-        <div className="h-2 w-1/2 rounded-full bg-[#381e72]/15" />
+        <div className="agent-chart-line h-2 w-3/4 rounded-full" />
+        <div className="agent-chart-line-muted h-2 w-1/2 rounded-full" />
       </div>
     ),
   },
   {
     name: 'The Creator',
     badge: 'CREATOR',
-    badgeClass: 'bg-[#4f378a] text-[#c0a7ff]',
+    badgeClass: 'agent-badge-solid',
     description:
       "Generates high-fidelity posts and professional images tailored to each platform's unique voice and formatting requirements.",
     features: ['Multi-format copy', 'Visual asset gen'],
     icon: PenTool,
     preview: (
-      <div className="flex size-full flex-col gap-3 bg-gradient-to-br from-[#ede7fb] to-[#c0a7ff]/40 p-6">
+      <div className="agent-preview-creator flex size-full flex-col gap-3 p-6">
         <div className="flex items-center gap-3">
-          <div className="size-10 rounded-full bg-[#4f378a]/30" />
+          <div className="agent-creator-avatar size-10 rounded-full" />
           <div className="flex-1 space-y-2">
-            <div className="h-2.5 w-full rounded-full bg-[#4f378a]/25" />
-            <div className="h-2.5 w-2/3 rounded-full bg-[#4f378a]/20" />
+            <div className="agent-creator-line h-2.5 w-full rounded-full" />
+            <div className="agent-creator-line-muted h-2.5 w-2/3 rounded-full" />
           </div>
         </div>
-        <div className="mt-2 flex flex-1 items-center justify-center rounded-2xl border-2 border-dashed border-[#4f378a]/30 bg-white/40">
-          <PenTool className="size-6 text-[#4f378a]/60" />
+        <div className="agent-creator-canvas mt-2 flex flex-1 items-center justify-center rounded-2xl border-2 border-dashed">
+          <PenTool className="size-6" />
         </div>
       </div>
     ),
@@ -53,16 +53,16 @@ const agents = [
   {
     name: 'The Orchestrator',
     badge: 'ORCHESTRATOR',
-    badgeClass: 'bg-[#633b48] text-[#dca7b7]',
+    badgeClass: 'agent-badge-contrast',
     description:
       'Intelligently schedules and publishes content to FB, IG, and LI at the optimal engagement times for your specific audience.',
     features: ['Auto-publishing', 'Engagement analytics'],
     icon: CalendarClock,
     preview: (
-      <div className="relative flex size-full items-center justify-center overflow-hidden bg-[#1d1b20] p-6">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#381e72]/40 to-transparent" />
-        <svg viewBox="0 0 240 160" className="relative size-full">
-          <g stroke="#c0a7ff" strokeWidth="1" fill="none" opacity="0.6">
+      <div className="agent-preview-orchestrator relative flex size-full items-center justify-center overflow-hidden p-6">
+        <div className="agent-orchestrator-glow absolute inset-0" />
+        <svg viewBox="0 0 240 160" className="agent-network relative size-full">
+          <g stroke="currentColor" strokeWidth="1" fill="none" opacity="0.6">
             <path d="M120 80 L60 45 M120 80 L180 40 M120 80 L80 130 M120 80 L165 125" />
           </g>
           {[
@@ -77,7 +77,7 @@ const agents = [
               cx={cx}
               cy={cy}
               r={i === 0 ? 6 : 4}
-              fill="#c0a7ff"
+              fill="currentColor"
             />
           ))}
         </svg>
@@ -97,7 +97,7 @@ const cardVariants = {
 
 export function MarketingTeamSection() {
   return (
-    <section id="workspace" className="bg-[#f8f2f9] px-6 py-32 lg:px-8">
+    <section id="workspace" className="marketing-team-section px-6 py-32 lg:px-8">
       <div className="mx-auto flex max-w-[1280px] flex-col gap-20">
         {/* Header */}
         <div className="flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-end">
@@ -122,7 +122,7 @@ export function MarketingTeamSection() {
           </div>
           <a
             href="#platform"
-            className="group inline-flex shrink-0 items-center gap-2 rounded-md px-6 py-3 text-sm font-semibold text-[#381e72] transition-colors hover:bg-[#e8def9]"
+            className="marketing-team-action group inline-flex shrink-0 items-center gap-2 rounded-md px-6 py-3 text-sm font-semibold transition-colors"
           >
             Explore the platform
             <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
@@ -141,10 +141,10 @@ export function MarketingTeamSection() {
                 initial="hidden"
                 whileInView="show"
                 viewport={{ once: true, amount: 0.3 }}
-                className="flex flex-col rounded-[48px] border border-[#cbc4d2] bg-white p-6"
+                className="agent-showcase-card flex flex-col rounded-[48px] border p-6"
               >
                 {/* Preview */}
-                <div className="relative h-[250px] overflow-hidden rounded-[32px] border border-[#cbc4d2]">
+                <div className="agent-preview-frame relative h-[250px] overflow-hidden rounded-[32px] border">
                   {agent.preview}
                   <span
                     className={`absolute left-4 top-4 rounded-full px-3 py-1 text-xs font-medium tracking-wide ${agent.badgeClass}`}
@@ -156,7 +156,7 @@ export function MarketingTeamSection() {
                 {/* Body */}
                 <div className="flex flex-1 flex-col px-2 pt-8">
                   <div className="flex items-center gap-3">
-                    <span className="flex size-9 items-center justify-center rounded-xl bg-[#e8def9] text-[#4f378a]">
+                    <span className="agent-card-icon flex size-9 items-center justify-center rounded-xl">
                       <Icon className="size-5" />
                     </span>
                     <h3 className="text-2xl font-semibold text-[#1d1b20]">
@@ -172,7 +172,7 @@ export function MarketingTeamSection() {
                         key={feature}
                         className="flex items-center gap-3 text-sm text-[#494551]"
                       >
-                        <Check className="size-4 shrink-0 text-[#4f378a]" />
+                        <Check className="agent-feature-check size-4 shrink-0" />
                         {feature}
                       </li>
                     ))}

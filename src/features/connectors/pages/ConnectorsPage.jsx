@@ -84,11 +84,11 @@ export function ConnectorsPage() {
       <Navbar />
 
       <main>
-        <section className="relative overflow-hidden border-b border-[#cbc4d2]/35 pt-[72px]">
+        <section className="connector-hero relative overflow-hidden border-b pt-[72px]">
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute -left-32 top-10 size-[440px] rounded-full bg-[#64d9e6]/10 blur-[110px]" />
-            <div className="absolute -right-28 top-12 size-[500px] rounded-full bg-[#df59d8]/10 blur-[120px]" />
-            <div className="absolute left-1/2 top-1/2 size-[680px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-[#987ac9]/15" />
+            <div className="connector-hero-glow-primary absolute -left-32 top-10 size-[440px] rounded-full blur-[110px]" />
+            <div className="connector-hero-glow-secondary absolute -right-28 top-12 size-[500px] rounded-full blur-[120px]" />
+            <div className="connector-hero-boundary absolute left-1/2 top-1/2 size-[680px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed" />
           </div>
 
           <div className="relative mx-auto grid min-h-[700px] max-w-[1280px] items-center gap-12 px-6 py-20 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-24">
@@ -99,7 +99,7 @@ export function ConnectorsPage() {
               transition={{ duration: 0.6, ease: "easeOut" }}
               className="max-w-[680px]"
             >
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#cbbdde]/60 bg-white/55 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#62458e] shadow-sm backdrop-blur-md">
+              <div className="connector-hero-kicker inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] shadow-sm backdrop-blur-md">
                 <Sparkles className="size-3.5" />
                 Connector ecosystem
               </div>
@@ -116,14 +116,14 @@ export function ConnectorsPage() {
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <a
                   href="#connector-library"
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#381e72] px-7 text-sm font-semibold text-white shadow-[0_14px_36px_rgba(56,30,114,0.22)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#4f378a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] focus-visible:ring-offset-2"
+                  className="connector-primary-action inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-7 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] focus-visible:ring-offset-2"
                 >
                   Explore connectors
                   <ArrowDown className="size-4" />
                 </a>
                 <Link
                   to="/publishing"
-                  className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#a996c2]/55 bg-white/55 px-7 text-sm font-semibold text-[#381e72] backdrop-blur-md transition-colors duration-200 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] focus-visible:ring-offset-2"
+                  className="connector-secondary-action inline-flex min-h-12 items-center justify-center rounded-xl border px-7 text-sm font-semibold backdrop-blur-md transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] focus-visible:ring-offset-2"
                 >
                   Start connecting
                 </Link>
@@ -133,7 +133,7 @@ export function ConnectorsPage() {
                 {["Brand-safe output", "Channel-native formats", "One workflow"].map(
                   (benefit) => (
                     <span key={benefit} className="inline-flex items-center gap-2">
-                      <CheckCircle2 className="size-4 text-[#6c5599]" />
+                      <CheckCircle2 className="connector-benefit-icon size-4" />
                       {benefit}
                     </span>
                   ),

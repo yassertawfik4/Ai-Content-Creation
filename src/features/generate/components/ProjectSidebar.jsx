@@ -207,11 +207,11 @@ export function ProjectSidebar({
       </div>
 
       <nav className="mt-1 space-y-0.5" aria-label="Workspace navigation">
-        <button className="flex h-9 w-full items-center gap-2.5 rounded-lg bg-[#f4f2f7] px-2.5 text-[13px] font-semibold text-[#201a25]" type="button">
-          <Folder className="size-[17px] text-[#4f378a]" /> Projects
+        <button className="project-sidebar-nav-item flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-semibold" type="button" data-selected={!historyOpen}>
+          <Folder className="project-sidebar-nav-icon size-[17px]" /> Projects
         </button>
-        <button onClick={onOpenHistory} className={`flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-[13px] transition-colors ${historyOpen ? 'bg-[#f4f2f7] font-semibold text-[#201a25]' : 'font-medium text-[#4a4453] hover:bg-[#f7f6f9]'}`} type="button">
-          <History className="size-[17px] text-[#8b8494]" /> Chat history
+        <button onClick={onOpenHistory} className="project-sidebar-nav-item flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium transition-colors" type="button" data-selected={historyOpen}>
+          <History className="project-sidebar-nav-icon size-[17px]" /> Chat history
         </button>
       </nav>
 
@@ -222,7 +222,7 @@ export function ProjectSidebar({
           onClick={createProjectFromSidebar}
           aria-label="Create new project"
           title="Create new project"
-          className="flex size-7 items-center justify-center rounded-md text-[#6b6577] transition-colors hover:bg-[#f4f2f7] hover:text-[#4f378a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+          className="project-sidebar-icon-action flex size-7 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
         >
           <Plus className="size-4" />
         </button>
@@ -280,7 +280,7 @@ export function ProjectSidebar({
                       onClick={() => createChatInProject(project.id)}
                       aria-label={`Create chat in ${project.name}`}
                       title="New chat"
-                      className="flex size-7 items-center justify-center rounded-md text-[#6b6577] transition-colors hover:bg-[#f4f2f7] hover:text-[#4f378a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                      className="project-sidebar-icon-action flex size-7 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
                     >
                       <Plus className="size-3.5" />
                     </button>
@@ -294,7 +294,7 @@ export function ProjectSidebar({
                         aria-label={`More actions for ${project.name}`}
                         aria-haspopup="menu"
                         aria-expanded={openProjectMenuId === project.id}
-                        className="flex size-7 items-center justify-center rounded-md text-[#6b6577] transition-colors hover:bg-[#f4f2f7] hover:text-[#201a25] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                        className="project-sidebar-icon-action flex size-7 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
                       >
                         <MoreHorizontal className="size-4" />
                       </button>
@@ -317,7 +317,8 @@ export function ProjectSidebar({
                     return (
                       <div
                         key={chat.id}
-                        className={`group/chat relative rounded-lg transition-colors ${selected ? 'bg-[#f1eef6]' : 'hover:bg-[#f7f6f9]'}`}
+                        className="project-chat-row group/chat relative rounded-lg transition-colors"
+                        data-selected={selected}
                       >
                         {editingChatId === chat.id ? (
                           <div className="flex min-h-9 items-center pl-5 pr-1.5">
@@ -356,7 +357,7 @@ export function ProjectSidebar({
                               aria-label={`More actions for ${chat.title}`}
                               aria-haspopup="menu"
                               aria-expanded={openChatMenuId === chat.id}
-                              className="flex size-7 items-center justify-center rounded-md text-[#6b6577] transition-colors hover:bg-[#eae7f0] hover:text-[#201a25] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                              className="project-sidebar-icon-action flex size-7 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
                             >
                               <MoreHorizontal className="size-4" />
                             </button>

@@ -3,13 +3,13 @@ import { ShieldCheck, LayoutDashboard } from 'lucide-react'
 import { AnimatedText } from './AnimatedText'
 
 const stats = [
-  { value: '11x', label: 'Production Speed', valueClass: 'text-[#e9ddff]' },
-  { value: '4x', label: 'Engagement Rate', valueClass: 'text-[#eeb8c8]' },
+  { value: '11x', label: 'Production Speed', valueClass: 'impact-stat-primary' },
+  { value: '4x', label: 'Engagement Rate', valueClass: 'impact-stat-secondary' },
 ]
 
 export function ImpactBentoSection() {
   return (
-    <section className="bg-[#fef7ff] px-6 py-32 lg:px-8">
+    <section className="impact-section px-6 py-32 lg:px-8">
       <div className="mx-auto grid max-w-[1280px] gap-8 lg:grid-cols-3 lg:grid-rows-2">
         {/* Main impact card */}
         <motion.div
@@ -17,10 +17,10 @@ export function ImpactBentoSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.6, ease: 'easeOut' }}
-          className="relative flex flex-col justify-end overflow-hidden rounded-[48px] bg-[#322f35] p-12 lg:col-span-2 lg:row-span-2"
+          className="impact-main-card relative flex flex-col justify-end overflow-hidden rounded-[48px] p-12 lg:col-span-2 lg:row-span-2"
         >
           {/* Decorative glow */}
-          <div className="pointer-events-none absolute -right-16 -top-16 size-80 rounded-full bg-[#4f378a]/40 blur-3xl" />
+          <div className="impact-main-glow pointer-events-none absolute -right-16 -top-16 size-80 rounded-full blur-3xl" />
           <div className="relative flex flex-col gap-8">
             <h2 className="text-4xl font-bold leading-[1.05] tracking-tight text-[#f5eff6] sm:text-5xl lg:text-[64px]">
               <AnimatedText
@@ -57,10 +57,10 @@ export function ImpactBentoSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.55, delay: 0.1, ease: 'easeOut' }}
-          className="flex flex-col justify-between gap-10 rounded-[48px] border border-[#cbc4d2] bg-[#ece6ed] p-10"
+          className="impact-control-card flex flex-col justify-between gap-10 rounded-[48px] border p-10"
         >
           <div className="flex items-start justify-between">
-            <span className="flex size-16 items-center justify-center rounded-[32px] bg-[#381e72]/10 text-[#381e72]">
+            <span className="impact-control-icon flex size-16 items-center justify-center rounded-[32px]">
               <ShieldCheck className="size-7" />
             </span>
             <span className="text-xs uppercase tracking-wider text-[#494551]">
@@ -84,21 +84,21 @@ export function ImpactBentoSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.55, delay: 0.2, ease: 'easeOut' }}
-          className="flex flex-col justify-between gap-10 rounded-[48px] border border-[#cbc4d2] bg-[#e8def9] p-10"
+          className="impact-results-card flex flex-col justify-between gap-10 rounded-[48px] border p-10"
         >
           <div className="flex items-start justify-between">
-            <span className="flex size-16 items-center justify-center rounded-[32px] bg-[#625b71]/10 text-[#686177]">
+            <span className="impact-results-icon flex size-16 items-center justify-center rounded-[32px]">
               <LayoutDashboard className="size-7" />
             </span>
-            <span className="text-xs uppercase tracking-wider text-[#686177]">
+            <span className="impact-results-copy text-xs uppercase tracking-wider">
               Results
             </span>
           </div>
           <div className="flex flex-col gap-4">
-            <h3 className="text-2xl font-semibold text-[#686177]">
+            <h3 className="impact-results-title text-2xl font-semibold">
               Unified View
             </h3>
-            <p className="text-sm leading-relaxed text-[#686177]/80">
+            <p className="impact-results-copy text-sm leading-relaxed">
               Track performance across all social platforms from a single,
               AI-powered dashboard.
             </p>

@@ -15,7 +15,7 @@ export function BrandProfileCard({ value, onChange, onSave, busy }) {
               <h2 className="font-bold text-[#2a2330]">Brand rules</h2>
               <p className="mt-1 text-sm leading-5 text-[#71677a]">Give every workflow a consistent voice.</p>
             </div>
-            <button type="button" onClick={() => setIsOpen((open) => !open)} className="flex min-h-9 shrink-0 items-center gap-1 rounded-lg px-2 text-xs font-bold text-[#4f378a] hover:bg-[#eee7f6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]" aria-expanded={isOpen}>
+            <button type="button" onClick={() => setIsOpen((open) => !open)} className="knowledge-rules-trigger flex min-h-9 shrink-0 items-center gap-1 rounded-lg px-2 text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]" aria-expanded={isOpen}>
               {isOpen ? "Close" : hasVoice ? "Edit" : "Set rules"}<ChevronDown className={`size-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`} />
             </button>
           </div>

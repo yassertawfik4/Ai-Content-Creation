@@ -212,7 +212,7 @@ export function SettingsPage() {
                 <a
                   key={href}
                   href={`#${href}`}
-                  className="group flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium text-[#625768] transition hover:bg-[#f1eaf4] hover:text-[#4f378a]"
+                  className="settings-nav-link group flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition"
                 >
                   <Icon className="size-[18px]" />
                   {label}

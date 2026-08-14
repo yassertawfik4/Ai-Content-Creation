@@ -289,6 +289,56 @@ html[data-corner-style="soft"] :where([class*="rounded-["]:not([class~="rounded-
   );
 }
 
+.project-sidebar-nav-item {
+  color: color-mix(in srgb, var(--aether-accent) 14%, var(--foreground));
+}
+
+.project-sidebar-nav-item:hover,
+.project-sidebar-nav-item[data-selected="true"] {
+  background-color: color-mix(in srgb, var(--aether-accent) 8%, var(--aether-surface));
+  color: var(--foreground);
+}
+
+.project-sidebar-nav-item[data-selected="true"] {
+  font-weight: 600;
+}
+
+.project-sidebar-nav-icon {
+  color: color-mix(in srgb, var(--aether-accent) 28%, var(--foreground));
+}
+
+.project-sidebar-nav-item[data-selected="true"] .project-sidebar-nav-icon {
+  color: var(--aether-accent);
+}
+
+.project-sidebar-icon-action {
+  color: color-mix(in srgb, var(--aether-accent) 22%, var(--foreground));
+}
+
+.project-sidebar-icon-action:hover,
+.project-sidebar-icon-action[aria-expanded="true"] {
+  background-color: color-mix(in srgb, var(--aether-accent) 9%, var(--aether-surface));
+  color: var(--aether-accent);
+}
+
+.project-chat-row:hover {
+  background-color: color-mix(in srgb, var(--aether-accent) 5%, var(--aether-surface));
+}
+
+.project-chat-row[data-selected="true"] {
+  background-color: color-mix(in srgb, var(--aether-accent) 9%, var(--aether-surface));
+}
+
+.settings-nav-link {
+  color: color-mix(in srgb, var(--aether-accent) 16%, var(--foreground));
+}
+
+.settings-nav-link:hover,
+.settings-nav-link:focus-visible {
+  background-color: color-mix(in srgb, var(--aether-accent) 10%, var(--aether-surface));
+  color: var(--aether-accent);
+}
+
 .settings-corner-option[data-selected="true"] {
   background-color: color-mix(in srgb, var(--aether-accent) 12%, var(--aether-surface));
   box-shadow:
@@ -398,6 +448,31 @@ html[data-corner-style="soft"] :where([class*="rounded-["]:not([class~="rounded-
     0 3px 10px color-mix(in srgb, var(--aether-accent) 18%, transparent);
 }
 
+.account-trigger {
+  color: color-mix(in srgb, var(--aether-accent) 30%, var(--foreground));
+}
+
+.account-trigger-label {
+  color: color-mix(in srgb, var(--aether-accent) 24%, var(--foreground));
+}
+
+.account-trigger-icon {
+  color: color-mix(in srgb, var(--aether-accent) 36%, var(--foreground));
+}
+
+.account-trigger:hover,
+.account-trigger[aria-expanded="true"] {
+  background-color: color-mix(in srgb, var(--aether-accent) 10%, var(--aether-surface));
+  color: var(--aether-accent);
+}
+
+.account-trigger:hover .account-trigger-label,
+.account-trigger:hover .account-trigger-icon,
+.account-trigger[aria-expanded="true"] .account-trigger-label,
+.account-trigger[aria-expanded="true"] .account-trigger-icon {
+  color: var(--aether-accent);
+}
+
 .account-menu-accent-item {
   color: color-mix(in srgb, var(--aether-accent) 82%, var(--foreground));
 }
@@ -438,6 +513,55 @@ html[data-corner-style="soft"] :where([class*="rounded-["]:not([class~="rounded-
   box-shadow: 0 24px 60px color-mix(in srgb, var(--aether-accent) 32%, transparent);
 }
 
+.connector-hero {
+  border-color: color-mix(in srgb, var(--aether-accent) 14%, transparent);
+  background-color: var(--aether-canvas);
+}
+
+.connector-hero-glow-primary {
+  background-color: color-mix(in srgb, var(--aether-accent) 13%, transparent);
+}
+
+.connector-hero-glow-secondary {
+  background-color: color-mix(in srgb, var(--aether-accent) 7%, transparent);
+}
+
+.connector-hero-boundary {
+  border-color: color-mix(in srgb, var(--aether-accent) 12%, transparent);
+}
+
+.connector-hero-kicker {
+  border-color: color-mix(in srgb, var(--aether-accent) 24%, transparent);
+  background-color: color-mix(in srgb, var(--aether-surface) 76%, transparent);
+  color: color-mix(in srgb, var(--aether-accent) 82%, var(--foreground));
+}
+
+.connector-primary-action {
+  background-color: var(--aether-accent);
+  color: var(--aether-on-accent);
+  box-shadow: 0 14px 36px color-mix(in srgb, var(--aether-accent) 26%, transparent);
+}
+
+.connector-primary-action:hover {
+  background-color: color-mix(in srgb, var(--aether-accent) 86%, black);
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--aether-accent) 34%, transparent);
+}
+
+.connector-secondary-action {
+  border-color: color-mix(in srgb, var(--aether-accent) 30%, transparent);
+  background-color: color-mix(in srgb, var(--aether-surface) 76%, transparent);
+  color: var(--aether-accent);
+}
+
+.connector-secondary-action:hover {
+  border-color: color-mix(in srgb, var(--aether-accent) 50%, transparent);
+  background-color: color-mix(in srgb, var(--aether-accent) 9%, var(--aether-surface));
+}
+
+.connector-benefit-icon {
+  color: var(--aether-accent);
+}
+
 .knowledge-accent-text {
   color: var(--aether-accent);
 }
@@ -445,6 +569,17 @@ html[data-corner-style="soft"] :where([class*="rounded-["]:not([class~="rounded-
 .knowledge-icon-tile {
   background-color: color-mix(in srgb, var(--aether-accent) 10%, var(--aether-surface));
   color: var(--aether-accent);
+}
+
+.knowledge-rules-trigger {
+  color: var(--aether-accent);
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.knowledge-rules-trigger:hover,
+.knowledge-rules-trigger[aria-expanded="true"] {
+  background-color: color-mix(in srgb, var(--aether-accent) 10%, var(--aether-surface));
+  color: color-mix(in srgb, var(--aether-accent) 86%, black);
 }
 
 .knowledge-hero-decoration {
@@ -469,6 +604,229 @@ html[data-corner-style="soft"] :where([class*="rounded-["]:not([class~="rounded-
 }
 
 /* Landing-page color roles derived from the saved appearance settings. */
+.marketing-team-section {
+  background-color: var(--aether-canvas);
+}
+
+.marketing-team-action {
+  color: var(--aether-accent);
+}
+
+.marketing-team-action:hover,
+.marketing-team-action:focus-visible {
+  background-color: color-mix(in srgb, var(--aether-accent) 10%, var(--aether-surface));
+}
+
+.agent-showcase-card {
+  border-color: color-mix(in srgb, var(--aether-accent) 20%, var(--aether-border));
+  background-color: var(--aether-surface);
+}
+
+.agent-preview-frame {
+  border-color: color-mix(in srgb, var(--aether-accent) 22%, var(--aether-border));
+}
+
+.agent-preview-researcher {
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--aether-accent) 4%, var(--aether-surface)),
+    color-mix(in srgb, var(--aether-accent) 15%, var(--aether-surface))
+  );
+}
+
+.agent-chart-bar {
+  background-color: color-mix(in srgb, var(--aether-accent) 76%, var(--aether-surface));
+}
+
+.agent-chart-line {
+  background-color: color-mix(in srgb, var(--aether-accent) 25%, var(--aether-surface));
+}
+
+.agent-chart-line-muted {
+  background-color: color-mix(in srgb, var(--aether-accent) 17%, var(--aether-surface));
+}
+
+.agent-preview-creator {
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--aether-accent) 7%, var(--aether-surface)),
+    color-mix(in srgb, var(--aether-accent) 20%, var(--aether-surface))
+  );
+}
+
+.agent-creator-avatar {
+  background-color: color-mix(in srgb, var(--aether-accent) 30%, var(--aether-surface));
+}
+
+.agent-creator-line {
+  background-color: color-mix(in srgb, var(--aether-accent) 26%, var(--aether-surface));
+}
+
+.agent-creator-line-muted {
+  background-color: color-mix(in srgb, var(--aether-accent) 19%, var(--aether-surface));
+}
+
+.agent-creator-canvas {
+  border-color: color-mix(in srgb, var(--aether-accent) 34%, transparent);
+  background-color: color-mix(in srgb, var(--aether-surface) 64%, transparent);
+  color: color-mix(in srgb, var(--aether-accent) 70%, transparent);
+}
+
+.agent-preview-orchestrator {
+  background-color: color-mix(in srgb, var(--aether-accent) 17%, #17141c);
+}
+
+.agent-orchestrator-glow {
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--aether-accent) 34%, transparent),
+    transparent 64%
+  );
+}
+
+.agent-network {
+  color: color-mix(in srgb, var(--aether-accent) 62%, white);
+}
+
+.agent-badge-subtle {
+  background-color: color-mix(in srgb, var(--aether-accent) 9%, var(--aether-surface));
+  color: color-mix(in srgb, var(--aether-accent) 48%, var(--foreground));
+}
+
+.agent-badge-solid {
+  background-color: var(--aether-accent);
+  color: var(--aether-on-accent);
+}
+
+.agent-badge-contrast {
+  background-color: color-mix(in srgb, var(--aether-accent) 48%, #241d29);
+  color: color-mix(in srgb, var(--aether-on-accent) 78%, var(--aether-accent));
+}
+
+.agent-card-icon {
+  background-color: color-mix(in srgb, var(--aether-accent) 9%, var(--aether-surface));
+  color: var(--aether-accent);
+}
+
+.agent-feature-check {
+  color: var(--aether-accent);
+}
+
+.pipeline-section {
+  background-color: var(--aether-canvas);
+}
+
+.pipeline-card {
+  border-color: color-mix(in srgb, var(--aether-accent) 20%, var(--aether-border));
+  background-color: color-mix(in srgb, var(--aether-accent) 6%, var(--aether-surface));
+}
+
+.pipeline-step-badge {
+  background-color: color-mix(in srgb, var(--aether-accent) 11%, var(--aether-surface));
+  color: var(--aether-accent);
+}
+
+.pipeline-accent-icon {
+  color: var(--aether-accent);
+}
+
+.pipeline-preview {
+  border-color: color-mix(in srgb, var(--aether-accent) 20%, var(--aether-border));
+  background-color: var(--aether-surface);
+}
+
+.pipeline-progress-track {
+  background-color: color-mix(in srgb, var(--aether-accent) 13%, var(--aether-surface));
+}
+
+.pipeline-progress-fill {
+  background-color: var(--aether-accent);
+}
+
+.pipeline-data-chip {
+  background-color: color-mix(in srgb, var(--aether-accent) 10%, var(--aether-surface));
+}
+
+.pipeline-avatar {
+  background-color: color-mix(in srgb, var(--aether-accent) 10%, var(--aether-surface));
+}
+
+.pipeline-placeholder {
+  background-color: color-mix(in srgb, var(--aether-accent) 14%, var(--aether-surface));
+}
+
+.pipeline-placeholder-muted {
+  background-color: color-mix(in srgb, var(--aether-accent) 10%, var(--aether-surface));
+}
+
+.pipeline-dropzone {
+  border-color: color-mix(in srgb, var(--aether-accent) 34%, transparent);
+  background-color: color-mix(in srgb, var(--aether-accent) 5%, var(--aether-surface));
+  color: color-mix(in srgb, var(--aether-accent) 70%, transparent);
+}
+
+.pipeline-ready-icon {
+  background-color: color-mix(in srgb, var(--aether-accent) 10%, var(--aether-surface));
+  color: var(--aether-accent);
+}
+
+.pipeline-publish-preview {
+  border-color: color-mix(in srgb, var(--aether-accent) 18%, var(--aether-border));
+  background-color: color-mix(in srgb, var(--aether-accent) 4%, var(--aether-surface));
+}
+
+.pipeline-publish-line {
+  background-color: color-mix(in srgb, var(--aether-accent) 18%, var(--aether-surface));
+}
+
+.impact-section {
+  background-color: var(--aether-canvas);
+}
+
+.impact-main-card {
+  background-color: color-mix(in srgb, var(--aether-accent) 12%, #322f35);
+}
+
+.impact-main-glow {
+  background-color: color-mix(in srgb, var(--aether-accent) 42%, transparent);
+}
+
+.impact-stat-primary {
+  color: color-mix(in srgb, var(--aether-accent) 48%, white);
+}
+
+.impact-stat-secondary {
+  color: color-mix(in srgb, var(--aether-accent) 28%, white);
+}
+
+.impact-control-card {
+  border-color: color-mix(in srgb, var(--aether-accent) 20%, var(--aether-border));
+  background-color: color-mix(in srgb, var(--aether-accent) 6%, var(--aether-surface));
+}
+
+.impact-control-icon {
+  background-color: color-mix(in srgb, var(--aether-accent) 11%, var(--aether-surface));
+  color: var(--aether-accent);
+}
+
+.impact-results-card {
+  border-color: color-mix(in srgb, var(--aether-accent) 22%, var(--aether-border));
+  background-color: color-mix(in srgb, var(--aether-accent) 13%, var(--aether-surface));
+}
+
+.impact-results-icon {
+  background-color: color-mix(in srgb, var(--aether-accent) 13%, var(--aether-surface));
+  color: var(--aether-accent);
+}
+
+.impact-results-title {
+  color: var(--foreground);
+}
+
+.impact-results-copy {
+  color: color-mix(in srgb, var(--aether-accent) 16%, var(--foreground));
+}
+
 .hero-section-theme {
   background-color: var(--aether-canvas);
 }
