@@ -76,7 +76,7 @@ export function ConnectorOrbit() {
         />
         <div className="connector-orbit-core relative flex size-24 items-center justify-center rounded-full border text-4xl font-bold">
           <span className="absolute inset-px rounded-full bg-[linear-gradient(145deg,rgba(255,255,255,0.2),transparent_42%)]" />
-          <span className="relative">J</span>
+          <span className="relative">S</span>
         </div>
       </div>
     </div>
