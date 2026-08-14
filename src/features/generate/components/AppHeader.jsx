@@ -112,7 +112,7 @@ export function AppHeader() {
             aria-expanded={profileMenuOpen}
             aria-controls="account-menu"
           >
-            <span className="flex size-9 items-center justify-center rounded-full bg-[#e3d5f7] text-xs font-bold text-[#381e72] ring-1 ring-[#cbb9e3]">
+            <span className="user-avatar flex size-9 items-center justify-center rounded-full text-xs font-bold">
               {initials || 'A'}
             </span>
             <ChevronDown className={`size-3.5 transition-transform duration-200 ${profileMenuOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
@@ -139,7 +139,7 @@ export function AppHeader() {
                   to="/settings"
                   role="menuitem"
                   onClick={() => setProfileMenuOpen(false)}
-                  className="flex min-h-11 w-full items-center gap-2.5 rounded-xl px-3 text-left text-sm font-semibold text-[#514759] transition-colors hover:bg-[#f1eaf4] hover:text-[#4f378a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#675094]"
+                  className="account-menu-accent-item flex min-h-11 w-full items-center gap-2.5 rounded-xl px-3 text-left text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#675094]"
                 >
                   <Settings className="size-[17px]" />
                   Settings
@@ -162,4 +162,3 @@ export function AppHeader() {
     </header>
   )
 }
-

@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { Clock3, Loader2, X } from 'lucide-react'
+import { Clock3, History, Loader2, X } from 'lucide-react'
 import { WorkflowBilling } from './WorkflowStatus'
 
 export function ProjectHistoryDrawer({ project, chat, entries, isLoading, onClose, onOpenEntry }) {
@@ -64,4 +64,3 @@ export function ProjectHistoryDrawer({ project, chat, entries, isLoading, onClos
     </AnimatePresence>
   )
 }
-

@@ -112,7 +112,7 @@ export function Navbar() {
                 aria-expanded={accountOpen}
                 aria-controls="navbar-account-menu"
               >
-                <span className="flex size-9 items-center justify-center rounded-full bg-[#e3d5f7] text-xs font-bold text-[#381e72] ring-1 ring-[#cbb9e3]">
+                <span className="user-avatar flex size-9 items-center justify-center rounded-full text-xs font-bold">
                   {initials || "A"}
                 </span>
                 <span className="max-w-[160px] truncate text-base font-medium text-[#494551]">
@@ -142,7 +142,7 @@ export function Navbar() {
                       to="/billing"
                       role="menuitem"
                       onClick={() => setAccountOpen(false)}
-                      className="flex min-h-11 w-full items-center gap-2.5 rounded-xl px-3 text-left text-sm font-semibold text-[#381e72] transition-colors hover:bg-[#f2eafa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                      className="account-menu-accent-item flex min-h-11 w-full items-center gap-2.5 rounded-xl px-3 text-left text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
                     >
                       <CreditCard className="size-[17px]" />
                       Billing &amp; plans
@@ -151,7 +151,7 @@ export function Navbar() {
                       to="/settings"
                       role="menuitem"
                       onClick={() => setAccountOpen(false)}
-                      className="flex min-h-11 w-full items-center gap-2.5 rounded-xl px-3 text-left text-sm font-semibold text-[#514759] transition-colors hover:bg-[#f1eaf4] hover:text-[#4f378a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#675094]"
+                      className="account-menu-accent-item flex min-h-11 w-full items-center gap-2.5 rounded-xl px-3 text-left text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#675094]"
                     >
                       <Settings className="size-[17px]" />
                       Settings
@@ -232,7 +232,7 @@ export function Navbar() {
               {isAuthenticated ? (
                 <>
                   <div className="flex items-center gap-2 rounded-lg px-3 py-2">
-                    <span className="flex size-8 items-center justify-center rounded-full bg-[#e3d5f7] text-xs font-bold text-[#381e72] ring-1 ring-[#cbb9e3]">
+                    <span className="user-avatar flex size-8 items-center justify-center rounded-full text-xs font-bold">
                       {initials}
                     </span>
                     <span className="truncate text-base font-medium text-[#494551]">
@@ -242,7 +242,7 @@ export function Navbar() {
                   <Link
                     to="/settings"
                     onClick={() => setMobileOpen(false)}
-                    className="flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-base font-medium text-[#494551] transition-colors hover:bg-[#f2ecf3] hover:text-[#381e72]"
+                    className="account-menu-accent-item flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-base font-medium transition-colors"
                   >
                     <Settings className="size-4" />
                     Settings

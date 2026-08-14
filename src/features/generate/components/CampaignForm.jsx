@@ -297,10 +297,11 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
                   key={preset.id}
                   type="button"
                   aria-pressed={selected}
+                  data-selected={selected}
                   onClick={() => onPresetClick(preset)}
-                  className={`h-10 rounded-xl border text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] ${
+                  className={`campaign-voice-preset h-10 rounded-xl border text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] ${
                     selected
-                      ? 'border-[#4f378a] bg-[#eee5f8] text-[#381e72] shadow-[inset_0_0_0_1px_#4f378a]'
+                      ? 'border-[#4f378a] text-[#381e72]'
                       : 'border-[#dcd4df] bg-white text-[#665d6b] hover:border-[#a99db0] hover:text-[#201a25]'
                   }`}
                 >
@@ -321,7 +322,7 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
               }))
             }
             placeholder="Describe the voice, e.g. witty, confident, minimal"
-            className={`mt-2 h-11 w-full rounded-xl border bg-white px-3.5 text-sm text-[#201a25] outline-none transition placeholder:text-[#aaa1ae] focus:border-[#4f378a] focus:ring-3 focus:ring-[#4f378a]/10 ${
+            className={`campaign-voice-input mt-2 h-11 w-full rounded-xl border px-3.5 text-sm text-[#201a25] outline-none transition placeholder:text-[#aaa1ae] focus:border-[#4f378a] focus:ring-3 focus:ring-[#4f378a]/10 ${
               errors.brandVoice ? 'border-[#ad3150]' : 'border-[#dcd4df]'
             }`}
             aria-label="Brand voice description"
@@ -428,9 +429,10 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
                   key={id}
                   type="button"
                   aria-pressed={selected}
+                  data-selected={selected}
                   onClick={() => togglePlatform(id)}
-                  className={`flex h-10 items-center gap-2 rounded-xl border px-3 text-[13px] font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] ${
-                    selected ? 'border-[#4f378a] bg-[#f2eafa] text-[#381e72]' : 'border-[#dcd4df] bg-white text-[#665d6b] hover:border-[#a99db0]'
+                  className={`campaign-platform-option flex h-10 items-center gap-2 rounded-xl border px-3 text-[13px] font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] ${
+                    selected ? 'border-[#4f378a] text-[#381e72]' : 'border-[#dcd4df] bg-white text-[#665d6b] hover:border-[#a99db0]'
                   }`}
                 >
                   {Icon ? <Icon className="size-4" /> : null}

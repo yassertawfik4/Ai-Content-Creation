@@ -6,9 +6,9 @@ export function BrandProfileCard({ value, onChange, onSave, busy }) {
   const hasVoice = Boolean(value.voice.trim());
 
   return (
-    <section className="rounded-[24px] border border-[#ded7e3] bg-[#faf6fd] p-5 sm:p-6">
+    <section className="knowledge-soft-panel rounded-[24px] border border-[#ded7e3] p-5 sm:p-6">
       <div className="flex gap-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#e8def4] text-[#4f378a]"><SlidersHorizontal className="size-5" /></span>
+        <span className="knowledge-icon-tile flex size-10 shrink-0 items-center justify-center rounded-xl"><SlidersHorizontal className="size-5" /></span>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
             <div>

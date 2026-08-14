@@ -2,16 +2,23 @@ const preferenceStorageKey = 'aetherflow:user-preferences:v1'
 const hexColorPattern = /^#[0-9a-f]{6}$/i
 const supportedThemes = new Set(['light', 'dark', 'system'])
 const supportedTextSizes = new Set(['compact', 'comfortable', 'large'])
+const supportedCornerStyles = new Set(['none', 'soft', 'rounded'])
 const textSizeScale = {
   compact: '93.75%',
   comfortable: '100%',
   large: '112.5%',
+}
+const cornerRadiusScale = {
+  none: '0rem',
+  soft: '0.375rem',
+  rounded: '0.625rem',
 }
 
 export const defaultPreferences = Object.freeze({
   theme: 'system',
   accentColor: '#4f378a',
   textSize: 'comfortable',
+  cornerStyle: 'rounded',
 })
 
 let activePreferences = defaultPreferences
@@ -26,6 +33,9 @@ function normalizePreferences(preferences = {}) {
     textSize: supportedTextSizes.has(preferences.textSize)
       ? preferences.textSize
       : defaultPreferences.textSize,
+    cornerStyle: supportedCornerStyles.has(preferences.cornerStyle)
+      ? preferences.cornerStyle
+      : defaultPreferences.cornerStyle,
   }
 }
 
@@ -51,10 +61,12 @@ function applyTheme(preferences) {
   root.dataset.theme = preferences.theme
   root.dataset.resolvedTheme = currentTheme
   root.dataset.textSize = preferences.textSize
+  root.dataset.cornerStyle = preferences.cornerStyle
   root.style.fontSize = textSizeScale[preferences.textSize]
   root.style.colorScheme = currentTheme
   root.style.setProperty('--aether-accent', preferences.accentColor)
   root.style.setProperty('--aether-on-accent', accentForeground(preferences.accentColor))
+  root.style.setProperty('--radius', cornerRadiusScale[preferences.cornerStyle])
 }
 
 function watchSystemTheme() {
@@ -84,6 +96,10 @@ export function applyUserPreferences(preferences = readUserPreferences()) {
 
 export function saveUserPreferences(preferences) {
   const normalized = normalizePreferences(preferences)
-  localStorage.setItem(preferenceStorageKey, JSON.stringify(normalized))
+  try {
+    localStorage.setItem(preferenceStorageKey, JSON.stringify(normalized))
+  } catch {
+    // Preferences still apply for this session when browser storage is unavailable.
+  }
   return applyUserPreferences(normalized)
 }

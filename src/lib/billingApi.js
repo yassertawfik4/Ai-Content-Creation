@@ -2,7 +2,16 @@
 // the NestJS server in dev by vite.config.js). It relies on Better Auth's
 // HTTP-only session cookie, so every request uses credentials.
 
-const BASE = '/api/subscriptions'
+import { getApiBase } from '@/lib/campaignApi'
+
+/**
+ * Resolved per call rather than at module load so the deployed API host from
+ * VITE_API_BASE_URL is honoured; a hardcoded path only ever works behind the
+ * dev proxy.
+ */
+function subscriptionsBase() {
+  return `${getApiBase()}/subscriptions`
+}
 
 export { getErrorMessage } from '@/lib/errors'
 
@@ -29,7 +38,7 @@ function extractError(data, fallback) {
 async function billingFetch(path, options = {}) {
   let response
   try {
-    response = await fetch(`${BASE}${path}`, {
+    response = await fetch(`${subscriptionsBase()}${path}`, {
       ...options,
       credentials: 'include',
       headers: {
@@ -55,14 +64,19 @@ async function billingFetch(path, options = {}) {
   return data
 }
 
+/** The purchasable plan catalog, priced from the database. Public. */
+export function getPlans({ signal } = {}) {
+  return billingFetch('/plans', { signal })
+}
+
 /** The signed-in user's subscription (or null). Requires a session. */
 export function getSubscription({ signal } = {}) {
-  return billingFetch('/me', { signal })
+  return billingFetch('/me', { signal, cache: 'no-store' })
 }
 
 /** The signed-in user's current generation-credit balance and reset date. */
 export function getCreditUsage({ signal } = {}) {
-  return billingFetch('/usage', { signal })
+  return billingFetch('/usage', { signal, cache: 'no-store' })
 }
 
 /**
@@ -77,22 +91,55 @@ export function createCheckout({ planCode, interval }, { signal } = {}) {
   })
 }
 
-/** Switches the current subscription to another plan (prorated in Stripe). */
-export function changePlan({ planCode, interval }, { signal } = {}) {
-  return billingFetch('/plan', {
-    method: 'PATCH',
-    body: JSON.stringify({ planCode, interval }),
+/**
+ * Verifies and applies a completed Stripe Checkout after redirect. The backend
+ * checks the authenticated user, Stripe customer, payment and trusted plan
+ * metadata; this never trusts the URL alone and never creates another charge.
+ */
+export function confirmCheckout({ sessionId, planCode, interval } = {}, { signal } = {}) {
+  return billingFetch('/checkout/confirm', {
+    method: 'POST',
+    body: JSON.stringify({
+      ...(sessionId ? { sessionId } : {}),
+      ...(planCode ? { planCode } : {}),
+      ...(interval ? { interval } : {}),
+    }),
     signal,
   })
 }
 
-/** Returns Stripe's non-mutating prorated amount for an existing subscription. */
+/**
+ * Applies a plan switch. Pass the `quoteId` from `previewPlanChange` so the
+ * amount shown on the confirmation screen is the amount charged; the backend
+ * answers 409 with a fresh quote if that price no longer holds.
+ *
+ * Resolves to `{ url, kind, scheduled, effectiveAt }` — `url` is a Stripe
+ * Checkout page for an upgrade, and null for a downgrade, which is scheduled
+ * for `effectiveAt` instead of charged.
+ */
+export function changePlan({ planCode, interval, quoteId }, { signal } = {}) {
+  return billingFetch('/plan', {
+    method: 'PATCH',
+    body: JSON.stringify({ planCode, interval, ...(quoteId ? { quoteId } : {}) }),
+    signal,
+  })
+}
+
+/**
+ * Prices a plan switch without applying it, and holds that price. Returns the
+ * money breakdown plus what the switch does to the generation-credit balance.
+ */
 export function previewPlanChange({ planCode, interval }, { signal } = {}) {
   return billingFetch('/plan/preview', {
     method: 'POST',
     body: JSON.stringify({ planCode, interval }),
     signal,
   })
+}
+
+/** Drops a scheduled downgrade, keeping the current plan. */
+export function cancelPendingPlanChange({ signal } = {}) {
+  return billingFetch('/plan/pending', { method: 'DELETE', signal })
 }
 
 /** Immediately cancels the current subscription. */

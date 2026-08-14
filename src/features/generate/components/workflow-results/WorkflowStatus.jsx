@@ -1,6 +1,37 @@
-import { AlertTriangle, Check, CircleAlert, RefreshCw, ShieldCheck } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { AlertTriangle, Check, CircleAlert, Clock3, RefreshCw, ShieldCheck } from 'lucide-react'
 import { STRATEGY_STEPS, WORKFLOW_STEPS } from '../../model/generateConfig'
 import { LoadingRing } from '../AppHeader'
+
+function timestampFrom(value) {
+  if (!value) return null
+  const timestamp = new Date(value).getTime()
+  return Number.isFinite(timestamp) ? timestamp : null
+}
+
+function formatElapsedTime(totalSeconds) {
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  const clock = [minutes, seconds].map((value) => String(value).padStart(2, '0'))
+  if (hours > 0) clock.unshift(String(hours).padStart(2, '0'))
+  return clock.join(':')
+}
+
+function useElapsedTime(startedAt) {
+  const [startTime] = useState(() => timestampFrom(startedAt) ?? Date.now())
+  const [elapsedSeconds, setElapsedSeconds] = useState(() => Math.max(0, Math.floor((Date.now() - startTime) / 1000)))
+
+  useEffect(() => {
+    const updateElapsedTime = () => {
+      setElapsedSeconds(Math.max(0, Math.floor((Date.now() - startTime) / 1000)))
+    }
+    const timer = window.setInterval(updateElapsedTime, 1000)
+    return () => window.clearInterval(timer)
+  }, [startTime])
+
+  return elapsedSeconds
+}
 
 export function QANotes({ notes }) {
   const safeNotes = Array.isArray(notes) ? notes : []
@@ -61,6 +92,8 @@ export function QANotes({ notes }) {
 }
 
 export function WorkflowProgress({ runState, generateImages, workflowKind = 'content' }) {
+  const elapsedSeconds = useElapsedTime(runState?.createdAt)
+  const elapsedTime = formatElapsedTime(elapsedSeconds)
   const completed = new Set(runState?.completedSteps ?? [])
   const active = new Set(runState?.activeSteps ?? [])
   const visibleSteps = workflowKind === 'strategy'
@@ -97,9 +130,19 @@ export function WorkflowProgress({ runState, generateImages, workflowKind = 'con
               </p>
             </div>
           </div>
-          <div className="shrink-0 text-left sm:text-right">
-            <p className="text-sm font-bold text-[#381e72]">{progressPercent}%</p>
-            <p className="mt-0.5 text-[11px] text-[#817687]">{completedCount} of {visibleSteps.length} complete</p>
+          <div className="flex shrink-0 items-center gap-4 self-start sm:self-auto">
+            <div className="text-left sm:text-right" role="timer" aria-label={`Elapsed time ${elapsedTime}`}>
+              <p className="flex items-center gap-1.5 text-sm font-bold tabular-nums text-[#514a56] sm:justify-end">
+                <Clock3 className="size-3.5 text-[#817687]" aria-hidden="true" />
+                <time dateTime={`PT${elapsedSeconds}S`}>{elapsedTime}</time>
+              </p>
+              <p className="mt-0.5 text-[11px] text-[#817687]">Elapsed time</p>
+            </div>
+            <span className="h-8 w-px bg-[#e6dee8]" aria-hidden="true" />
+            <div className="text-left sm:text-right">
+              <p className="text-sm font-bold text-[#381e72]">{progressPercent}%</p>
+              <p className="mt-0.5 text-[11px] text-[#817687]">{completedCount} of {visibleSteps.length} complete</p>
+            </div>
           </div>
         </div>
 
@@ -229,4 +272,3 @@ export function WorkflowBilling({ billing, executions = [], compact = false }) {
     </section>
   )
 }
-

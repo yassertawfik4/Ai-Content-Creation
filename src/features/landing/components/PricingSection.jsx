@@ -1,12 +1,26 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, Check, CheckCircle2, Coins, Loader2, LockKeyhole, Sparkles, X } from 'lucide-react'
+import { ArrowRight, Check, Coins, Loader2, LockKeyhole, Sparkles } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { getSubscription, cancelSubscription, getErrorMessage } from '@/lib/billingApi'
-import { formatPlanPrice, getPlanPrice, PRICING_PLANS } from '@/features/billing/plans'
+import {
+  cancelSubscription,
+  changePlan,
+  getErrorMessage,
+  getSubscription,
+} from '@/lib/billingApi'
+import { bestYearlySavingPercent, getPlanPrice } from '@/features/billing/plans'
+import { usePlanCatalog } from '@/features/billing/hooks/usePlanCatalog'
+import { IntervalToggle } from '@/features/billing/components/IntervalToggle'
+import { BillingPopup } from '@/features/billing/components/BillingPopup'
+import {
+  formatMoney,
+  isActiveStatus,
+  normalizeInterval,
+} from '@/features/billing/format'
 
 export function PricingSection() {
+  const { plans, error: plansError } = usePlanCatalog()
   const [subscription, setSubscription] = useState(null)
   const [interval, setInterval] = useState('month')
   const [error, setError] = useState('')
@@ -90,23 +104,41 @@ export function PricingSection() {
     navigate(destination)
   }
 
-  const handleCancel = async () => {
+  const runAction = async (name, action, successPopup) => {
     setError('')
-    setCheckingOut('cancel')
+    setCheckingOut(name)
     try {
-      await cancelSubscription()
+      await action()
       await refreshSubscription()
-      setCheckingOut('')
-      setPopup({
-        kind: 'notice',
-        title: 'Subscription cancelled',
-        body: 'Your paid subscription ended and your account is now on the Free allowance.',
-      })
-    } catch (cancelError) {
-      setError(getErrorMessage(cancelError))
+      setPopup(successPopup)
+    } catch (actionError) {
+      setError(getErrorMessage(actionError))
+    } finally {
       setCheckingOut('')
     }
   }
+
+  const handleCancel = () =>
+    runAction('cancel', cancelSubscription, {
+      kind: 'notice',
+      title: 'Subscription cancelled',
+      body: 'Your paid subscription ended and your account is now on the Free allowance.',
+    })
+
+  /**
+   * Returning to Free ends the paid plan when the period already paid for runs
+   * out, rather than cutting access off — and the credits with it — today.
+   */
+  const handleReturnToFree = () =>
+    runAction(
+      'free',
+      () => changePlan({ planCode: 'free', interval: 'month' }),
+      {
+        kind: 'notice',
+        title: 'Return to Free scheduled',
+        body: 'Your current plan and its credits stay available until the end of the period you have paid for.',
+      },
+    )
 
   return (
     <section id="pricing" className="bg-[#fef7ff] px-6 py-24 lg:py-28">
@@ -129,23 +161,12 @@ export function PricingSection() {
           </p>
         </div>
 
-        <div className="mt-10 flex items-center justify-center gap-3">
-          {['month', 'year'].map((value) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setInterval(value)}
-              aria-pressed={interval === value}
-              className={`flex min-h-11 items-center gap-2 rounded-full px-6 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] ${
-                interval === value
-                  ? 'bg-[#381e72] text-white shadow-[0_8px_18px_rgba(56,30,114,0.22)]'
-                  : 'border border-[#d8cfdc] bg-white text-[#625b71] hover:border-[#a99eb4] hover:text-[#201a25]'
-              }`}
-            >
-              {value === 'month' ? 'Monthly' : 'Yearly'}
-              {value === 'year' ? <span className={interval === 'year' ? 'text-[#b7f36b]' : 'text-[#6a9f27]'}>Save 17%</span> : null}
-            </button>
-          ))}
+        <div className="mt-10 flex items-center justify-center">
+          <IntervalToggle
+            interval={interval}
+            onChange={setInterval}
+            savingPercent={bestYearlySavingPercent(plans)}
+          />
         </div>
 
         <div className="mx-auto mt-7 flex max-w-xl items-center justify-center gap-2 rounded-2xl border border-[#dfd3e7] bg-white/70 px-4 py-3 text-center text-sm text-[#625b71]">
@@ -153,26 +174,20 @@ export function PricingSection() {
           One generation credit starts one strategy or one content workflow.
         </div>
 
-        {error ? (
+        {error || plansError ? (
           <div role="alert" aria-live="polite" className="mt-8 rounded-2xl border border-[#eccfd5] bg-[#fbe9ee] px-4 py-3 text-center text-sm text-[#8a2440]">
-            {error}
+            {error || plansError}
           </div>
         ) : null}
 
         <div className="mt-12 grid gap-6 md:grid-cols-3">
-          {PRICING_PLANS.map((plan, index) => {
-            const isActiveSubscription =
-              subscription &&
-              ['ACTIVE', 'TRIALING', 'PAST_DUE', 'UNPAID'].includes(subscription?.status)
+          {plans.map((plan, index) => {
+            const isActiveSubscription = isActiveStatus(subscription?.status)
             const isSubscribedPlan =
               isActiveSubscription && subscription?.plan?.code === plan.code
-            const subscribedInterval =
-              String(subscription?.billingInterval ?? '').toUpperCase() === 'MONTHLY'
-                ? 'month'
-                : 'year'
+            const subscribedInterval = normalizeInterval(subscription?.billingInterval)
             const cardInterval = isSubscribedPlan ? subscribedInterval : interval
             const priceCents = getPlanPrice(plan, cardInterval)
-            const priceLabel = formatPlanPrice(priceCents)
             const isFree = priceCents === 0
             const busy = checkingOut === plan.code
 
@@ -185,7 +200,7 @@ export function PricingSection() {
                 transition={{ duration: 0.5, delay: index * 0.08, ease: 'easeOut' }}
                 className={`relative flex flex-col rounded-3xl p-7 transition-shadow ${
                   plan.highlight
-                    ? 'bg-[#381e72] text-white shadow-[0_24px_60px_rgba(56,30,114,0.3)]'
+                    ? 'pricing-highlight-card'
                     : 'border border-[#e2d9e6] bg-[#fffaff] shadow-[0_14px_38px_rgba(46,32,51,0.07)]'
                 }`}
               >
@@ -194,40 +209,40 @@ export function PricingSection() {
                     <span className="inline-flex items-center gap-1"><Check className="size-3" strokeWidth={3} /> Confirmed</span>
                   </span>
                 ) : plan.highlight ? (
-                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-[#b7f36b] px-3.5 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#1d3b05] shadow-md">
+                  <span className="pricing-highlight-badge absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full px-3.5 py-1 text-[11px] font-bold uppercase tracking-[0.12em] shadow-md">
                     Most popular
                   </span>
                 ) : null}
 
                 <div className="flex items-baseline justify-between">
-                  <h3 className={`text-lg font-semibold ${plan.highlight ? 'text-white' : 'text-[#201a25]'}`}>
+                  <h3 className={`text-lg font-semibold ${plan.highlight ? 'pricing-highlight-primary' : 'text-[#201a25]'}`}>
                     {plan.name}
                   </h3>
-                  <span className={`text-[11px] font-bold uppercase tracking-[0.14em] ${plan.highlight ? 'text-[#b7f36b]' : 'text-[#8d8195]'}`}>
+                  <span className={`text-[11px] font-bold uppercase tracking-[0.14em] ${plan.highlight ? 'pricing-highlight-primary' : 'text-[#8d8195]'}`}>
                     {plan.eyebrow}
                   </span>
                 </div>
-                <p className={`mt-2 min-h-10 text-sm leading-5 ${plan.highlight ? 'text-white/75' : 'text-[#6a6170]'}`}>
+                <p className={`mt-2 min-h-10 text-sm leading-5 ${plan.highlight ? 'pricing-highlight-secondary' : 'text-[#6a6170]'}`}>
                   {plan.description}
                 </p>
 
                 <div className="mt-6 flex items-end gap-1.5">
-                  <span className={`font-display text-4xl font-bold tracking-[-1px] ${plan.highlight ? 'text-white' : 'text-[#201a25]'}`}>
-                    {isFree ? '$0' : priceLabel}
+                  <span className={`font-display text-4xl font-bold tracking-[-1px] ${plan.highlight ? 'pricing-highlight-primary' : 'text-[#201a25]'}`}>
+                    {formatMoney(priceCents)}
                   </span>
-                  <span className={`mb-1 text-sm ${plan.highlight ? 'text-white/60' : 'text-[#8a8190]'}`}>
+                  <span className={`mb-1 text-sm ${plan.highlight ? 'pricing-highlight-secondary' : 'text-[#8a8190]'}`}>
                     {isFree ? 'forever' : ` / ${cardInterval}`}
                   </span>
                 </div>
 
-                <div className={`mt-5 rounded-2xl border px-4 py-3 ${plan.highlight ? 'border-white/15 bg-white/10' : 'border-[#e4d9e8] bg-[#f8f2f9]'}`}>
+                <div className={`mt-5 rounded-2xl border px-4 py-3 ${plan.highlight ? 'pricing-highlight-surface' : 'border-[#e4d9e8] bg-[#f8f2f9]'}`}>
                   <div className="flex items-center gap-2">
-                    <Coins className={`size-4 ${plan.highlight ? 'text-[#d9ffa8]' : 'text-[#4f378a]'}`} />
-                    <span className={`text-sm font-bold ${plan.highlight ? 'text-white' : 'text-[#2b2030]'}`}>
+                    <Coins className={`size-4 ${plan.highlight ? 'pricing-highlight-primary' : 'text-[#4f378a]'}`} />
+                    <span className={`text-sm font-bold ${plan.highlight ? 'pricing-highlight-primary' : 'text-[#2b2030]'}`}>
                       {Number(plan.generationCredits ?? 0).toLocaleString()} credits / month
                     </span>
                   </div>
-                  <p className={`mt-1 text-[11px] leading-4 ${plan.highlight ? 'text-white/65' : 'text-[#776e7d]'}`}>
+                  <p className={`mt-1 text-[11px] leading-4 ${plan.highlight ? 'pricing-highlight-secondary' : 'text-[#776e7d]'}`}>
                     Shared by strategy, post creation, and regenerations.
                   </p>
                 </div>
@@ -237,7 +252,7 @@ export function PricingSection() {
                     <span
                       className={`flex min-h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold ${
                         plan.highlight
-                          ? 'bg-[#d9ffa8]/25 text-[#d9ffa8]'
+                          ? 'pricing-current-plan'
                           : 'border border-[#cfe2b2] bg-[#eff9df] text-[#315016]'
                       }`}
                     >
@@ -250,7 +265,7 @@ export function PricingSection() {
                       disabled={Boolean(checkingOut)}
                       className={`flex min-h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
                         plan.highlight
-                          ? 'border border-[#c8a6b4] bg-white/5 text-[#ffc6d1] hover:bg-white/10 focus-visible:ring-white'
+                          ? 'pricing-cancel-on-accent focus-visible:ring-[var(--aether-on-accent)]'
                           : 'border border-[#eccfd5] bg-white text-[#9f2949] hover:bg-[#fbe9ee] focus-visible:ring-[#ad3150]'
                       }`}
                     >
@@ -261,15 +276,15 @@ export function PricingSection() {
                 ) : isAuthenticated && isActiveSubscription && isFree ? (
                   <button
                     type="button"
-                    onClick={handleCancel}
+                    onClick={handleReturnToFree}
                     disabled={busy || Boolean(checkingOut)}
                     className={`group mt-6 flex min-h-12 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
                       plan.highlight
-                        ? 'bg-white text-[#381e72] shadow-[0_10px_26px_rgba(0,0,0,0.22)] hover:bg-[#f3edf5] focus-visible:ring-white'
+                        ? 'pricing-highlight-action focus-visible:ring-[var(--aether-on-accent)]'
                         : 'bg-[#381e72] text-white shadow-[0_10px_22px_rgba(56,30,114,0.22)] hover:bg-[#4f378a] focus-visible:ring-[#381e72]'
                     }`}
                   >
-                    {busy ? <Loader2 className={`size-4 animate-spin ${plan.highlight ? 'text-[#4f378a]' : 'text-[#b7f36b]'}`} /> : null}
+                    {busy ? <Loader2 className={`size-4 animate-spin ${plan.highlight ? 'text-[var(--aether-accent)]' : 'text-[#b7f36b]'}`} /> : null}
                     Switch to Free
                     {!busy ? <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" /> : null}
                   </button>
@@ -280,27 +295,27 @@ export function PricingSection() {
                   disabled={busy || Boolean(checkingOut)}
                   className={`group mt-6 flex min-h-12 items-center justify-center gap-2 rounded-xl text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
                     plan.highlight
-                      ? 'bg-white text-[#381e72] shadow-[0_10px_26px_rgba(0,0,0,0.22)] hover:bg-[#f3edf5] focus-visible:ring-white'
+                      ? 'pricing-highlight-action focus-visible:ring-[var(--aether-on-accent)]'
                       : 'bg-[#381e72] text-white shadow-[0_10px_22px_rgba(56,30,114,0.22)] hover:bg-[#4f378a] focus-visible:ring-[#381e72]'
                   }`}
                 >
-                  {busy ? <Loader2 className={`size-4 animate-spin ${plan.highlight ? 'text-[#4f378a]' : 'text-[#b7f36b]'}`} /> : null}
+                  {busy ? <Loader2 className={`size-4 animate-spin ${plan.highlight ? 'text-[var(--aether-accent)]' : 'text-[#b7f36b]'}`} /> : null}
                   {isFree ? 'Start free' : `Choose ${plan.name}`}
                   {!busy ? <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" /> : null}
                 </button>
                 )}
 
-                <ul className={`mt-7 space-y-3 ${plan.highlight ? 'text-white/90' : 'text-[#514a56]'}`}>
+                <ul className={`mt-7 space-y-3 ${plan.highlight ? 'pricing-highlight-primary' : 'text-[#514a56]'}`}>
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-2.5 text-sm">
-                      <span className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full ${plan.highlight ? 'bg-[#b7f36b]/20 text-[#d9ffa8]' : 'bg-[#e6fbc7] text-[#315016]'}`}>
+                      <span className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full ${plan.highlight ? 'pricing-highlight-check' : 'bg-[#e6fbc7] text-[#315016]'}`}>
                         <Check className="size-3" strokeWidth={2.6} />
                       </span>
                       {feature}
                     </li>
                   ))}
                 </ul>
-                <p className={`mt-auto flex items-center gap-1.5 border-t pt-5 text-[11px] ${plan.highlight ? 'border-white/15 text-white/60' : 'border-[#ece4ee] text-[#817687]'}`}>
+                <p className={`mt-auto flex items-center gap-1.5 border-t pt-5 text-[11px] ${plan.highlight ? 'pricing-highlight-footer' : 'border-[#ece4ee] text-[#817687]'}`}>
                   <LockKeyhole className="size-3.5" /> Secure checkout. Cancel anytime.
                 </p>
               </motion.article>
@@ -317,49 +332,12 @@ export function PricingSection() {
       </motion.div>
 
       {popup ? (
-        <div className="fixed inset-x-4 bottom-6 z-[80] mx-auto w-full max-w-md" role="alert" aria-live="polite">
-          <div
-            className={`relative overflow-hidden rounded-2xl border p-4 shadow-[0_20px_60px_rgba(46,32,51,0.22)] ${
-              popup.kind === 'success'
-                ? 'border-[#cfe2b2] bg-[#fffaff]'
-                : 'border-[#f0d9b7] bg-[#fffaff]'
-            }`}
-          >
-            <span
-              className={`absolute -right-6 -top-10 size-28 rounded-full ${
-                popup.kind === 'success' ? 'bg-[#e6fbc7]/60' : 'bg-[#fcefd9]/60'
-              }`}
-              aria-hidden="true"
-            />
-            <div className="relative flex items-start gap-3">
-              <span
-                className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${
-                  popup.kind === 'success'
-                    ? 'bg-[#e6fbc7] text-[#2c4a0e]'
-                    : 'bg-[#fcefd9] text-[#9b5a12]'
-                }`}
-              >
-                {popup.kind === 'success' ? (
-                  <CheckCircle2 className="size-5" strokeWidth={2.4} />
-                ) : (
-                  <X className="size-5" strokeWidth={2.3} />
-                )}
-              </span>
-              <div className="min-w-0 flex-1 pt-0.5">
-                <p className="text-sm font-bold text-[#201a25]">{popup.title}</p>
-                <p className="mt-0.5 text-xs leading-5 text-[#625b71]">{popup.body}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPopup(null)}
-                aria-label="Dismiss notification"
-                className="flex size-8 shrink-0 items-center justify-center rounded-lg text-[#776e7d] transition-colors hover:bg-[#f3edf5] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-          </div>
-        </div>
+        <BillingPopup
+          kind={popup.kind}
+          title={popup.title}
+          body={popup.body}
+          onClose={() => setPopup(null)}
+        />
       ) : null}
     </section>
   )

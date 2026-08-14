@@ -40,11 +40,11 @@ export function SourceComposer({ busy, onAddWebsite, onAddDocument, onAddSocial 
     <section className="rounded-[24px] border border-[#ded7e3] bg-white p-5 shadow-[0_12px_30px_rgba(70,48,96,0.05)] sm:p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#70579e]">Build your library</p>
+          <p className="knowledge-accent-text text-xs font-bold uppercase tracking-[0.16em]">Build your library</p>
           <h2 className="mt-2 text-xl font-bold tracking-tight text-[#27202d]">Add a trusted source</h2>
           <p className="mt-1 text-sm leading-5 text-[#71677a]">Choose one source type, then add only what your team has approved.</p>
         </div>
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#eee7f6] text-[#4f378a]"><BookOpen className="size-5" /></span>
+        <span className="knowledge-icon-tile flex size-10 shrink-0 items-center justify-center rounded-xl"><BookOpen className="size-5" /></span>
       </div>
 
       <div className="mt-6 grid grid-cols-3 gap-2">
@@ -55,8 +55,9 @@ export function SourceComposer({ busy, onAddWebsite, onAddDocument, onAddSocial 
             <button
               key={option.id}
               type="button"
+              data-selected={selected}
               onClick={() => setType(option.id)}
-              className={`rounded-xl border px-2 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] ${selected ? "border-[#4f378a] bg-[#f0eafb] text-[#3c2675] shadow-sm" : "border-[#e6dfea] bg-[#fff] text-[#5f5568] hover:border-[#cfc1dc] hover:bg-[#fdfaff]"}`}
+              className={`knowledge-source-option rounded-xl border px-2 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] ${selected ? "border-[#4f378a] shadow-sm" : "border-[#e6dfea] bg-[#fff] text-[#5f5568] hover:border-[#cfc1dc] hover:bg-[#fdfaff]"}`}
               aria-pressed={selected}
             >
               <Icon className="size-4" />

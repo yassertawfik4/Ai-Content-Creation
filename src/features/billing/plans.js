@@ -1,52 +1,76 @@
-export const PRICING_PLANS = [
-  {
-    code: 'free',
-    name: 'Free',
-    description: 'Explore the full workflow and launch your first campaigns.',
-    priceMonthlyCents: 0,
-    priceYearlyCents: 0,
-    generationCredits: 6,
-    sortOrder: 0,
+// Plans are priced in the database and served by GET /api/subscriptions/plans.
+// Only what the backend has no opinion about — marketing copy and which card
+// gets the badge — lives here, keyed by plan code. Prices and credit counts are
+// never duplicated client-side, so a repricing cannot leave the UI lying.
+
+const PLAN_PRESENTATION = {
+  free: {
     eyebrow: 'Starter',
-    features: ['Up to 3 complete campaigns', 'Strategy and content workflows', 'Community support'],
+    features: [
+      'Up to 3 complete campaigns',
+      'Strategy and content workflows',
+      'Community support',
+    ],
   },
-  {
-    code: 'pro',
-    name: 'Pro',
-    description: 'For creators and growing brands publishing consistently.',
-    priceMonthlyCents: 1500,
-    priceYearlyCents: 15000,
-    generationCredits: 60,
-    sortOrder: 1,
+  pro: {
     eyebrow: 'Popular',
     highlight: true,
-    features: ['Up to 30 complete campaigns', 'AI image generation', 'Advanced analytics', 'Priority support'],
+    features: [
+      'Up to 30 complete campaigns',
+      'AI image generation',
+      'Advanced analytics',
+      'Priority support',
+    ],
   },
-  {
-    code: 'business',
-    name: 'Business',
-    description: 'Higher capacity and controls for ambitious marketing teams.',
-    priceMonthlyCents: 4000,
-    priceYearlyCents: 40000,
-    generationCredits: 240,
-    sortOrder: 2,
+  business: {
     eyebrow: 'Team',
-    features: ['Up to 120 complete campaigns', 'Team workspaces', 'API access', 'Dedicated success manager'],
+    features: [
+      'Up to 120 complete campaigns',
+      'Team workspaces',
+      'API access',
+      'Dedicated success manager',
+    ],
   },
-]
+}
 
-export function getPlan(planCode) {
-  return PRICING_PLANS.find((plan) => plan.code === planCode)
+const FALLBACK_PRESENTATION = { eyebrow: null, highlight: false, features: [] }
+
+/** Merges a plan row from the API with its local presentation metadata. */
+export function decoratePlan(plan) {
+  return {
+    ...FALLBACK_PRESENTATION,
+    ...(PLAN_PRESENTATION[plan.code] ?? {}),
+    ...plan,
+    priceMonthlyCents: plan.priceMonthlyCents ?? 0,
+    priceYearlyCents: plan.priceYearlyCents ?? 0,
+  }
+}
+
+export function decoratePlans(plans) {
+  return [...plans]
+    .map(decoratePlan)
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
 }
 
 export function getPlanPrice(plan, interval) {
   return interval === 'year' ? plan.priceYearlyCents : plan.priceMonthlyCents
 }
 
-export function formatPlanPrice(cents) {
-  return (cents / 100).toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
-  })
+/** Money saved over a year by paying yearly, or 0 when there is no discount. */
+export function yearlySavingCents(plan) {
+  const monthlyForAYear = (plan.priceMonthlyCents ?? 0) * 12
+  return Math.max(0, monthlyForAYear - (plan.priceYearlyCents ?? 0))
+}
+
+/**
+ * The headline yearly discount, derived from the catalog so the badge follows a
+ * repricing instead of advertising a stale "Save 17%".
+ */
+export function bestYearlySavingPercent(plans) {
+  return plans.reduce((best, plan) => {
+    const monthlyForAYear = (plan.priceMonthlyCents ?? 0) * 12
+    if (monthlyForAYear <= 0) return best
+    const percent = Math.round((yearlySavingCents(plan) / monthlyForAYear) * 100)
+    return Math.max(best, percent)
+  }, 0)
 }

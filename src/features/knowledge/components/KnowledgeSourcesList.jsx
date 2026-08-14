@@ -11,7 +11,7 @@ export function KnowledgeSourcesList({ sources, busy, onRefresh, onDelete, onRei
   return (
     <section className="mt-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-[#70579e]">Your library</p><h2 className="mt-2 text-2xl font-bold tracking-tight text-[#29222f]">Indexed sources</h2></div>
+        <div><p className="knowledge-accent-text text-xs font-bold uppercase tracking-[0.16em]">Your library</p><h2 className="mt-2 text-2xl font-bold tracking-tight text-[#29222f]">Indexed sources</h2></div>
         <button disabled={busy || !sources.length} onClick={onReindex} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#cabdde] bg-white px-3.5 text-sm font-bold text-[#4f378a] transition hover:bg-[#f3edfa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] disabled:cursor-not-allowed disabled:opacity-45"><RefreshCw className="size-4" />Refresh all</button>
       </div>
 
@@ -29,7 +29,7 @@ function SourceRow({ source, busy, onRefresh, onDelete }) {
 
   return (
     <article className="flex flex-col gap-4 border-b border-[#eee8f0] p-4 last:border-0 sm:flex-row sm:items-center sm:p-5">
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#f0eafb] text-[#4f378a]"><Icon className="size-[18px]" /></span>
+      <span className="knowledge-icon-tile flex size-10 shrink-0 items-center justify-center rounded-xl"><Icon className="size-[18px]" /></span>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2"><h3 className="font-bold text-[#302936]">{source.name}</h3><span className={`rounded-full border px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${statusStyles[status] ?? "border-slate-200 bg-slate-50 text-slate-700"}`}>{status.toLowerCase()}</span></div>
         <p className="mt-1 truncate text-sm text-[#71677a]">{details}{source.metadata?.pageCount ? ` · ${source.metadata.pageCount} pages` : ""}{source.metadata?.embeddingModel ? ` · ${source.metadata.embeddingModel}` : ""}</p>
@@ -45,7 +45,7 @@ function SourceRow({ source, busy, onRefresh, onDelete }) {
 }
 
 function EmptySources() {
-  return <div className="px-5 py-10 text-center sm:py-12"><span className="mx-auto flex size-11 items-center justify-center rounded-2xl bg-[#f0eafb] text-[#4f378a]"><Globe2 className="size-5" /></span><h3 className="mt-4 font-bold text-[#322a38]">Your library is waiting</h3><p className="mx-auto mt-1 max-w-sm text-sm leading-6 text-[#71677a]">Add a website, document, or approved social posts to give your next workflow better context.</p></div>;
+  return <div className="px-5 py-10 text-center sm:py-12"><span className="knowledge-icon-tile mx-auto flex size-11 items-center justify-center rounded-2xl"><Globe2 className="size-5" /></span><h3 className="mt-4 font-bold text-[#322a38]">Your library is waiting</h3><p className="mx-auto mt-1 max-w-sm text-sm leading-6 text-[#71677a]">Add a website, document, or approved social posts to give your next workflow better context.</p></div>;
 }
 
 function ActionButton({ label, disabled, onClick, danger = false, children }) {

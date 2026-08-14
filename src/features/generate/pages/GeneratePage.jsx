@@ -361,7 +361,7 @@ export function GeneratePage() {
       }
       setPhase(active.kind)
       setActiveRunId(active.id)
-      setRunState({ status: 'running', activeSteps: [], completedSteps: [] })
+      setRunState({ ...active, status: 'running', activeSteps: [], completedSteps: [] })
       return true
     }
 

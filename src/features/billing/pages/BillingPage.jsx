@@ -1,117 +1,22 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import {
+  ArrowDownRight,
   ArrowRight,
   Check,
-  CheckCircle2,
   Coins,
   CreditCard,
   Loader2,
   ShieldCheck,
   Sparkles,
-  X,
   XCircle,
 } from 'lucide-react'
-
-const STATUS_STYLES = {
-  ACTIVE: 'bg-[#e6fbc7] text-[#315016]',
-  TRIALING: 'bg-[#f2eafa] text-[#4f378a]',
-  PAST_DUE: 'bg-[#fcefd9] text-[#9b5a12]',
-  UNPAID: 'bg-[#fcefd9] text-[#9b5a12]',
-  CANCELLED: 'bg-[#f3edf5] text-[#625b71]',
-  INCOMPLETE: 'bg-[#f3edf5] text-[#625b71]',
-  PAUSED: 'bg-[#f2eafa] text-[#4f378a]',
-}
-
-const STATUS_LABELS = {
-  ACTIVE: 'Active',
-  TRIALING: 'Trial',
-  PAST_DUE: 'Past due',
-  UNPAID: 'Unpaid',
-  CANCELLED: 'Cancelled',
-  INCOMPLETE: 'Incomplete',
-  PAUSED: 'Paused',
-}
-
-function formatCents(cents) {
-  if (cents == null) return null
-  return (cents / 100).toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
-  })
-}
-
-function SuccessPopup({ message, onClose }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24, scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 16, scale: 0.97 }}
-      transition={{ duration: 0.32, ease: 'easeOut' }}
-      className="fixed inset-x-4 bottom-6 z-[80] mx-auto w-full max-w-md"
-      role="alert"
-      aria-live="polite"
-    >
-      <div className="relative overflow-hidden rounded-2xl border border-[#cfe2b2] bg-[#fffaff] p-4 shadow-[0_20px_60px_rgba(46,32,51,0.22)]">
-        <span className="absolute -right-6 -top-10 size-28 rounded-full bg-[#e6fbc7]/60" aria-hidden="true" />
-        <div className="relative flex items-start gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#e6fbc7] text-[#2c4a0e]">
-            <CheckCircle2 className="size-5" strokeWidth={2.4} />
-          </span>
-          <div className="min-w-0 flex-1 pt-0.5">
-            <p className="text-sm font-bold text-[#201a25]">{message.title}</p>
-            <p className="mt-0.5 text-xs leading-5 text-[#625b71]">{message.body}</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Dismiss notification"
-            className="flex size-8 shrink-0 items-center justify-center rounded-lg text-[#776e7d] transition-colors hover:bg-[#f3edf5] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-function NoticePopup({ title, body, onClose }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24, scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 16, scale: 0.97 }}
-      transition={{ duration: 0.32, ease: 'easeOut' }}
-      className="fixed inset-x-4 bottom-6 z-[80] mx-auto w-full max-w-md"
-      role="alert"
-      aria-live="polite"
-    >
-      <div className="relative overflow-hidden rounded-2xl border border-[#f0d9b7] bg-[#fffaff] p-4 shadow-[0_20px_60px_rgba(46,32,51,0.22)]">
-        <span className="absolute -right-6 -top-10 size-28 rounded-full bg-[#fcefd9]/60" aria-hidden="true" />
-        <div className="relative flex items-start gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#fcefd9] text-[#9b5a12]">
-            <XCircle className="size-5" strokeWidth={2.3} />
-          </span>
-          <div className="min-w-0 flex-1 pt-0.5">
-            <p className="text-sm font-bold text-[#201a25]">{title}</p>
-            <p className="mt-0.5 text-xs leading-5 text-[#625b71]">{body}</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Dismiss notification"
-            className="flex size-8 shrink-0 items-center justify-center rounded-lg text-[#776e7d] transition-colors hover:bg-[#f3edf5] hover:text-[#381e72] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
 import { useBillingPage } from '../hooks/useBillingPage'
+import { BillingPopup } from '@/features/billing/components/BillingPopup'
+import { IntervalToggle } from '@/features/billing/components/IntervalToggle'
+import { PendingChangeBanner } from '@/features/billing/components/PendingChangeBanner'
+import { PlanStatusBadge } from '@/features/billing/components/PlanStatusBadge'
+import { formatMoney } from '@/features/billing/format'
+import { bestYearlySavingPercent, getPlanPrice } from '@/features/billing/plans'
 
 export function BillingPage() {
   const {
@@ -121,9 +26,11 @@ export function BillingPage() {
     currentPlanCode,
     error,
     handleCancel,
+    handleUndoPendingChange,
     interval,
     isActiveStatus,
     loading,
+    pendingChange,
     popup,
     setInterval,
     setPopup,
@@ -133,7 +40,8 @@ export function BillingPage() {
     switchPlan,
   } = useBillingPage()
 
-  const statusStyle = STATUS_STYLES[subscription?.status] ?? 'bg-[#f3edf5] text-[#625b71]'
+  const currentSortOrder = sortedPlans.find((plan) => plan.code === currentPlanCode)?.sortOrder
+  const savingPercent = bestYearlySavingPercent(sortedPlans)
 
   return (
     <div className="min-h-screen bg-[#fef7ff]">
@@ -155,10 +63,7 @@ export function BillingPage() {
 
           {subscription ? (
             <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
-              <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-[0.1em] ${statusStyle}`}>
-                <span className="size-1.5 rounded-full bg-current" />
-                {STATUS_LABELS[subscription.status] ?? subscription.status}
-              </span>
+              <PlanStatusBadge status={subscription.status} />
               {isActiveStatus ? (
                 <button
                   type="button"
@@ -174,6 +79,13 @@ export function BillingPage() {
           ) : null}
         </div>
 
+        <PendingChangeBanner
+          change={pendingChange}
+          currentPlanName={subscription?.plan?.name}
+          onUndo={handleUndoPendingChange}
+          busy={busyAction === 'undo-pending'}
+        />
+
         {creditUsage ? (
           <section className="grid gap-5 rounded-3xl border border-[#ded3e4] bg-[#fffaff] p-5 shadow-[0_12px_32px_rgba(46,32,51,0.06)] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-6" aria-labelledby="credit-balance-title">
             <div>
@@ -186,9 +98,9 @@ export function BillingPage() {
               <p className="mt-1 text-xs leading-5 text-[#746b79]">
                 One credit starts one strategy, content workflow, or regeneration. Resets {new Date(creditUsage.periodEnd).toLocaleDateString()}.
               </p>
-              <div className="mt-4 h-2 max-w-xl overflow-hidden rounded-full bg-[#ebe3ed]" aria-hidden="true">
+              <div className="billing-credit-track mt-4 h-2 max-w-xl overflow-hidden rounded-full" aria-hidden="true">
                 <div
-                  className={`h-full rounded-full transition-[width] ${creditUsage.blockedReason ? 'bg-[#ad3150]' : 'bg-[#4f378a]'}`}
+                  className={`h-full rounded-full transition-[width] ${creditUsage.blockedReason ? 'bg-[#ad3150]' : 'billing-credit-fill'}`}
                   style={{ width: `${creditUsage.limit ? Math.max(2, (creditUsage.remaining / creditUsage.limit) * 100) : 0}%` }}
                 />
               </div>
@@ -198,32 +110,14 @@ export function BillingPage() {
                 <p role="status" className="mt-3 text-sm font-semibold text-[#9f2949]">No credits remain. Choose a larger plan to keep generating.</p>
               ) : null}
             </div>
-            <div className="rounded-2xl bg-[#f2eafa] px-5 py-4 text-center">
+            <div className="billing-allowance-card rounded-2xl px-5 py-4 text-center">
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#746286]">Current allowance</p>
               <p className="mt-1 font-display text-2xl text-[#381e72]">{creditUsage.plan.name}</p>
             </div>
           </section>
         ) : null}
 
-        {/* Interval toggle */}
-        <div className="flex items-center gap-3">
-          {['month', 'year'].map((value) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setInterval(value)}
-              aria-pressed={interval === value}
-              className={`flex min-h-11 items-center gap-2 rounded-full px-6 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] ${
-                interval === value
-                  ? 'bg-[#381e72] text-white shadow-[0_8px_18px_rgba(56,30,114,0.22)]'
-                  : 'border border-[#d8cfdc] bg-white text-[#625b71] hover:border-[#a99eb4] hover:text-[#201a25]'
-              }`}
-            >
-              {value === 'month' ? 'Monthly' : 'Yearly'}
-              {value === 'year' ? <span className={interval === 'year' ? 'text-[#b7f36b]' : 'text-[#6a9f27]'}>Save 17%</span> : null}
-            </button>
-          ))}
-        </div>
+        <IntervalToggle interval={interval} onChange={setInterval} savingPercent={savingPercent} />
 
         {error ? (
           <div className="flex items-start gap-3 rounded-2xl border border-[#eccfd5] bg-[#fbe9ee] px-4 py-3 text-sm text-[#8a2440]">
@@ -249,14 +143,16 @@ export function BillingPage() {
               const isSamePlanSubscription = subscription && currentPlanCode === plan.code
               const isCurrent = (isSamePlanSubscription && isActiveStatus) ||
                 (!isActiveStatus && creditUsage?.plan?.code === plan.code)
-              const priceCents =
-                (isCurrent ? subscribedInterval : interval) === 'year'
-                  ? plan.priceYearlyCents
-                  : plan.priceMonthlyCents
               const priceInterval = isCurrent ? subscribedInterval : interval
+              const priceCents = getPlanPrice(plan, priceInterval)
               const hasPrice = priceCents != null
               const isSamePlan = currentPlanCode === plan.code
-              const highlight = plan.code === 'pro'
+              const highlight = plan.highlight
+              const isPendingTarget = pendingChange?.planCode === plan.code
+              // A lower tier is scheduled for the period end rather than applied
+              // now, so the button must not imply an immediate switch.
+              const isDowngrade =
+                currentSortOrder != null && (plan.sortOrder ?? 0) < currentSortOrder
 
               return (
                 <motion.article
@@ -286,7 +182,7 @@ export function BillingPage() {
                     {hasPrice ? (
                       <>
                         <span className="font-display text-4xl font-bold tracking-[-1px] text-[#201a25]">
-                          {priceCents === 0 ? '$0' : formatCents(priceCents)}
+                          {formatMoney(priceCents)}
                         </span>
                         <span className="mb-1 text-sm text-[#8a8190]">{priceCents === 0 ? 'forever' : ` / ${priceInterval}`}</span>
                       </>
@@ -304,7 +200,11 @@ export function BillingPage() {
                   </div>
 
                   <div className="mt-6 flex min-h-12">
-                    {isCurrent ? (
+                    {isPendingTarget ? (
+                      <span className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#dfd3e7] bg-[#f2eafa] px-3 text-center text-sm font-semibold text-[#4f378a]">
+                        <Check className="size-4 shrink-0" /> Starts at the end of this period
+                      </span>
+                    ) : isCurrent ? (
                       <span className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-[#cfe2b2] bg-[#eff9df] text-sm font-semibold text-[#315016]">
                         <Check className="size-4" /> Current plan{plan.code === 'free' ? ' · Included' : ` · ${subscribedInterval === 'year' ? 'Yearly' : 'Monthly'}`}
                       </span>
@@ -322,11 +222,24 @@ export function BillingPage() {
                       <button
                         type="button"
                         onClick={() => switchPlan(plan.code)}
-                        disabled={busyAction === 'cancel'}
-                        className="group flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#381e72] px-4 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(56,30,114,0.22)] transition-all hover:bg-[#4f378a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#381e72] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                        disabled={Boolean(busyAction)}
+                        className={`group flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#381e72] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
+                          isDowngrade
+                            ? 'border border-[#d8cfdc] bg-white text-[#4f378a] hover:bg-[#f3edf5]'
+                            : 'bg-[#381e72] text-white shadow-[0_10px_22px_rgba(56,30,114,0.22)] hover:bg-[#4f378a]'
+                        }`}
                       >
-                        <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-                        Switch to {plan.name}
+                        {isDowngrade ? (
+                          <>
+                            <ArrowDownRight className="size-4" />
+                            Switch at period end
+                          </>
+                        ) : (
+                          <>
+                            <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                            Upgrade to {plan.name}
+                          </>
+                        )}
                       </button>
                     ) : (
                       <button
@@ -365,11 +278,12 @@ export function BillingPage() {
 
       <AnimatePresence>
         {popup ? (
-          popup.kind === 'success' ? (
-            <SuccessPopup message={popup} onClose={() => setPopup(null)} />
-          ) : (
-            <NoticePopup title={popup.title} body={popup.body} onClose={() => setPopup(null)} />
-          )
+          <BillingPopup
+            kind={popup.kind}
+            title={popup.title}
+            body={popup.body}
+            onClose={() => setPopup(null)}
+          />
         ) : null}
       </AnimatePresence>
     </div>

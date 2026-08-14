@@ -17,33 +17,21 @@ import {
   LockKeyhole,
   LogOut,
   MonitorCog,
-  Palette,
   PlugZap,
   Save,
   ShieldCheck,
   Sparkles,
-  Type,
   UserRound,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { InterfacePreferences } from '../components/InterfacePreferences'
+import {
+  formatBillingDate,
+  normalizeInterval,
+} from '@/features/billing/format'
 
 const inputClassName =
   'h-12 w-full rounded-2xl border border-[#d9cfe1] bg-white px-4 text-sm text-[#2f2735] shadow-[0_1px_2px_rgba(29,27,32,0.03)] outline-none transition placeholder:text-[#9a909f] focus:border-[#675094] focus:ring-4 focus:ring-[#675094]/10 disabled:bg-[#f5f1f7] disabled:text-[#7b7180]'
-
-const textSizeOptions = [
-  { value: 'compact', label: 'Compact' },
-  { value: 'comfortable', label: 'Comfortable' },
-  { value: 'large', label: 'Large' },
-]
-
-const accentPresets = [
-  { color: '#4f378a', label: 'Aether violet' },
-  { color: '#2563eb', label: 'Electric blue' },
-  { color: '#0f766e', label: 'Ocean teal' },
-  { color: '#15803d', label: 'Forest green' },
-  { color: '#c2410c', label: 'Ember orange' },
-  { color: '#be185d', label: 'Orchid pink' },
-]
 
 function initialsFor(name) {
   return String(name || 'A')
@@ -325,7 +313,7 @@ export function SettingsPage() {
                         <p className="mt-2 font-display text-3xl font-bold">{billing.usage?.plan?.name ?? billing.subscription?.plan?.name ?? 'Free'}</p>
                         <p className="mt-1 text-xs text-white/60">
                           {billing.subscription?.billingInterval
-                            ? `${String(billing.subscription.billingInterval).toLowerCase() === 'yearly' ? 'Yearly' : 'Monthly'} billing`
+                            ? `${normalizeInterval(billing.subscription.billingInterval) === 'year' ? 'Yearly' : 'Monthly'} billing`
                             : 'Included with your account'}
                         </p>
                       </div>
@@ -333,16 +321,22 @@ export function SettingsPage() {
                         {billing.subscription?.status === 'ACTIVE' ? 'Active' : billing.subscription?.status?.replaceAll('_', ' ') ?? 'Included'}
                       </span>
                     </div>
-                    {billing.subscription?.currentPeriodEnd ? (
+                    {billing.subscription?.pendingPlanId ? (
                       <p className="relative mt-6 border-t border-white/12 pt-4 text-xs text-white/65">
-                        Current billing period ends {new Date(billing.subscription.currentPeriodEnd).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                        Switching to {billing.subscription.pendingPlan?.name ?? 'a new plan'} on{' '}
+                        {formatBillingDate(billing.subscription.pendingEffectiveAt) ?? 'the end of this period'}.
+                        Manage it on the billing page.
+                      </p>
+                    ) : billing.subscription?.currentPeriodEnd ? (
+                      <p className="relative mt-6 border-t border-white/12 pt-4 text-xs text-white/65">
+                        Current billing period ends {formatBillingDate(billing.subscription.currentPeriodEnd)}
                       </p>
                     ) : null}
                   </div>
 
                   <div className="rounded-[22px] border border-[#e3d9e7] bg-white p-5">
                     <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2 text-sm font-bold text-[#392f3e]"><Coins className="size-4 text-[#5d4597]" /> Generation credits</div>
+                      <div className="flex items-center gap-2 text-sm font-bold text-[#392f3e]"><Coins className="size-4 text-[var(--aether-accent)]" /> Generation credits</div>
                       <span className="text-xs font-semibold text-[#796f7e]">Monthly allowance</span>
                     </div>
                     <div className="mt-5 grid grid-cols-3 gap-3 text-center">
@@ -351,14 +345,14 @@ export function SettingsPage() {
                         ['Used', billing.usage?.used ?? 0],
                         ['Total', billing.usage?.limit ?? 0],
                       ].map(([label, value]) => (
-                        <div key={label} className="rounded-2xl bg-[#f7f1f8] px-2 py-3">
+                        <div key={label} className="billing-credit-stat rounded-2xl px-2 py-3">
                           <p className="text-xl font-bold text-[#332a38]">{Number(value).toLocaleString()}</p>
                           <p className="mt-1 text-[10px] font-bold uppercase tracking-[.1em] text-[#817487]">{label}</p>
                         </div>
                       ))}
                     </div>
-                    <div className="mt-5 h-2 overflow-hidden rounded-full bg-[#e9e0ec]" aria-label={`${billing.usage?.used ?? 0} of ${billing.usage?.limit ?? 0} credits used`}>
-                      <div className="h-full rounded-full bg-[#5d4597] transition-[width]" style={{ width: `${billing.usage?.limit ? Math.min(100, ((billing.usage.used ?? 0) / billing.usage.limit) * 100) : 0}%` }} />
+                    <div className="billing-credit-track mt-5 h-2 overflow-hidden rounded-full" aria-label={`${billing.usage?.used ?? 0} of ${billing.usage?.limit ?? 0} credits used`}>
+                      <div className="billing-credit-fill h-full rounded-full transition-[width]" style={{ width: `${billing.usage?.limit ? Math.min(100, ((billing.usage.used ?? 0) / billing.usage.limit) * 100) : 0}%` }} />
                     </div>
                     <p className="mt-3 text-xs text-[#766b7b]">Credits reset {billing.usage?.periodEnd ? new Date(billing.usage.periodEnd).toLocaleDateString(undefined, { dateStyle: 'medium' }) : 'monthly'}.</p>
                   </div>
@@ -465,100 +459,7 @@ export function SettingsPage() {
             description="Choose how Sada looks and feels across this browser."
             icon={MonitorCog}
           >
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-[#e3d9e7] bg-white p-4 sm:p-5">
-                <div className="flex items-start gap-3">
-                  <span
-                    className="flex size-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm"
-                    style={{ backgroundColor: preferences.accentColor }}
-                  >
-                    <Palette className="size-5" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-[#362d3b]">Accent color</p>
-                    <p className="mt-1 text-xs leading-5 text-[#766b7b]">Tint backgrounds, surfaces, buttons, links, and focus states.</p>
-                  </div>
-                  <code className="hidden rounded-lg bg-[#f4eef6] px-2 py-1 text-[11px] font-semibold uppercase text-[#6e6374] sm:block">
-                    {preferences.accentColor}
-                  </code>
-                </div>
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  {accentPresets.map(({ color, label }) => {
-                    const selected = preferences.accentColor === color
-                    return (
-                      <button
-                        key={color}
-                        type="button"
-                        onClick={() => updatePreferences({ accentColor: color })}
-                        className="relative flex size-10 items-center justify-center rounded-full border-2 border-white shadow-[0_0_0_1px_#d9cfe1] transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#675094] focus-visible:ring-offset-2"
-                        style={{ backgroundColor: color }}
-                        aria-label={`Use ${label}`}
-                        aria-pressed={selected}
-                        title={label}
-                      >
-                        {selected ? <Check className="size-4 text-white drop-shadow-sm" strokeWidth={3} /> : null}
-                      </button>
-                    )
-                  })}
-                  <label className="group relative flex h-10 min-w-10 cursor-pointer items-center gap-2 rounded-full border border-[#d9cfe1] bg-[#faf7fb] pr-3 text-xs font-semibold text-[#5f5565] transition hover:border-[#bbaac7] hover:bg-white focus-within:ring-2 focus-within:ring-[#675094] focus-within:ring-offset-2">
-                    <span
-                      className="ml-1 flex size-8 items-center justify-center rounded-full border-2 border-white shadow-sm"
-                      style={{ background: `conic-gradient(from 90deg, #ef4444, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ef4444)` }}
-                    >
-                      <Palette className="size-3.5 text-white drop-shadow" />
-                    </span>
-                    Custom
-                    <input
-                      type="color"
-                      value={preferences.accentColor}
-                      onChange={(event) => updatePreferences({ accentColor: event.target.value })}
-                      className="absolute inset-0 cursor-pointer opacity-0"
-                      aria-label="Choose a custom accent color"
-                    />
-                  </label>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-[#e3d9e7] bg-white p-4 sm:p-5">
-                <div className="flex items-start gap-3">
-                  <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[#f0e9f4] text-[#5d4772]">
-                    <Type className="size-5" />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-[#362d3b]">Text size</p>
-                    <p className="mt-1 text-xs leading-5 text-[#766b7b]">Scale the interface text to your comfort.</p>
-                  </div>
-                </div>
-                <div
-                  className="mt-4 inline-flex max-w-full overflow-hidden rounded-xl border border-[#ded5e2] bg-[#faf7fb] p-1"
-                  role="group"
-                  aria-label="Text size"
-                >
-                  {textSizeOptions.map(({ value, label }) => {
-                    const selected = preferences.textSize === value
-                    return (
-                      <button
-                        key={value}
-                        type="button"
-                        aria-pressed={selected}
-                        onClick={() => updatePreferences({ textSize: value })}
-                        className={`relative min-h-9 rounded-lg px-3 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#675094] focus-visible:ring-inset sm:px-4 ${selected ? 'text-white' : 'text-[#766b7b] hover:text-[#362d3b]'}`}
-                      >
-                        {selected ? (
-                          <motion.span
-                            layoutId="settings-text-size-pill"
-                            className="pointer-events-none absolute inset-0 rounded-lg bg-[#241d29] shadow-[0_2px_7px_rgba(36,29,41,0.28)] ring-1 ring-[#4f378a]"
-                            transition={{ type: 'spring', stiffness: 520, damping: 38, mass: 0.72 }}
-                            aria-hidden="true"
-                          />
-                        ) : null}
-                        <span className="relative z-10">{label}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
+            <InterfacePreferences preferences={preferences} onChange={updatePreferences} />
           </SectionCard>
 
           <SectionCard
