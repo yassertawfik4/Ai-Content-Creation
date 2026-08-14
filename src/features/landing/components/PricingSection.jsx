@@ -13,6 +13,7 @@ import { bestYearlySavingPercent, getPlanPrice } from '@/features/billing/plans'
 import { usePlanCatalog } from '@/features/billing/hooks/usePlanCatalog'
 import { IntervalToggle } from '@/features/billing/components/IntervalToggle'
 import { BillingPopup } from '@/features/billing/components/BillingPopup'
+import { AnimatedText } from './AnimatedText'
 import {
   formatMoney,
   isActiveStatus,
@@ -154,10 +155,18 @@ export function PricingSection() {
             <Sparkles className="size-3.5" /> Pricing
           </span>
           <h2 className="font-display mt-5 text-4xl font-bold tracking-[-0.9px] text-[#201a25] sm:text-5xl">
-            Simple, honest plans.
+            <AnimatedText
+              text="Simple, honest plans."
+              delay={0.32}
+              stagger={0.036}
+            />
           </h2>
           <p className="mt-4 text-lg leading-relaxed text-[#6a6170]">
-            Start free and scale when you need more power. No contracts, cancel anytime.
+            <AnimatedText
+              text="Start free and scale when you need more power. No contracts, cancel anytime."
+              delay={0.48}
+              stagger={0.014}
+            />
           </p>
         </div>
 
