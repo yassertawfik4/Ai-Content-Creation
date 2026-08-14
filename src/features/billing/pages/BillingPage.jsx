@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   ArrowDownRight,
@@ -12,6 +13,7 @@ import {
 } from 'lucide-react'
 import { useBillingPage } from '../hooks/useBillingPage'
 import { BillingPopup } from '@/features/billing/components/BillingPopup'
+import { CancelSubscriptionDialog } from '@/features/billing/components/CancelSubscriptionDialog'
 import { IntervalToggle } from '@/features/billing/components/IntervalToggle'
 import { PendingChangeBanner } from '@/features/billing/components/PendingChangeBanner'
 import { PlanStatusBadge } from '@/features/billing/components/PlanStatusBadge'
@@ -19,6 +21,7 @@ import { formatMoney } from '@/features/billing/format'
 import { bestYearlySavingPercent, getPlanPrice } from '@/features/billing/plans'
 
 export function BillingPage() {
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const {
     busyAction,
     choosePlan,
@@ -67,7 +70,7 @@ export function BillingPage() {
               {isActiveStatus ? (
                 <button
                   type="button"
-                  onClick={handleCancel}
+                  onClick={() => setCancelDialogOpen(true)}
                   disabled={busyAction === 'cancel'}
                   className="flex h-10 items-center gap-1.5 rounded-xl border border-[#eccfd5] bg-white px-3.5 text-sm font-semibold text-[#9f2949] transition-colors hover:bg-[#fbe9ee] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ad3150] disabled:cursor-wait disabled:opacity-60"
                 >
@@ -275,6 +278,14 @@ export function BillingPage() {
           Payments are processed securely by Stripe. We never see or store your card details.
         </div>
       </div>
+
+      <CancelSubscriptionDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        onConfirm={handleCancel}
+        busy={busyAction === 'cancel'}
+        error={error}
+      />
 
       <AnimatePresence>
         {popup ? (

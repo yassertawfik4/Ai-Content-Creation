@@ -216,8 +216,10 @@ export function useBillingPage() {
         await refreshSession()
         await load()
         setPopup(successPopup)
+        return true
       } catch (actionError) {
         setError(getErrorMessage(actionError))
+        return false
       } finally {
         setBusyAction('')
       }

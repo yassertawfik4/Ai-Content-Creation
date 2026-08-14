@@ -13,6 +13,7 @@ import { bestYearlySavingPercent, getPlanPrice } from '@/features/billing/plans'
 import { usePlanCatalog } from '@/features/billing/hooks/usePlanCatalog'
 import { IntervalToggle } from '@/features/billing/components/IntervalToggle'
 import { BillingPopup } from '@/features/billing/components/BillingPopup'
+import { CancelSubscriptionDialog } from '@/features/billing/components/CancelSubscriptionDialog'
 import { AnimatedText } from './AnimatedText'
 import {
   formatMoney,
@@ -26,6 +27,7 @@ export function PricingSection() {
   const [interval, setInterval] = useState('month')
   const [error, setError] = useState('')
   const [checkingOut, setCheckingOut] = useState('')
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [popup, setPopup] = useState(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('success') === '1') {
@@ -112,8 +114,10 @@ export function PricingSection() {
       await action()
       await refreshSubscription()
       setPopup(successPopup)
+      return true
     } catch (actionError) {
       setError(getErrorMessage(actionError))
+      return false
     } finally {
       setCheckingOut('')
     }
@@ -270,7 +274,7 @@ export function PricingSection() {
                     </span>
                     <button
                       type="button"
-                      onClick={handleCancel}
+                      onClick={() => setCancelDialogOpen(true)}
                       disabled={Boolean(checkingOut)}
                       className={`flex min-h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
                         plan.highlight
@@ -339,6 +343,14 @@ export function PricingSection() {
           </Link>
         </p>
       </motion.div>
+
+      <CancelSubscriptionDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        onConfirm={handleCancel}
+        busy={checkingOut === 'cancel'}
+        error={error}
+      />
 
       {popup ? (
         <BillingPopup
