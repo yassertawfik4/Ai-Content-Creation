@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { Database, ImagePlus, Send, Check } from 'lucide-react'
+import { AnimatedText } from './AnimatedText'
 
 const steps = [
   {
@@ -91,11 +92,17 @@ export function PipelineSection() {
       <div className="mx-auto flex max-w-[1280px] flex-col gap-20">
         <div className="flex flex-col items-center gap-6 text-center">
           <h2 className="text-4xl font-bold tracking-tight text-[#1d1b20] lg:text-5xl">
-            Your Campaign Pipeline, Automated.
+            <AnimatedText
+              text="Your Campaign Pipeline, Automated."
+              stagger={0.032}
+            />
           </h2>
           <p className="max-w-[672px] text-base text-[#494551]">
-            From raw data to polished posts in seconds. See how our agents work
-            in harmony.
+            <AnimatedText
+              text="From raw data to polished posts in seconds. See how our agents work in harmony."
+              delay={0.25}
+              stagger={0.014}
+            />
           </p>
         </div>
 

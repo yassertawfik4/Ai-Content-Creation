@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, Check, Search, PenTool, CalendarClock } from 'lucide-react'
+import { AnimatedText } from './AnimatedText'
 
 const agents = [
   {
@@ -102,15 +103,21 @@ export function MarketingTeamSection() {
         <div className="flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-end">
           <div className="max-w-[672px]">
             <p className="text-sm font-semibold uppercase tracking-[0.1em] text-[#381e72]">
-              The Workspace
+              <AnimatedText text="The Workspace" stagger={0.045} />
             </p>
             <h2 className="mt-4 text-4xl font-bold leading-tight tracking-tight text-[#1d1b20] lg:text-5xl">
-              Meet Your New Marketing Team
+              <AnimatedText
+                text="Meet Your New Marketing Team"
+                delay={0.12}
+                stagger={0.032}
+              />
             </h2>
             <p className="mt-4 text-base leading-relaxed text-[#494551]">
-              Three specialized agents, one seamless workflow. Sada brings
-              high-intelligence automation to every stage of your campaign
-              lifecycle.
+              <AnimatedText
+                text="Three specialized agents, one seamless workflow. Sada brings high-intelligence automation to every stage of your campaign lifecycle."
+                delay={0.28}
+                stagger={0.012}
+              />
             </p>
           </div>
           <a

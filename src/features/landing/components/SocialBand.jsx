@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { motion, useInView, useReducedMotion } from "framer-motion";
 import { LayoutGrid } from "lucide-react";
+import { AnimatedText } from "./AnimatedText";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -195,10 +196,18 @@ export function SocialBand({ id }) {
           className="relative z-20 text-center"
         >
           <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.26em] text-[#70579e]">
-            One voice. Every channel.
+            <AnimatedText
+              text="One voice. Every channel."
+              delay={0.3}
+              stagger={0.04}
+            />
           </p>
           <h2 className="text-3xl font-bold tracking-tight text-[#1d1b20] sm:text-4xl lg:text-5xl">
-            Connect your voice everywhere.
+            <AnimatedText
+              text="Connect your voice everywhere."
+              delay={0.42}
+              stagger={0.032}
+            />
           </h2>
         </motion.div>
 

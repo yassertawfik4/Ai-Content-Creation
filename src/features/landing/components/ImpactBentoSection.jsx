@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { ShieldCheck, LayoutDashboard } from 'lucide-react'
+import { AnimatedText } from './AnimatedText'
 
 const stats = [
   { value: '11x', label: 'Production Speed', valueClass: 'text-[#e9ddff]' },
@@ -22,14 +23,18 @@ export function ImpactBentoSection() {
           <div className="pointer-events-none absolute -right-16 -top-16 size-80 rounded-full bg-[#4f378a]/40 blur-3xl" />
           <div className="relative flex flex-col gap-8">
             <h2 className="text-4xl font-bold leading-[1.05] tracking-tight text-[#f5eff6] sm:text-5xl lg:text-[64px]">
-              Orchestrate at scale.
-              <br />
-              Measure the impact.
+              <AnimatedText
+                text={'Orchestrate at scale.\nMeasure the impact.'}
+                delay={0.38}
+                stagger={0.032}
+              />
             </h2>
             <p className="max-w-[512px] text-base leading-relaxed text-[#f5eff6]/80">
-              Sada doesn't just create content; it builds connected pipelines
-              that turn your marketing strategy into an automated engine of
-              growth.
+              <AnimatedText
+                text="Sada doesn't just create content; it builds connected pipelines that turn your marketing strategy into an automated engine of growth."
+                delay={0.62}
+                stagger={0.012}
+              />
             </p>
             <div className="flex gap-16 pt-4">
               {stats.map((stat) => (
