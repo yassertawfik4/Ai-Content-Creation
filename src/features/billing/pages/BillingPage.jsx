@@ -156,6 +156,7 @@ export function BillingPage() {
               // now, so the button must not imply an immediate switch.
               const isDowngrade =
                 currentSortOrder != null && (plan.sortOrder ?? 0) < currentSortOrder
+              const isSchedulingDowngrade = busyAction === `schedule-${plan.code}`
 
               return (
                 <motion.article
@@ -224,7 +225,7 @@ export function BillingPage() {
                     ) : isActiveStatus ? (
                       <button
                         type="button"
-                        onClick={() => switchPlan(plan.code)}
+                        onClick={() => switchPlan(plan.code, isDowngrade)}
                         disabled={Boolean(busyAction)}
                         className={`group flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#381e72] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 ${
                           isDowngrade
@@ -234,8 +235,12 @@ export function BillingPage() {
                       >
                         {isDowngrade ? (
                           <>
-                            <ArrowDownRight className="size-4" />
-                            Switch at period end
+                            {isSchedulingDowngrade ? (
+                              <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                              <ArrowDownRight className="size-4" />
+                            )}
+                            {isSchedulingDowngrade ? 'Scheduling…' : 'Switch at period end'}
                           </>
                         ) : (
                           <>

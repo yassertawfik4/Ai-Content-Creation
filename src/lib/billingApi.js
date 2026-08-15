@@ -80,13 +80,13 @@ export function getCreditUsage({ signal } = {}) {
 }
 
 /**
- * Starts Stripe Checkout for a plan code + interval.
- * Returns { url } where the user is redirected to Stripe's hosted page.
+ * Starts Stripe Checkout for a plan code + interval. Custom mode returns the
+ * client secret consumed only by Stripe.js; hosted mode returns a redirect URL.
  */
-export function createCheckout({ planCode, interval }, { signal } = {}) {
+export function createCheckout({ planCode, interval, uiMode }, { signal } = {}) {
   return billingFetch('/checkout', {
     method: 'POST',
-    body: JSON.stringify({ planCode, interval }),
+    body: JSON.stringify({ planCode, interval, ...(uiMode ? { uiMode } : {}) }),
     signal,
   })
 }
@@ -113,14 +113,18 @@ export function confirmCheckout({ sessionId, planCode, interval } = {}, { signal
  * amount shown on the confirmation screen is the amount charged; the backend
  * answers 409 with a fresh quote if that price no longer holds.
  *
- * Resolves to `{ url, kind, scheduled, effectiveAt }` — `url` is a Stripe
- * Checkout page for an upgrade, and null for a downgrade, which is scheduled
- * for `effectiveAt` instead of charged.
+ * Custom mode resolves with a Stripe Elements `clientSecret`; hosted mode
+ * resolves with `url`. Downgrades return neither because they are scheduled.
  */
-export function changePlan({ planCode, interval, quoteId }, { signal } = {}) {
+export function changePlan({ planCode, interval, quoteId, uiMode }, { signal } = {}) {
   return billingFetch('/plan', {
     method: 'PATCH',
-    body: JSON.stringify({ planCode, interval, ...(quoteId ? { quoteId } : {}) }),
+    body: JSON.stringify({
+      planCode,
+      interval,
+      ...(quoteId ? { quoteId } : {}),
+      ...(uiMode ? { uiMode } : {}),
+    }),
     signal,
   })
 }

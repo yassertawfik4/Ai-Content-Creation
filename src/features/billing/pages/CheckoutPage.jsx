@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import brandMark from '@/assets/auth/brand-mark.svg'
+import { CustomStripeCheckout } from '@/features/billing/components/CustomStripeCheckout'
 import { useCheckoutPage } from '@/features/billing/hooks/useCheckoutPage'
 import { formatBillingDate, formatMoney } from '@/features/billing/format'
 import { getPlanPrice, yearlySavingCents } from '@/features/billing/plans'
@@ -29,10 +30,14 @@ export function CheckoutPage() {
     acknowledgeReprice,
     paymentBlocked,
     isPlanChange,
+    isUpgradeIntent,
+    isPaidUpgrade,
     isExactCurrentPlan,
     isScheduledDowngrade,
     loading,
     quoteLoading,
+    checkoutClientSecret,
+    checkoutLoading,
     submitting,
     confirm,
     openPortal,
@@ -54,6 +59,24 @@ export function CheckoutPage() {
   const priceCents = getPlanPrice(plan, interval)
   const currency = quote?.currency ?? 'USD'
   const saving = yearlySavingCents(plan)
+
+  if (isUpgradeIntent || (!isPlanChange && !isExactCurrentPlan)) {
+    return (
+      <CustomStripeCheckout
+        plan={plan}
+        interval={interval}
+        priceCents={isPaidUpgrade ? quote.amountDueCents : 0}
+        planPriceCents={priceCents}
+        currency={currency}
+        clientSecret={checkoutClientSecret}
+        loading={quoteLoading || checkoutLoading || (isUpgradeIntent && !quote)}
+        error={error}
+        isUpgrade={isUpgradeIntent}
+        previousPlanName={subscription?.plan?.name}
+        repriced={repriced}
+      />
+    )
+  }
 
   return (
     <main className="relative min-h-dvh overflow-hidden bg-[#f6f0f7] text-[#201a25]">

@@ -265,9 +265,27 @@ export function useBillingPage() {
     [runAction],
   )
 
+  const scheduleDowngrade = useCallback(
+    (planCode) =>
+      runAction(
+        `schedule-${planCode}`,
+        () => changePlan({ planCode, interval }),
+        {
+          kind: 'notice',
+          title: 'Plan change scheduled',
+          body: 'Your current plan and credits stay available until the paid period ends. You can undo this change before it starts.',
+        },
+      ),
+    [interval, runAction],
+  )
+
   const switchPlan = useCallback(
-    (planCode) => (planCode === 'free' ? handleReturnToFree() : goToCheckout(planCode)),
-    [goToCheckout, handleReturnToFree],
+    (planCode, scheduleAtPeriodEnd = false) => {
+      if (planCode === 'free') return handleReturnToFree()
+      if (scheduleAtPeriodEnd) return scheduleDowngrade(planCode)
+      return goToCheckout(planCode)
+    },
+    [goToCheckout, handleReturnToFree, scheduleDowngrade],
   )
 
   useEffect(() => {
