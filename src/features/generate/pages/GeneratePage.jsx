@@ -30,6 +30,7 @@ import {
   deleteChat,
   deleteProject,
   getChatHistory,
+  generateChatTitle,
   listChats,
   listProjects,
   renameChat,
@@ -72,6 +73,10 @@ function mergeWorkflowStatus(current, next) {
   }
 }
 
+function isUntitledChat(title) {
+  return /^(?:New chat|Campaign chat \d+)$/i.test(title?.trim() ?? '')
+}
+
 export function GeneratePage() {
   const [restoredState] = useState(() => readGenerateState())
   const [projects, setProjects] = useState([])
@@ -105,6 +110,7 @@ export function GeneratePage() {
   const [projectPendingDelete, setProjectPendingDelete] = useState(null)
   const [chatPendingDelete, setChatPendingDelete] = useState(null)
   const abortRef = useRef(null)
+  const titleAbortRef = useRef(null)
   const navigationEpochRef = useRef(0)
   const billingAbortRef = useRef(null)
   const sseHealthyRef = useRef(false)
@@ -133,6 +139,7 @@ export function GeneratePage() {
 
   useEffect(() => () => {
     abortRef.current?.abort()
+    titleAbortRef.current?.abort()
     billingAbortRef.current?.abort()
   }, [])
 
@@ -318,6 +325,8 @@ export function GeneratePage() {
     navigationEpochRef.current += 1
     abortRef.current?.abort()
     abortRef.current = null
+    titleAbortRef.current?.abort()
+    titleAbortRef.current = null
     sseHealthyRef.current = false
     setActiveRunId('')
     setPhase('idle')
@@ -548,7 +557,7 @@ export function GeneratePage() {
     if (!projectId || isGenerating) return
     try {
       const existingChats = projectId === activeProject ? chats : await listChats(projectId)
-      const chat = await createChat(projectId, `Campaign chat ${existingChats.length + 1}`)
+      const chat = await createChat(projectId, 'New chat')
       setActiveProject(projectId)
       setChats([chat, ...existingChats])
       setProjects((current) => current.map((project) => project.id === projectId ? { ...project, chatCount: existingChats.length + 1 } : project))
@@ -704,6 +713,33 @@ export function GeneratePage() {
       activeSteps: [],
       completedSteps: [],
     })
+
+    if (isUntitledChat(currentChat.title)) {
+      titleAbortRef.current?.abort()
+      const titleController = new AbortController()
+      titleAbortRef.current = titleController
+      const titleBrief = {
+        brandName: values.brandName.trim(),
+        product: values.product.trim(),
+        industry: values.industry.trim(),
+        businessType: values.businessType.trim(),
+        campaignGoal: values.campaignGoal,
+        targetAudience: values.targetAudience.trim(),
+      }
+
+      void generateChatTitle(activeChat, titleBrief, { signal: titleController.signal })
+        .then((updated) => {
+          if (titleController.signal.aborted) return
+          setChats((current) => current.map((chat) => chat.id === updated.id ? updated : chat))
+        })
+        .catch(() => {
+          // Title generation is non-blocking; the strategy request remains authoritative.
+        })
+        .finally(() => {
+          if (titleAbortRef.current === titleController) titleAbortRef.current = null
+        })
+    }
+
     try {
       const { runId } = await startStrategy(parsed.data, { signal: controller.signal, projectId: activeProject, chatId: activeChat })
       if (controller.signal.aborted) return
