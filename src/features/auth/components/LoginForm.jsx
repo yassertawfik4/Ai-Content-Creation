@@ -5,7 +5,6 @@ import arrowRight from '@/assets/auth/arrow-right.svg'
 import eyeIcon from '@/assets/auth/eye.svg'
 import eyeOffIcon from '@/assets/auth/eye-off.svg'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Link } from 'react-router-dom'
@@ -114,14 +113,19 @@ export function LoginForm({ onSuccess, onUnverified }) {
       </div>
 
       <div className="flex w-full flex-col items-start gap-3 text-sm text-[#494551] sm:flex-row sm:items-center sm:justify-between">
-        <label className="flex cursor-pointer items-center gap-2">
-          <Checkbox
+        <div className="flex items-center gap-2">
+          <input
+            id="remember-me"
+            name="rememberMe"
+            type="checkbox"
             checked={rememberMe}
-            onCheckedChange={(checked) => setRememberMe(checked === true)}
-            className="rounded-[4px] border-[#cbc4d2] bg-white data-[checked]:border-[#4f378a] data-[checked]:bg-[#4f378a]"
+            onChange={(event) => setRememberMe(event.target.checked)}
+            className="size-4 shrink-0 cursor-pointer accent-[#4f378a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4f378a]"
           />
-          Remember me
-        </label>
+          <Label htmlFor="remember-me" className="cursor-pointer font-normal">
+            Remember me
+          </Label>
+        </div>
         <Link to="/otp-login" className="font-semibold text-[#4f378a] underline-offset-4 hover:underline">
           Sign in with email code
         </Link>

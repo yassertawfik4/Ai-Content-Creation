@@ -125,13 +125,18 @@ export async function listProjects({ signal } = {}) {
   })) : []
 }
 
-export function createProject(name, { signal } = {}) {
-  return request('/projects', {
+export async function createProject(name, { signal } = {}) {
+  const project = await request('/projects', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name }),
     signal,
   })
+
+  return {
+    ...project,
+    initialChat: project.initialChat ? asChat(project.initialChat) : null,
+  }
 }
 
 export function renameProject(projectId, name, { signal } = {}) {

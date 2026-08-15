@@ -393,12 +393,12 @@ export function GeneratePage() {
 
   const handleCreateProject = async ({ name, iconId, color }) => {
     try {
-      const project = await createProject(name)
+      const { initialChat, ...project } = await createProject(name)
       saveProjectAppearance(project.id, { iconId, color })
-      setProjects((current) => [{ ...project, iconId, color, chatCount: 0 }, ...current])
+      setProjects((current) => [{ ...project, iconId, color, chatCount: initialChat ? 1 : 0 }, ...current])
       setActiveProject(project.id)
-      setChats([])
-      setActiveChat('')
+      setChats(initialChat ? [initialChat] : [])
+      setActiveChat(initialChat?.id ?? '')
       setValues({ ...EMPTY_VALUES })
       setCampaign(null)
       setStrategy(null)
