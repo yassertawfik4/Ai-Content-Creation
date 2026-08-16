@@ -57,6 +57,7 @@ export function CheckoutPage() {
   }
 
   const priceCents = getPlanPrice(plan, interval)
+  const amountDueCents = isPaidUpgrade ? quote.amountDueCents : priceCents
   const currency = quote?.currency ?? 'USD'
   const saving = yearlySavingCents(plan)
 
@@ -65,7 +66,7 @@ export function CheckoutPage() {
       <CustomStripeCheckout
         plan={plan}
         interval={interval}
-        priceCents={isPaidUpgrade ? quote.amountDueCents : 0}
+        priceCents={amountDueCents}
         planPriceCents={priceCents}
         currency={currency}
         clientSecret={checkoutClientSecret}
