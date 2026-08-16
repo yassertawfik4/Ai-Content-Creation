@@ -7,7 +7,8 @@ const PLAN_PRESENTATION = {
   free: {
     eyebrow: 'Starter',
     features: [
-      'Up to 3 complete campaigns',
+      '1-week campaigns',
+      'Up to 3 posts per week',
       'Strategy and content workflows',
       'Community support',
     ],
@@ -16,7 +17,8 @@ const PLAN_PRESENTATION = {
     eyebrow: 'Popular',
     highlight: true,
     features: [
-      'Up to 30 complete campaigns',
+      'Campaigns up to 3 weeks',
+      'Up to 6 posts per week',
       'AI image generation',
       'Advanced analytics',
       'Priority support',
@@ -25,7 +27,8 @@ const PLAN_PRESENTATION = {
   business: {
     eyebrow: 'Team',
     features: [
-      'Up to 120 complete campaigns',
+      'Every campaign duration',
+      'Up to 20 posts per week',
       'Team workspaces',
       'API access',
       'Dedicated success manager',

@@ -1,9 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, ChevronDown, ChevronRight, Image as ImageIcon, Sparkles, Wand2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { BRAND_VOICE_PRESETS, CAMPAIGN_GOAL_OPTIONS, DURATION_OPTIONS, PLATFORM_OPTIONS } from '../schema/campaignSchema'
+import { BRAND_VOICE_PRESETS, CAMPAIGN_GOAL_OPTIONS, PLATFORM_OPTIONS } from '../schema/campaignSchema'
 import { CAMPAIGN_FORM_STEPS, PLATFORM_ICONS } from '../model/generateConfig'
+import {
+  campaignLimitDescription,
+  clampCampaignValues,
+  getAvailableDurations,
+  getCampaignPlanLimits,
+} from '../model/campaignPlanLimits'
 import { LoadingRing } from './AppHeader'
 
 function FieldLabel({ htmlFor, children, optional }) {
@@ -41,6 +47,18 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
   const currentStepData = CAMPAIGN_FORM_STEPS[currentStep]
   const currentStepComplete = stepCompletion[currentStep]
   const isLastStep = currentStep === CAMPAIGN_FORM_STEPS.length - 1
+  const campaignLimits = useMemo(() => getCampaignPlanLimits(creditUsage), [creditUsage])
+  const availableDurations = getAvailableDurations(campaignLimits.maxCampaignWeeks)
+
+  useEffect(() => {
+    if (!campaignLimits.isResolved) return
+    setValues((current) => {
+      const next = clampCampaignValues(current, campaignLimits)
+      return next.duration === current.duration && next.postsPerWeek === current.postsPerWeek
+        ? current
+        : next
+    })
+  }, [campaignLimits, setValues])
 
   const togglePlatform = (id) => {
     setValues((current) => ({
@@ -60,7 +78,7 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
   }
 
   const fillWithTestData = () => {
-    onFillTestData()
+    onFillTestData(campaignLimits)
     setCurrentStep(0)
     setFurthestStep(0)
     setIsOpen(true)
@@ -342,7 +360,7 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
                 className={selectClass(Boolean(errors.duration))}
                 aria-invalid={Boolean(errors.duration)}
               >
-                {DURATION_OPTIONS.map((duration) => (
+                {availableDurations.map((duration) => (
                   <option key={duration} value={duration}>
                     {duration}
                   </option>
@@ -370,7 +388,7 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
                 id="posts-per-week"
                 type="number"
                 min={1}
-                max={20}
+                max={campaignLimits.maxPostsPerWeek}
                 value={values.postsPerWeek}
                 onChange={(event) => {
                   const next = Number.parseInt(event.target.value, 10)
@@ -382,9 +400,9 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
                 type="button"
                 aria-label="Increase posts per week"
                 onClick={() =>
-                  setValues((current) => ({ ...current, postsPerWeek: Math.min(20, (current.postsPerWeek || 1) + 1) }))
+                  setValues((current) => ({ ...current, postsPerWeek: Math.min(campaignLimits.maxPostsPerWeek, (current.postsPerWeek || 1) + 1) }))
                 }
-                disabled={values.postsPerWeek >= 20}
+                disabled={values.postsPerWeek >= campaignLimits.maxPostsPerWeek}
                 className="flex size-9 items-center justify-center rounded-lg text-lg text-[#625b71] hover:bg-[#f3edf5] disabled:cursor-not-allowed disabled:opacity-30"
               >
                 +
@@ -393,6 +411,13 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
             <FieldError message={errors.postsPerWeek} />
           </div>
         </div>
+
+        {campaignLimits.isResolved ? (
+          <div className="mt-3 rounded-xl border border-[#dfd4e5] bg-[#f8f2fa] px-3.5 py-3 text-[11px] leading-5 text-[#6f6277]">
+            <span className="font-bold text-[#4f378a]">{campaignLimitDescription(campaignLimits)}</span>{' '}
+            {campaignLimits.hasPlanCaps ? <Link to="/billing" className="font-bold underline underline-offset-2">Upgrade for more</Link> : null}
+          </div>
+        ) : null}
 
         <div className="mt-5">
           <FieldLabel htmlFor="include-images">Post images</FieldLabel>

@@ -54,6 +54,7 @@ import { ProjectSidebar } from '../components/ProjectSidebar'
 import { ProjectHistoryDrawer } from '../components/workflow-results/ProjectHistoryDrawer'
 import { ResultsPanel } from '../components/workflow-results/ResultsPanel'
 import { EMPTY_PROJECT, EMPTY_VALUES, GENERATE_STORAGE_KEY, TEST_VALUES, buildContentWorkflowInput, buildStrategyBrief, hasBriefContent, mergeStoredValues, readGenerateState, valuesFromStrategy } from '../model/generateConfig'
+import { clampCampaignValues, durationInWeeks, getCampaignPlanLimits } from '../model/campaignPlanLimits'
 
 function fieldErrorsFromZod(issue) {
   const paths = issue.path.filter(Boolean)
@@ -119,6 +120,7 @@ export function GeneratePage() {
   const currentProject = projects.find((project) => project.id === activeProject) ?? projects[0] ?? EMPTY_PROJECT
   const currentChat = chats.find((chat) => chat.id === activeChat) ?? chats[0] ?? { id: '', title: 'New chat', historyCount: 0 }
   const isGenerating = phase === 'strategy' || phase === 'content'
+  const campaignLimits = getCampaignPlanLimits(creditUsage)
   const restoredProjectId = restoredState?.activeProject
   const restoredChatId = restoredState?.activeChat
   const closeCampaignBrief = useCallback(() => setBriefOpen(false), [])
@@ -681,8 +683,11 @@ export function GeneratePage() {
     if (!values.campaignGoal) requiredFormErrors.campaignGoal = 'Pick a campaign goal'
     if (!values.platforms.length) requiredFormErrors.platforms = 'Select at least one platform'
     if (!values.duration) requiredFormErrors.duration = 'Duration is required'
-    if (!Number.isInteger(values.postsPerWeek) || values.postsPerWeek < 1 || values.postsPerWeek > 20) {
-      requiredFormErrors.postsPerWeek = 'Posts per week must be between 1 and 20'
+    else if (durationInWeeks(values.duration) > campaignLimits.maxCampaignWeeks) {
+      requiredFormErrors.duration = `${campaignLimits.name} supports campaigns up to ${campaignLimits.maxCampaignWeeks} ${campaignLimits.maxCampaignWeeks === 1 ? 'week' : 'weeks'}`
+    }
+    if (!Number.isInteger(values.postsPerWeek) || values.postsPerWeek < 1 || values.postsPerWeek > campaignLimits.maxPostsPerWeek) {
+      requiredFormErrors.postsPerWeek = `Posts per week must be between 1 and ${campaignLimits.maxPostsPerWeek}`
     }
     if (Object.keys(requiredFormErrors).length > 0) {
       setErrors(requiredFormErrors)
@@ -753,8 +758,8 @@ export function GeneratePage() {
     }
   }
 
-  const handleFillTestData = () => {
-    setValues({ ...TEST_VALUES, platforms: [...TEST_VALUES.platforms] })
+  const handleFillTestData = (limits = campaignLimits) => {
+    setValues(clampCampaignValues({ ...TEST_VALUES, platforms: [...TEST_VALUES.platforms] }, limits))
     setErrors({})
   }
 
