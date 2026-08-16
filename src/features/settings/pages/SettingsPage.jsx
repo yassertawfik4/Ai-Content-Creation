@@ -20,10 +20,10 @@ import {
   PlugZap,
   Save,
   ShieldCheck,
-  Sparkles,
   UserRound,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { AppLogo } from '@/components/AppLogo'
 import { InterfacePreferences } from '../components/InterfacePreferences'
 import {
   formatBillingDate,
@@ -41,15 +41,6 @@ function initialsFor(name) {
     .join('')
     .slice(0, 2)
     .toUpperCase()
-}
-
-function SettingsBrand() {
-  return (
-    <span className="relative flex size-10 items-center justify-center overflow-hidden rounded-[13px] bg-[#381e72] text-white shadow-[0_7px_18px_rgba(56,30,114,0.24)]">
-      <span className="absolute -right-1 -top-2 size-6 rounded-full bg-[#b7f36b]" />
-      <Sparkles className="relative size-5" strokeWidth={2.2} />
-    </span>
-  )
 }
 
 function SectionCard({ id, eyebrow, title, description, icon: Icon, children }) {
@@ -172,7 +163,7 @@ export function SettingsPage() {
       <header className="sticky top-0 z-40 border-b border-[#ded7e3]/90 bg-[#fffaff]/88 backdrop-blur-2xl">
         <div className="mx-auto flex h-[72px] max-w-[1240px] items-center gap-3 px-4 sm:px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-2.5" aria-label="Sada home">
-            <SettingsBrand />
+            <AppLogo size="lg" />
             <span className="hidden text-[17px] font-semibold tracking-[-0.4px] text-[#201a25] sm:inline">
               Sada
             </span>
