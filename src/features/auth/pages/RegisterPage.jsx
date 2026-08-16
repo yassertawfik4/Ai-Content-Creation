@@ -8,8 +8,8 @@ export function RegisterPage() {
   const location = useLocation()
 
   return (
-    <main className="flex min-h-dvh w-full bg-[#fef7ff] text-[#1d1b20] xl:h-dvh xl:overflow-hidden">
-      <section className="flex w-full shrink-0 flex-col justify-center px-5 py-8 sm:px-8 sm:py-10 md:px-12 xl:h-dvh xl:w-[46%] xl:overflow-y-auto xl:px-10 xl:py-8 2xl:w-[812px]">
+    <main className="scrollbar-hidden flex h-dvh w-full overflow-y-auto bg-[#fef7ff] text-[#1d1b20] xl:overflow-hidden">
+      <section className="scrollbar-hidden flex w-full shrink-0 flex-col justify-center px-5 py-8 sm:px-8 sm:py-10 md:px-12 xl:h-dvh xl:w-[46%] xl:overflow-y-auto xl:px-10 xl:py-8 2xl:w-[812px]">
         <div className="mx-auto flex w-full max-w-[448px] flex-col gap-7 sm:gap-8 xl:gap-9">
           <header className="flex flex-col gap-1">
             <div className="flex items-center">

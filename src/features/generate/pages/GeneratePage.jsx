@@ -946,7 +946,7 @@ export function GeneratePage() {
   const resultValues = submittedValues ?? values
 
   return (
-    <div className="flex min-h-dvh flex-col overflow-hidden bg-[#f8f3f8] text-[#201a25]">
+    <div className="flex h-dvh flex-col overflow-hidden bg-[#f8f3f8] text-[#201a25]">
       <AppHeader />
       <div className="border-b border-[#ded7e3] bg-[#f6f0f7] px-4 py-2.5 lg:hidden">
         <div className="mx-auto max-w-xl space-y-2">

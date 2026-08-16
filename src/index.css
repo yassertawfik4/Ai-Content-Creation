@@ -165,6 +165,15 @@
   }
 }
 
+@utility scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Tailwind's named radii follow --radius automatically. Existing large,
    arbitrary card radii need this small compatibility bridge. True circles
    remain circular so avatars, status dots, and color swatches keep meaning. */

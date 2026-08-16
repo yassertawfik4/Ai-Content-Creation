@@ -48,7 +48,7 @@ export function ResultsPanel({
 
   return (
     <main
-      className="min-w-0 flex-1 bg-[#f8f3f8] lg:max-h-[calc(100dvh-64px)] lg:overflow-y-auto"
+      className="scrollbar-hidden min-h-0 min-w-0 flex-1 overflow-y-auto bg-[#f8f3f8]"
       id="generated-results"
     >
       <div
