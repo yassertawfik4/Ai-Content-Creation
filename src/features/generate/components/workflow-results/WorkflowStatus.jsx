@@ -19,18 +19,16 @@ function formatElapsedTime(totalSeconds) {
 }
 
 function useElapsedTime(startedAt) {
-  const [startTime] = useState(() => timestampFrom(startedAt) ?? Date.now())
-  const [elapsedSeconds, setElapsedSeconds] = useState(() => Math.max(0, Math.floor((Date.now() - startTime) / 1000)))
+  const [fallbackStartTime] = useState(Date.now)
+  const [currentTime, setCurrentTime] = useState(Date.now)
+  const startTime = timestampFrom(startedAt) ?? fallbackStartTime
 
   useEffect(() => {
-    const updateElapsedTime = () => {
-      setElapsedSeconds(Math.max(0, Math.floor((Date.now() - startTime) / 1000)))
-    }
-    const timer = window.setInterval(updateElapsedTime, 1000)
+    const timer = window.setInterval(() => setCurrentTime(Date.now()), 1000)
     return () => window.clearInterval(timer)
-  }, [startTime])
+  }, [])
 
-  return elapsedSeconds
+  return Math.max(0, Math.floor((currentTime - startTime) / 1000))
 }
 
 export function QANotes({ notes }) {

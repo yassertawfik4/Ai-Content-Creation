@@ -67,6 +67,7 @@ function mergeWorkflowStatus(current, next) {
   return {
     ...current,
     ...next,
+    createdAt: next.createdAt ?? current?.createdAt,
     // Polling returns durable status/result but no Mastra step graph. Retain
     // the SSE snapshot until a newer SSE event advances it.
     activeSteps: next.activeSteps?.length ? next.activeSteps : (current?.activeSteps ?? []),
@@ -97,7 +98,11 @@ export function GeneratePage() {
   const [errors, setErrors] = useState({})
   const [values, setValues] = useState(() => mergeStoredValues(restoredState?.values))
   const [submittedValues, setSubmittedValues] = useState(() => restoredState?.submittedValues ?? null)
-  const [runState, setRunState] = useState(null)
+  const [runState, setRunState] = useState(() => (
+    restoredState?.activeRunId && restoredState?.runStartedAt
+      ? { status: 'running', activeSteps: [], completedSteps: [], createdAt: restoredState.runStartedAt }
+      : null
+  ))
   const [activeRunId, setActiveRunId] = useState(() => restoredState?.activeRunId ?? '')
   const [canceling, setCanceling] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -178,7 +183,7 @@ export function GeneratePage() {
     return subscribeToWorkflow(phase, activeRunId, {
       onProgress: (progress) => {
         sseHealthyRef.current = progress.status !== 'success' && progress.status !== 'failed' && progress.status !== 'suspended' && progress.status !== 'canceled'
-        setRunState(progress)
+        setRunState((current) => mergeWorkflowStatus(current, progress))
       },
       onError: () => {
         sseHealthyRef.current = false
@@ -315,13 +320,14 @@ export function GeneratePage() {
         strategy,
         strategyReview,
         strategyRunId,
+        runStartedAt: runState?.createdAt ?? null,
         submittedValues,
         values,
       }))
     } catch {
       // Persistence is best-effort when storage is disabled or unavailable.
     }
-  }, [activeChat, activeProject, activeRunId, campaign, phase, strategy, strategyReview, strategyRunId, submittedValues, values])
+  }, [activeChat, activeProject, activeRunId, campaign, phase, runState?.createdAt, strategy, strategyReview, strategyRunId, submittedValues, values])
 
   const detachFromActiveRun = () => {
     navigationEpochRef.current += 1
@@ -717,6 +723,7 @@ export function GeneratePage() {
       status: 'running',
       activeSteps: [],
       completedSteps: [],
+      createdAt: new Date().toISOString(),
     })
 
     if (isUntitledChat(currentChat.title)) {
@@ -817,7 +824,7 @@ export function GeneratePage() {
     setError('')
     setPhase('content')
     setCampaign(null)
-    setRunState({ status: 'running', activeSteps: [], completedSteps: [] })
+    setRunState({ status: 'running', activeSteps: [], completedSteps: [], createdAt: new Date().toISOString() })
 
     try {
       const { runId } = await startContent(contentInput, { signal: controller.signal, chatId: activeChat, strategyId: strategyRunId })
@@ -861,7 +868,7 @@ export function GeneratePage() {
     abortRef.current = controller
     setError('')
     setPhase('strategy')
-    setRunState({ status: 'running', activeSteps: ['regenerate-strategy-section'], completedSteps: [] })
+    setRunState({ status: 'running', activeSteps: ['regenerate-strategy-section'], completedSteps: [], createdAt: new Date().toISOString() })
 
     try {
       const { runId } = await regenerateStrategySection(
