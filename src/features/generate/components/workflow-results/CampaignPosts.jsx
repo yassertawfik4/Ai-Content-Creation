@@ -230,7 +230,7 @@ export function PostCard({ post, index, showImage, brandName, onCaptionChange })
             onChange={(event) => setDraftCaption(event.target.value)}
             onBlur={() => onCaptionChange(index, draftCaption)}
             aria-describedby={`post-caption-count-${index} post-caption-help-${index}`}
-            className="min-h-28 w-full resize-none overflow-hidden rounded-2xl border border-[#ddd3e1] bg-[#fbf8fb] px-4 py-3.5 text-base leading-7 text-[#423a47] outline-none transition-colors placeholder:text-[#aaa1ae] focus:border-[#6b4c9a] focus:bg-white focus:ring-3 focus:ring-[#4f378a]/10 sm:text-[15px]"
+            className="min-h-28 w-full resize-none overflow-hidden rounded-2xl border border-[#ddd3e1] bg-[#fbf8fb] px-4 py-3.5 text-base leading-7 text-[#423a47] outline-none transition-colors [field-sizing:content] placeholder:text-[#aaa1ae] focus:border-[#6b4c9a] focus:bg-white focus:ring-3 focus:ring-[#4f378a]/10 sm:text-[15px]"
           />
           <p id={`post-caption-help-${index}`} className="mt-1.5 text-[11px] text-[#8a7f90]">Your edit saves when you leave this field.</p>
 
