@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import {
   ArrowDownRight,
+  ArrowLeft,
   ArrowRight,
   Check,
   Coins,
@@ -49,6 +51,14 @@ export function BillingPage() {
   return (
     <div className="min-h-screen bg-[#fef7ff]">
       <div className="mx-auto flex max-w-[1120px] flex-col gap-8 px-5 py-10 sm:px-8 lg:py-14">
+        <Link
+          to="/"
+          className="group -mb-3 inline-flex min-h-10 w-fit items-center gap-2 rounded-xl border border-[#ded3e4] bg-[#fffaff] px-3.5 text-sm font-semibold text-[#4f378a] shadow-[0_6px_18px_rgba(46,32,51,0.05)] transition-all hover:-translate-y-0.5 hover:border-[#c9bbd1] hover:bg-white hover:shadow-[0_10px_24px_rgba(46,32,51,0.09)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] focus-visible:ring-offset-2"
+        >
+          <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" aria-hidden="true" />
+          Back to home
+        </Link>
+
         {/* Header */}
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
