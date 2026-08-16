@@ -1,18 +1,121 @@
-import { useEffect, useRef, useState } from 'react'
-import { CalendarDays, Check, ChevronDown, Copy, Hash, MousePointerClick, Sparkles } from 'lucide-react'
+import { useLayoutEffect, useRef, useState } from 'react'
+import { CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Copy, Hash, ImageOff, MousePointerClick, Sparkles } from 'lucide-react'
 import { PLATFORM_OPTIONS } from '../../schema/campaignSchema'
 import { ART_GRADIENTS, PLATFORM_ICONS } from '../../model/generateConfig'
 
-function PostArtwork({ gradient, imageUrl, label, brandName, platform }) {
-  const canRenderImage = typeof imageUrl === 'string' && /^(https?:|data:image\/|blob:)/i.test(imageUrl)
+const RENDERABLE_IMAGE_URL = /^(https?:|data:image\/|blob:)/i
+
+function getRenderableImages(imageUrl, imageUrls) {
+  const primaryImages = Array.isArray(imageUrl) ? imageUrl : [imageUrl]
+  const additionalImages = Array.isArray(imageUrls) ? imageUrls : []
+  const candidates = [...new Set([...primaryImages, ...additionalImages])]
+
+  return candidates
+    .filter((source) => typeof source === 'string' && RENDERABLE_IMAGE_URL.test(source))
+    .slice(0, 2)
+}
+
+function PostArtwork({ gradient, imageUrl, imageUrls, label, brandName, platform }) {
+  const [activeImageIndex, setActiveImageIndex] = useState(0)
+  const renderableImages = getRenderableImages(imageUrl, imageUrls)
+  const hasImages = renderableImages.length > 0
+  const hasImagePair = renderableImages.length === 2
+  const visibleImageIndex = hasImagePair
+    ? Math.min(activeImageIndex, renderableImages.length - 1)
+    : 0
+
+  const showPreviousImage = () => {
+    setActiveImageIndex((current) => (current - 1 + renderableImages.length) % renderableImages.length)
+  }
+
+  const showNextImage = () => {
+    setActiveImageIndex((current) => (current + 1) % renderableImages.length)
+  }
+
+  const handleCarouselKeyDown = (event) => {
+    if (!hasImagePair) return
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault()
+      showPreviousImage()
+    }
+    if (event.key === 'ArrowRight') {
+      event.preventDefault()
+      showNextImage()
+    }
+  }
+
   return (
-    <div role="img" aria-label={label} className={`relative aspect-[4/3] min-h-60 overflow-hidden rounded-2xl ${canRenderImage ? '' : `bg-gradient-to-br ${gradient}`}`}>
-      {canRenderImage ? (
-        <img src={imageUrl} alt="" loading="lazy" className="absolute inset-0 size-full object-cover" />
+    <div
+      role={hasImagePair ? 'region' : 'img'}
+      aria-roledescription={hasImagePair ? 'carousel' : undefined}
+      aria-label={label}
+      tabIndex={hasImagePair ? 0 : undefined}
+      onKeyDown={handleCarouselKeyDown}
+      className={`group/artwork relative aspect-[4/3] min-h-60 overflow-hidden rounded-2xl outline-none focus-visible:ring-3 focus-visible:ring-[#4f378a]/50 focus-visible:ring-offset-2 ${hasImages ? 'bg-[#ded6df]' : `bg-gradient-to-br ${gradient}`}`}
+    >
+      {hasImages ? (
+        <div className="absolute inset-0">
+          {renderableImages.map((source, imageIndex) => (
+            <div
+              key={`${source.slice(0, 80)}-${imageIndex}`}
+              aria-hidden={imageIndex !== visibleImageIndex}
+              className={`absolute inset-0 overflow-hidden transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none ${
+                imageIndex === visibleImageIndex
+                  ? 'translate-x-0 opacity-100'
+                  : imageIndex < visibleImageIndex
+                    ? '-translate-x-[8%] opacity-0'
+                    : 'translate-x-[8%] opacity-0'
+              }`}
+            >
+              <img
+                src={source}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="absolute inset-0 size-full object-cover"
+              />
+            </div>
+          ))}
+        </div>
       ) : null}
-      <div className="absolute -right-8 -top-8 size-36 rounded-full border border-white/35 bg-white/10" />
-      <div className="absolute bottom-[-52px] left-[-38px] size-44 rounded-full bg-[#201a25]/20 blur-sm" />
-      <div className="absolute inset-x-5 bottom-5 flex items-end justify-between">
+      <div className="pointer-events-none absolute -right-8 -top-8 size-36 rounded-full border border-white/35 bg-white/10" />
+      <div className="pointer-events-none absolute bottom-[-52px] left-[-38px] size-44 rounded-full bg-[#201a25]/20 blur-sm" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-[#17111c]/70 via-[#17111c]/24 to-transparent" />
+
+      {hasImagePair ? (
+        <>
+          <button
+            type="button"
+            onClick={showPreviousImage}
+            aria-label="Show previous campaign image"
+            className="absolute left-3 top-1/2 z-20 flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/45 bg-[#17111c]/35 text-white shadow-[0_8px_24px_rgba(23,17,28,0.22)] backdrop-blur-md transition hover:scale-105 hover:bg-[#17111c]/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white motion-reduce:transition-none"
+          >
+            <ChevronLeft className="size-5" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={showNextImage}
+            aria-label="Show next campaign image"
+            className="absolute right-3 top-1/2 z-20 flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/45 bg-[#17111c]/35 text-white shadow-[0_8px_24px_rgba(23,17,28,0.22)] backdrop-blur-md transition hover:scale-105 hover:bg-[#17111c]/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white motion-reduce:transition-none"
+          >
+            <ChevronRight className="size-5" aria-hidden="true" />
+          </button>
+          <div
+            aria-live="polite"
+            className="absolute left-1/2 top-4 z-20 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-white/35 bg-[#17111c]/32 px-2.5 py-2 shadow-sm backdrop-blur-md"
+          >
+            {renderableImages.map((_, dotIndex) => (
+              <span
+                key={dotIndex}
+                className={`block h-1.5 rounded-full transition-[width,background-color] duration-300 motion-reduce:transition-none ${dotIndex === visibleImageIndex ? 'w-5 bg-white' : 'w-1.5 bg-white/55'}`}
+              />
+            ))}
+            <span className="sr-only">Image {visibleImageIndex + 1} of {renderableImages.length}</span>
+          </div>
+        </>
+      ) : null}
+
+      <div className="absolute inset-x-5 bottom-5 z-10 flex items-end justify-between">
         <div>
           <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.2em] text-white/80">
             {platform}
@@ -36,8 +139,10 @@ export function PostCard({ post, index, showImage, brandName, onCaptionChange })
   const platformLabel = PLATFORM_OPTIONS.find((option) => option.id === post.platform)?.label ?? post.platform
   const Icon = PLATFORM_ICONS[post.platform]
   const gradient = ART_GRADIENTS[index % ART_GRADIENTS.length]
+  const hasRenderableImage = getRenderableImages(post.imageUrl, post.imageUrls).length > 0
+  const renderArtwork = showImage && hasRenderableImage
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const textarea = captionRef.current
     if (!textarea) return
     textarea.style.height = 'auto'
@@ -88,17 +193,29 @@ export function PostCard({ post, index, showImage, brandName, onCaptionChange })
         </div>
       </header>
 
-      <div className={`grid gap-1 p-4 sm:p-5 ${showImage ? 'md:grid-cols-[minmax(260px,0.76fr)_minmax(0,1.24fr)] md:gap-5' : ''}`}>
-        {showImage ? (
+      <div className={`grid gap-1 p-4 sm:p-5 ${renderArtwork ? 'md:grid-cols-[minmax(260px,0.76fr)_minmax(0,1.24fr)] md:gap-5' : ''}`}>
+        {renderArtwork ? (
           <PostArtwork
             gradient={gradient}
             imageUrl={post.imageUrl}
+            imageUrls={post.imageUrls}
             label={post.visualPrompt || `Campaign visual for ${brandName}`}
             brandName={brandName}
             platform={platformLabel}
           />
         ) : null}
-        <div className={`${showImage ? 'pt-5 md:pt-1' : ''} min-w-0`}>
+        <div className={`${renderArtwork ? 'pt-5 md:pt-1' : ''} min-w-0`}>
+          {showImage && !hasRenderableImage ? (
+            <div role="status" className="mb-4 flex items-start gap-3 rounded-2xl border border-[#ead9bd] bg-[#fff9ed] px-3.5 py-3 text-[#725526]">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white text-[#9a6b22] shadow-sm">
+                <ImageOff className="size-4" aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-xs font-bold">Image unavailable · post copy is ready</p>
+                <p className="mt-0.5 text-[11px] leading-5 text-[#8b6b38]">{post.imageError || 'The visual could not be generated, but this post is complete and ready to review.'}</p>
+              </div>
+            </div>
+          ) : null}
           <div className="mb-2.5 flex items-end justify-between gap-3">
             <label className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#746a7a]" htmlFor={`post-caption-${index}`}>
               Caption
