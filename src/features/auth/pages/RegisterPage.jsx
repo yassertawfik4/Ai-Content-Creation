@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import brandMark from '@/assets/auth/brand-mark.svg'
+import { AppLogo } from '@/components/AppLogo'
 import { RegisterForm } from '../components/RegisterForm'
 import { RegisterShowcasePanel } from '../components/RegisterShowcasePanel'
 
@@ -13,9 +13,7 @@ export function RegisterPage() {
         <div className="mx-auto flex w-full max-w-[448px] flex-col gap-7 sm:gap-8 xl:gap-9">
           <header className="flex flex-col gap-1">
             <div className="flex items-center">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#4f378a] shadow-lg shadow-black/10">
-                <img src={brandMark} alt="" className="size-[19px]" />
-              </span>
+              <AppLogo size="lg" />
               <span className="pl-2 text-[22px] font-medium leading-7">Sada</span>
             </div>
 

@@ -13,7 +13,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import brandMark from '@/assets/auth/brand-mark.svg'
+import { AppLogo } from '@/components/AppLogo'
 import { CustomStripeCheckout } from '@/features/billing/components/CustomStripeCheckout'
 import { useCheckoutPage } from '@/features/billing/hooks/useCheckoutPage'
 import { formatBillingDate, formatMoney } from '@/features/billing/format'
@@ -84,7 +84,7 @@ export function CheckoutPage() {
       <div className="checkout-background-glow pointer-events-none absolute inset-0 opacity-70" aria-hidden="true" />
       <header className="relative mx-auto flex max-w-[1120px] items-center justify-between px-5 py-6 sm:px-8">
         <Link to="/" className="flex items-center gap-2.5 font-semibold">
-          <span className="flex size-9 items-center justify-center rounded-full bg-[#4f378a]"><img src={brandMark} alt="" className="size-[17px]" /></span>
+          <AppLogo />
           Sada
         </Link>
         <Link to="/billing" className="flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-[#625b71] hover:bg-white/70 hover:text-[#381e72]">

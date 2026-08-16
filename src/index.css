@@ -237,6 +237,32 @@ html[data-corner-style="soft"] :where([class*="rounded-["]:not([class~="rounded-
   background: color-mix(in srgb, var(--aether-accent) 28%, transparent);
 }
 
+/* The shared Sada mark follows the user's saved accent color. Keeping the
+   artwork as a mask also lets its contrast adapt for very light accents. */
+.app-logo {
+  color: var(--aether-on-accent);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--aether-accent) 84%, white),
+    var(--aether-accent) 62%
+  );
+  box-shadow: 0 7px 20px color-mix(in srgb, var(--aether-accent) 28%, transparent);
+}
+
+.app-logo-glow {
+  background: color-mix(in srgb, var(--aether-on-accent) 28%, transparent);
+}
+
+.app-logo-mark {
+  background: currentColor;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
 /* Compatibility layer for screens that predate the semantic theme tokens. */
 :where(
   [class~="bg-[#fef7ff]"],

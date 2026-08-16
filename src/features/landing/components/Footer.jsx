@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { AppLogo } from '@/components/AppLogo'
 import { TwitterIcon, LinkedinIcon } from './BrandIcons'
 
 const footerLinks = [
@@ -23,9 +24,7 @@ export function Footer() {
         <div className="grid gap-12 lg:grid-cols-[1.4fr_repeat(3,1fr)]">
           <div className="max-w-[320px]">
             <Link to="/" className="flex items-center gap-2">
-              <span className="flex size-8 items-center justify-center rounded-lg bg-[#381e72] text-base font-bold text-white">
-                S
-              </span>
+              <AppLogo size="sm" />
               <span className="text-2xl font-bold tracking-tight text-[#1d1b20]">
                 Sada
               </span>

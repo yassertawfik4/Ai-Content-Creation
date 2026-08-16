@@ -13,7 +13,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import brandMark from '@/assets/auth/brand-mark.svg'
+import { AppLogo } from '@/components/AppLogo'
 import { formatMoney } from '@/features/billing/format'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -119,9 +119,7 @@ export function CustomStripeCheckout({
 
       <header className="relative z-10 mx-auto flex max-w-[1220px] items-center justify-between px-5 py-5 sm:px-8 sm:py-7">
         <Link to="/" className="flex items-center gap-2.5 font-semibold tracking-[-.02em]">
-          <span className="flex size-9 items-center justify-center rounded-full bg-[#4f378a] shadow-[0_8px_24px_rgba(79,55,138,.2)]">
-            <img src={brandMark} alt="" className="size-[17px]" />
-          </span>
+          <AppLogo />
           Sada
         </Link>
         <Link

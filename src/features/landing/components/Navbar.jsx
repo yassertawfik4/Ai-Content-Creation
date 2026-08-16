@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { AppLogo } from "@/components/AppLogo";
 
 const navLinks = [
   { label: "Home", to: "/" },
@@ -82,9 +83,7 @@ export function Navbar() {
     >
       <div className="mx-auto flex h-[72px] max-w-[1280px] items-center justify-between px-6 lg:px-8">
         <Link to="/" className="flex items-center gap-2">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-[#381e72] text-base font-bold text-white">
-            S
-          </span>
+          <AppLogo size="sm" />
           <span className="text-xl font-bold tracking-tight text-[#1d1b20]">
             Sada
           </span>

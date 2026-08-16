@@ -1,17 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronDown, Loader2, LogOut, Settings, Sparkles } from 'lucide-react'
+import { ChevronDown, Loader2, LogOut, Settings } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-
-function BrandMark() {
-  return (
-    <span className="relative flex size-9 items-center justify-center overflow-hidden rounded-[11px] bg-[#381e72] text-white shadow-[0_5px_14px_rgba(56,30,114,0.25)]">
-      <span className="absolute -right-1 -top-2 size-5 rounded-full bg-[#b7f36b]" />
-      <Sparkles className="relative size-[18px]" strokeWidth={2.2} />
-    </span>
-  )
-}
+import { AppLogo } from '@/components/AppLogo'
 
 export function LoadingRing({ className = 'size-4' }) {
   return (
@@ -78,7 +70,7 @@ export function AppHeader() {
   return (
     <header className="relative z-30 flex h-16 shrink-0 items-center border-b border-[#ded7e3] bg-[#fffaff]/95 px-4 backdrop-blur-xl sm:px-6">
       <Link to="/" className="flex min-w-0 items-center gap-2.5" aria-label="Sada home">
-        <BrandMark />
+        <AppLogo />
         <span className="hidden text-[17px] font-semibold tracking-[-0.4px] text-[#201a25] sm:inline">
           Sada
         </span>
