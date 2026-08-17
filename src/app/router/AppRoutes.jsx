@@ -10,6 +10,7 @@ const lazyPage = (loader, exportName) => lazy(async () => {
 })
 
 const LandingPage = lazyPage(() => import('@/features/landing/pages/LandingPage'), 'LandingPage')
+const PricingPage = lazyPage(() => import('@/features/landing/pages/PricingPage'), 'PricingPage')
 const LoginPage = lazyPage(() => import('@/features/auth/pages/LoginPage'), 'LoginPage')
 const RegisterPage = lazyPage(() => import('@/features/auth/pages/RegisterPage'), 'RegisterPage')
 const VerifyEmailPage = lazyPage(() => import('@/features/auth/pages/VerifyEmailPage'), 'VerifyEmailPage')
@@ -31,6 +32,7 @@ export function AppRoutes() {
     <Suspense fallback={<LoadingScreen />}>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
         <Route path="/login" element={forGuests(<LoginPage />)} />
         <Route path="/register" element={forGuests(<RegisterPage />)} />
         <Route path="/verify-email" element={forGuests(<VerifyEmailPage />)} />

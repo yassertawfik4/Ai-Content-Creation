@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, Check, Coins, Loader2, LockKeyhole, Sparkles } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
   cancelSubscription,
@@ -47,11 +47,12 @@ export function PricingSection() {
     return null
   })
   const { isAuthenticated } = useAuth()
+  const location = useLocation()
   const navigate = useNavigate()
 
   useEffect(() => {
     if (popup) {
-      navigate('/#pricing', { replace: true })
+      navigate(location.pathname === '/pricing' ? '/pricing' : '/#pricing', { replace: true })
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -146,7 +147,7 @@ export function PricingSection() {
     )
 
   return (
-    <section id="pricing" className="bg-[#fef7ff] px-6 py-24 lg:py-28">
+    <section id="pricing" className="scroll-mt-[72px] bg-[#fef7ff] px-6 py-24 lg:py-28">
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}

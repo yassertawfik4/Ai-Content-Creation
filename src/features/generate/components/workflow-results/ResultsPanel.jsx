@@ -5,7 +5,7 @@ import { PostCard } from './CampaignPosts'
 import { StrategySummary } from './StrategySummary'
 import { StrategyReview } from './StrategyReview'
 import { ResultsHeader } from './ResultsHeader'
-import { ErrorBanner, QANotes, WorkflowBilling, WorkflowProgress } from './WorkflowStatus'
+import { ErrorBanner, QANotes, WorkflowProgress } from './WorkflowStatus'
 
 export function ResultsPanel({
   campaign,
@@ -75,13 +75,6 @@ export function ResultsPanel({
                 ? "Strategy generation failed"
                 : "Content generation failed"
             }
-          />
-        ) : null}
-
-        {!isGenerating ? (
-          <WorkflowBilling
-            billing={runState?.billing}
-            executions={runState?.executions}
           />
         ) : null}
 

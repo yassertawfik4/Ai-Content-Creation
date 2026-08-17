@@ -374,7 +374,7 @@ function UnavailableCheckout() {
         <h1 className="mt-4 font-display text-3xl text-[#201a25]">That checkout is unavailable</h1>
         <p className="mt-2 text-sm leading-6 text-[#6a6170]">Choose a paid plan to continue, or start generating with the included Free allowance.</p>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <Link to="/#pricing" className="flex min-h-11 flex-1 items-center justify-center rounded-xl border border-[#d8cfdc] font-semibold text-[#4f378a]">View plans</Link>
+          <Link to="/pricing" className="flex min-h-11 flex-1 items-center justify-center rounded-xl border border-[#d8cfdc] font-semibold text-[#4f378a]">View plans</Link>
           <Link to="/generate" className="flex min-h-11 flex-1 items-center justify-center rounded-xl bg-[#381e72] font-semibold text-white">Start free</Link>
         </div>
       </div>

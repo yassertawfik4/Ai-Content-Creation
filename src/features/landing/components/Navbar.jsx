@@ -11,7 +11,7 @@ const navLinks = [
   { label: "Connectors", to: "/connectors" },
   { label: "Publishing", to: "/publishing" },
   { label: "Knowledge", to: "/knowledge" },
-  { label: "Pricing", href: "/#pricing" },
+  { label: "Pricing", to: "/pricing" },
 ];
 
 export function Navbar() {
@@ -63,12 +63,8 @@ export function Navbar() {
     : "";
 
   const isLinkActive = (link) => {
-    if (link.href === "/#pricing") {
-      return location.pathname === "/" && location.hash === "#pricing";
-    }
-
     if (link.to === "/") {
-      return location.pathname === "/" && location.hash !== "#pricing";
+      return location.pathname === "/";
     }
 
     return location.pathname === link.to || location.pathname.startsWith(`${link.to}/`);
@@ -96,7 +92,7 @@ export function Navbar() {
               isActive ? "font-semibold text-[#381e72]" : "text-[#494551]"
             }`;
 
-            return link.to ? (
+            return (
               <Link
                 key={link.to}
                 to={link.to}
@@ -105,15 +101,6 @@ export function Navbar() {
               >
                 {link.label}
               </Link>
-            ) : (
-              <a
-                key={link.href}
-                href={link.href}
-                className={linkClassName}
-                aria-current={isActive ? "page" : undefined}
-              >
-                {link.label}
-              </a>
             );
           })}
         </div>
@@ -234,7 +221,7 @@ export function Navbar() {
                     : "text-[#494551]"
                 }`;
 
-                return link.to ? (
+                return (
                   <Link
                     key={link.to}
                     to={link.to}
@@ -244,16 +231,6 @@ export function Navbar() {
                   >
                     {link.label}
                   </Link>
-                ) : (
-                  <a
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMobileOpen(false)}
-                    className={linkClassName}
-                    aria-current={isActive ? "page" : undefined}
-                  >
-                    {link.label}
-                  </a>
                 );
               })}
               <hr className="my-2 border-[#cbc4d2]/40" />
