@@ -22,6 +22,7 @@ const KnowledgePage = lazyPage(() => import('@/features/knowledge/pages/Knowledg
 const SettingsPage = lazyPage(() => import('@/features/settings/pages/SettingsPage'), 'SettingsPage')
 const BillingPage = lazyPage(() => import('@/features/billing/pages/BillingPage'), 'BillingPage')
 const CheckoutPage = lazyPage(() => import('@/features/billing/pages/CheckoutPage'), 'CheckoutPage')
+const DashboardPage = lazyPage(() => import('@/features/admin/pages/DashboardPage'), 'DashboardPage')
 
 const protect = (page) => <ProtectedRoute>{page}</ProtectedRoute>
 const forGuests = (page) => <GuestRoute>{page}</GuestRoute>
@@ -43,6 +44,7 @@ export function AppRoutes() {
         <Route path="/settings" element={protect(<SettingsPage />)} />
         <Route path="/billing" element={protect(<BillingPage />)} />
         <Route path="/checkout" element={protect(<CheckoutPage />)} />
+        <Route path="/dashboard" element={protect(<DashboardPage />)} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
