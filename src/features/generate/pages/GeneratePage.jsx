@@ -55,6 +55,7 @@ import { ProjectHistoryDrawer } from '../components/workflow-results/ProjectHist
 import { ResultsPanel } from '../components/workflow-results/ResultsPanel'
 import { EMPTY_PROJECT, EMPTY_VALUES, GENERATE_STORAGE_KEY, TEST_VALUES, buildContentWorkflowInput, buildStrategyBrief, hasBriefContent, mergeStoredValues, readGenerateState, valuesFromStrategy } from '../model/generateConfig'
 import { campaignCreditCost, clampCampaignValues, contentRunCreditCost, durationInWeeks, getCampaignPlanLimits } from '../model/campaignPlanLimits'
+import { buildFallbackChatTitle } from '../model/chatTitle'
 
 function fieldErrorsFromZod(issue) {
   const paths = issue.path.filter(Boolean)
@@ -479,6 +480,10 @@ export function GeneratePage() {
   const handleRenameChat = async (chat, nextTitle, projectId = activeProject) => {
     const title = nextTitle?.trim()
     if (!title || title === chat.title) return chat
+    if (chat.id === activeChat) {
+      titleAbortRef.current?.abort()
+      titleAbortRef.current = null
+    }
     try {
       const updated = await renameChat(chat.id, title)
       if (projectId === activeProject) {
@@ -741,6 +746,7 @@ export function GeneratePage() {
       titleAbortRef.current?.abort()
       const titleController = new AbortController()
       titleAbortRef.current = titleController
+      const chatId = activeChat
       const titleBrief = {
         brandName: values.brandName.trim(),
         product: values.product.trim(),
@@ -749,14 +755,31 @@ export function GeneratePage() {
         campaignGoal: values.campaignGoal,
         targetAudience: values.targetAudience.trim(),
       }
+      const fallbackTitle = buildFallbackChatTitle(titleBrief)
 
-      void generateChatTitle(activeChat, titleBrief, { signal: titleController.signal })
+      setChats((current) => current.map((chat) => (
+        chat.id === chatId && isUntitledChat(chat.title)
+          ? { ...chat, title: fallbackTitle }
+          : chat
+      )))
+
+      void generateChatTitle(chatId, titleBrief, { signal: titleController.signal })
         .then((updated) => {
           if (titleController.signal.aborted) return
           setChats((current) => current.map((chat) => chat.id === updated.id ? updated : chat))
         })
-        .catch(() => {
-          // Title generation is non-blocking; the strategy request remains authoritative.
+        .catch(async (titleError) => {
+          if (titleError?.name === 'AbortError' || titleController.signal.aborted) return
+
+          // Older or temporarily unavailable title services should not leave
+          // the persisted campaign named "New chat" after a refresh.
+          try {
+            const updated = await renameChat(chatId, fallbackTitle, { signal: titleController.signal })
+            if (titleController.signal.aborted) return
+            setChats((current) => current.map((chat) => chat.id === updated.id ? updated : chat))
+          } catch {
+            // Naming is best-effort and must never stop the strategy workflow.
+          }
         })
         .finally(() => {
           if (titleAbortRef.current === titleController) titleAbortRef.current = null
