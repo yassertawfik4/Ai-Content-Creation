@@ -19,7 +19,15 @@ const STRATEGY_AGENT_TABS = [
   { id: 'quality', label: 'Quality gate', shortLabel: 'Quality', description: 'Evidence and risks', icon: ShieldCheck },
 ]
 
-export function StrategyReview({ strategy, strategyId, review, onConfirm, onRequestChanges, onRegenerateSection, onEdit, onStrategyChange, isSubmitting, creditUsage }) {
+export function StrategyReview({ strategy, strategyId, review, onConfirm, onRequestChanges, onRegenerateSection, onEdit, onStrategyChange, isSubmitting, creditUsage, contentRunCost }) {
+  // One credit per post, so the button has to name the real number rather than
+  // the flat "1 credit" it used to promise.
+  const costLabel = contentRunCost
+    ? `${contentRunCost} ${contentRunCost === 1 ? 'credit' : 'credits'}`
+    : 'credits'
+  const overBudget = Boolean(
+    contentRunCost && creditUsage && contentRunCost > creditUsage.remaining,
+  )
   const [activeTab, setActiveTab] = useState('overview')
   const [tabDirection, setTabDirection] = useState(1)
   const [reviewNote, setReviewNote] = useState(review?.reviewNote ?? '')
@@ -208,14 +216,17 @@ export function StrategyReview({ strategy, strategyId, review, onConfirm, onRequ
             <span className="strategy-ready-icon flex size-10 shrink-0 items-center justify-center rounded-xl"><Check className="size-[18px]" aria-hidden="true" /></span>
             <div>
               <p className="text-sm font-semibold text-foreground">Ready to create the campaign?</p>
-              <p className="mt-0.5 text-xs leading-5 text-muted-foreground">Approve this draft now, or add feedback for another pass.</p>
+              <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
+                Approve this draft now, or add feedback for another pass.
+                {contentRunCost ? ` Writing the posts costs ${costLabel}${creditUsage ? `, and you have ${creditUsage.remaining} left` : ''}.` : ''}
+              </p>
             </div>
           </div>
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <button type="button" onClick={onEdit} disabled={isSubmitting} className="strategy-secondary-action flex h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition disabled:opacity-50"><Pencil className="size-4" aria-hidden="true" />Edit brief</button>
-            <button type="button" onClick={() => onConfirm(reviewNote)} disabled={isSubmitting || creditUsage?.canGenerate === false} className="strategy-primary-action flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60">
+            <button type="button" onClick={() => onConfirm(reviewNote)} disabled={isSubmitting || creditUsage?.canGenerate === false || overBudget} className="strategy-primary-action flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60">
               {isSubmitting ? <LoadingRing className="size-4" /> : <Wand2 className="size-4" aria-hidden="true" />}
-              {isSubmitting ? 'Starting workflow…' : creditUsage?.canGenerate === false ? 'Credits required' : 'Approve & create posts · 1 credit'}
+              {isSubmitting ? 'Starting workflow…' : creditUsage?.canGenerate === false ? 'Credits required' : `Approve & create posts · ${costLabel}`}
             </button>
           </div>
         </div>

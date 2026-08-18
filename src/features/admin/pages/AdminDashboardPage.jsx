@@ -29,6 +29,10 @@ import {
   Rocket,
   ShieldCheck,
   Sparkles,
+  Trash2,
+  TriangleAlert,
+  UserCheck,
+  UserX,
   Users,
   WalletCards,
   X,
@@ -36,8 +40,21 @@ import {
 } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AppLogo } from '@/components/AppLogo'
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { useAuth } from '@/hooks/useAuth'
-import { getAdminUserAnalytics } from '@/lib/adminApi'
+import {
+  deleteAdminUser,
+  getAdminUserAnalytics,
+  updateAdminUser,
+} from '@/lib/adminApi'
 import { useAdminDashboard } from '../hooks/useAdminDashboard'
 
 const numberFormatter = new Intl.NumberFormat('en-US')
@@ -248,6 +265,63 @@ function LoadingDashboard() {
         <p className="mt-4 text-sm font-semibold text-[#4e4554]">Assembling platform intelligence…</p>
       </div>
     </div>
+  )
+}
+
+function UserActionDialog({ action, busy, error, onClose, onConfirm }) {
+  const isDelete = action?.type === 'delete'
+  const isActivate = action?.type === 'activate'
+  const displayName = action?.user?.name || action?.user?.email || 'this user'
+  const title = isDelete
+    ? `Delete ${displayName}?`
+    : isActivate
+      ? `Reactivate ${displayName}?`
+      : `Deactivate ${displayName}?`
+  const description = isDelete
+    ? 'This permanently removes the account. Accounts that still own projects, subscriptions, connections, or credit history cannot be deleted until those records are handled.'
+    : isActivate
+      ? 'This restores access and allows the user to sign in again.'
+      : 'This immediately signs the user out everywhere and blocks future sign-ins until the account is reactivated.'
+  const confirmLabel = isDelete
+    ? 'Delete account'
+    : isActivate
+      ? 'Reactivate user'
+      : 'Deactivate user'
+
+  return (
+    <AlertDialog
+      open={Boolean(action)}
+      onOpenChange={(open) => {
+        if (!open && !busy) onClose()
+      }}
+    >
+      <AlertDialogContent>
+        <div className={`mb-5 flex size-12 items-center justify-center rounded-2xl ${isActivate ? 'bg-[#eaf5d9] text-[#54702f]' : 'bg-[#fbe9ee] text-[#ad3150]'}`}>
+          {isActivate ? <UserCheck className="size-6" /> : <TriangleAlert className="size-6" />}
+        </div>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        {error ? (
+          <p role="alert" className="mt-4 rounded-xl border border-[#eccfd5] bg-[#fbe9ee] px-3 py-2.5 text-sm leading-5 text-[#8a2440]">
+            {error}
+          </p>
+        ) : null}
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={busy}
+            className={`inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60 ${isActivate ? 'bg-[#587832] hover:bg-[#476329] focus-visible:ring-[#587832]' : 'bg-[#ad3150] hover:bg-[#8f2742] focus-visible:ring-[#ad3150]'}`}
+          >
+            {busy ? <Loader2 className="size-4 animate-spin" /> : null}
+            {busy ? 'Saving…' : confirmLabel}
+          </button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }
 
@@ -507,6 +581,9 @@ export function AdminDashboardPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
   const [selectedUserId, setSelectedUserId] = useState(null)
+  const [userAction, setUserAction] = useState(null)
+  const [userActionBusy, setUserActionBusy] = useState(false)
+  const [userActionError, setUserActionError] = useState('')
   const dashboard = useAdminDashboard()
   const overview = dashboard.overview
   const normalizedPath = location.pathname.replace(/\/+$/, '') || '/'
@@ -515,6 +592,38 @@ export function AdminDashboardPage() {
   const ActiveSectionIcon = activeMeta.icon
   const invalidRange = !dashboard.draftRange.from || !dashboard.draftRange.to || dashboard.draftRange.from > dashboard.draftRange.to
   const closeUserDetails = useCallback(() => setSelectedUserId(null), [])
+
+  const openUserAction = (type, targetUser) => {
+    setUserActionError('')
+    setUserAction({ type, user: targetUser })
+  }
+
+  const closeUserAction = () => {
+    setUserActionError('')
+    setUserAction(null)
+  }
+
+  const confirmUserAction = async () => {
+    if (!userAction) return
+
+    setUserActionBusy(true)
+    setUserActionError('')
+    try {
+      if (userAction.type === 'delete') {
+        await deleteAdminUser(userAction.user.id)
+      } else {
+        await updateAdminUser(userAction.user.id, {
+          active: userAction.type === 'activate',
+        })
+      }
+      setUserAction(null)
+      dashboard.refresh()
+    } catch (error) {
+      setUserActionError(error?.message || 'Unable to update this account.')
+    } finally {
+      setUserActionBusy(false)
+    }
+  }
 
   const handleLogout = async () => {
     setLoggingOut(true)
@@ -604,14 +713,11 @@ export function AdminDashboardPage() {
               <p className="truncate text-sm font-bold tracking-[-.2px] text-[#2c2431]">Platform command center</p>
               <p className="mt-0.5 hidden text-[10px] font-medium text-[#817587] sm:block">Live operational and commercial intelligence</p>
             </div>
-            <span className="ml-auto hidden items-center gap-2 rounded-full border border-[#dce8ca] bg-[#f1f9e6] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.12em] text-[#4d692b] sm:flex">
-              <span className="size-1.5 animate-pulse rounded-full bg-[#719a3d]" /> API connected
-            </span>
             <button
               type="button"
               onClick={dashboard.refresh}
               disabled={dashboard.loading}
-              className="flex size-10 items-center justify-center rounded-xl border border-[#ded3e2] bg-white text-[#4f378a] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md disabled:translate-y-0 disabled:opacity-50"
+              className="ml-auto flex size-10 items-center justify-center rounded-xl border border-[#ded3e2] bg-white text-[#4f378a] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md disabled:translate-y-0 disabled:opacity-50"
               aria-label="Refresh dashboard"
             >
               <RefreshCw className={`size-[17px] ${dashboard.loading ? 'animate-spin' : ''}`} />
@@ -776,24 +882,52 @@ export function AdminDashboardPage() {
                       <span className="text-[10px] font-bold uppercase tracking-[.14em] text-[#827488]">{formatNumber(dashboard.users?.meta?.total)} users</span>
                     </div>
                     <div className="grid divide-y divide-[#eee7f0] sm:grid-cols-2 sm:divide-x sm:divide-y-0 lg:grid-cols-3">
-                      {(dashboard.users?.data || []).map((directoryUser) => (
-                        <button
-                          key={directoryUser.id}
-                          type="button"
-                          onClick={() => setSelectedUserId(directoryUser.id)}
-                          className="group flex min-w-0 items-center gap-3 px-5 py-4 text-left transition hover:bg-[#f8f2fa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#6f5291]"
-                        >
-                          <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-[#eee6f4] text-[10px] font-bold text-[#4f378a]">{initials(directoryUser.name || directoryUser.email)}</span>
-                          <span className="min-w-0">
-                            <span className="block truncate text-xs font-bold text-[#302735]">{directoryUser.name}</span>
-                            <span className="mt-0.5 block truncate text-[10px] text-[#887d8d]">{directoryUser.email}</span>
-                            <span className="mt-1.5 flex items-center gap-1.5 text-[8px] font-bold uppercase tracking-[.11em] text-[#806d91]">
-                              {humanize(directoryUser.role)} · {directoryUser.emailVerified ? 'Verified' : 'Pending'}
-                            </span>
-                          </span>
-                          <ArrowUpRight className="ml-auto size-4 shrink-0 text-[#9a8ca1] transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[#4f378a]" />
-                        </button>
-                      ))}
+                      {(dashboard.users?.data || []).map((directoryUser) => {
+                        const isSelf = directoryUser.id === user?.id
+                        const isActive = directoryUser.active !== false
+
+                        return (
+                          <div key={directoryUser.id} className={`group flex min-w-0 items-center gap-2 px-3 py-3 transition hover:bg-[#f8f2fa] ${isActive ? '' : 'bg-[#faf7fa] opacity-75'}`}>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedUserId(directoryUser.id)}
+                              className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-2 py-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6f5291] focus-visible:ring-offset-2"
+                            >
+                              <span className={`flex size-10 shrink-0 items-center justify-center rounded-2xl text-[10px] font-bold ${isActive ? 'bg-[#eee6f4] text-[#4f378a]' : 'bg-[#eee9ed] text-[#817783]'}`}>{initials(directoryUser.name || directoryUser.email)}</span>
+                              <span className="min-w-0">
+                                <span className="block truncate text-xs font-bold text-[#302735]">{directoryUser.name}</span>
+                                <span className="mt-0.5 block truncate text-[10px] text-[#887d8d]">{directoryUser.email}</span>
+                                <span className={`mt-1.5 flex items-center gap-1.5 text-[8px] font-bold uppercase tracking-[.11em] ${isActive ? 'text-[#806d91]' : 'text-[#a13d57]'}`}>
+                                  {humanize(directoryUser.role)} · {isActive ? (directoryUser.emailVerified ? 'Verified' : 'Pending') : 'Inactive'}
+                                </span>
+                              </span>
+                              <ArrowUpRight className="ml-auto size-4 shrink-0 text-[#9a8ca1] opacity-0 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:opacity-100 group-hover:text-[#4f378a]" />
+                            </button>
+                            <div className="flex shrink-0 items-center gap-1 border-l border-[#e7dfe9] pl-2">
+                              <button
+                                type="button"
+                                onClick={() => openUserAction(isActive ? 'deactivate' : 'activate', directoryUser)}
+                                disabled={isSelf || userActionBusy}
+                                className={`flex size-8 items-center justify-center rounded-lg transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-30 ${isActive ? 'text-[#8b6470] hover:bg-[#f8e8ed] hover:text-[#ad3150] focus-visible:ring-[#ad3150]' : 'text-[#62813c] hover:bg-[#eaf5d9] focus-visible:ring-[#62813c]'}`}
+                                aria-label={isSelf ? 'You cannot change your own account status' : `${isActive ? 'Deactivate' : 'Reactivate'} ${directoryUser.name || directoryUser.email}`}
+                                title={isSelf ? 'You cannot change your own account status' : isActive ? 'Deactivate user' : 'Reactivate user'}
+                              >
+                                {isActive ? <UserX className="size-4" /> : <UserCheck className="size-4" />}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openUserAction('delete', directoryUser)}
+                                disabled={isSelf || userActionBusy}
+                                className="flex size-8 items-center justify-center rounded-lg text-[#8b6470] transition hover:bg-[#f8e8ed] hover:text-[#ad3150] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ad3150] focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-30"
+                                aria-label={isSelf ? 'You cannot delete your own account' : `Delete ${directoryUser.name || directoryUser.email}`}
+                                title={isSelf ? 'You cannot delete your own account' : 'Delete account'}
+                              >
+                                <Trash2 className="size-4" />
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
                   </article>
                 </section> : null}
@@ -918,6 +1052,13 @@ export function AdminDashboardPage() {
       <AnimatePresence>
         {selectedUserId ? <UserAnalyticsDrawer key={selectedUserId} userId={selectedUserId} onClose={closeUserDetails} /> : null}
       </AnimatePresence>
+      <UserActionDialog
+        action={userAction}
+        busy={userActionBusy}
+        error={userActionError}
+        onClose={closeUserAction}
+        onConfirm={confirmUserAction}
+      />
     </div>
   )
 }

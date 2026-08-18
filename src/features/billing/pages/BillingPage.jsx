@@ -210,7 +210,7 @@ export function BillingPage() {
                       <Coins className="size-4 text-[#4f378a]" />
                       {Number(plan.generationCredits ?? 0).toLocaleString()} credits / month
                     </div>
-                    <p className="mt-1 text-[11px] leading-4 text-[#776e7d]">Shared across strategy, post creation, and regenerations.</p>
+                    <p className="mt-1 text-[11px] leading-4 text-[#776e7d]">One credit per strategy and one per post, so a 2-week campaign of 4 posts a week costs 9.</p>
                   </div>
 
                   <div className="mt-6 flex min-h-12">

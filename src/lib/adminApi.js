@@ -21,12 +21,17 @@ function errorMessage(data, status) {
   return `Dashboard request failed with status ${status}`
 }
 
-async function adminFetch(path, { signal } = {}) {
+async function adminFetch(path, { signal, method = 'GET', body } = {}) {
   let response
   try {
     response = await fetch(`${getApiBase()}${path}`, {
+      method,
       credentials: 'include',
-      headers: { Accept: 'application/json' },
+      headers: {
+        Accept: 'application/json',
+        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
       signal,
     })
   } catch (error) {
@@ -76,4 +81,19 @@ export function getAdminUsers({ page = 1, limit = 100, signal } = {}) {
 
 export function getAdminUserAnalytics(userId, { signal } = {}) {
   return adminFetch(`/admin/users/${encodeURIComponent(userId)}/analytics`, { signal })
+}
+
+export function updateAdminUser(userId, updates, { signal } = {}) {
+  return adminFetch(`/admin/users/${encodeURIComponent(userId)}`, {
+    method: 'PATCH',
+    body: updates,
+    signal,
+  })
+}
+
+export function deleteAdminUser(userId, { signal } = {}) {
+  return adminFetch(`/admin/users/${encodeURIComponent(userId)}`, {
+    method: 'DELETE',
+    signal,
+  })
 }

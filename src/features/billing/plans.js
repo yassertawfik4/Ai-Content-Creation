@@ -9,7 +9,8 @@ const PLAN_PRESENTATION = {
     features: [
       '1-week campaigns',
       'Up to 3 posts per week',
-      'Strategy and content workflows',
+      '1 platform per campaign',
+      'Text-only posts',
       'Community support',
     ],
   },
@@ -19,18 +20,18 @@ const PLAN_PRESENTATION = {
     features: [
       'Campaigns up to 3 weeks',
       'Up to 6 posts per week',
+      'Up to 3 platforms per campaign',
       'AI image generation',
-      'Advanced analytics',
       'Priority support',
     ],
   },
   business: {
     eyebrow: 'Team',
     features: [
-      'Every campaign duration',
+      'Campaigns up to 4 weeks',
       'Up to 20 posts per week',
-      'Team workspaces',
-      'API access',
+      'Up to 6 platforms per campaign',
+      'AI image generation',
       'Dedicated success manager',
     ],
   },

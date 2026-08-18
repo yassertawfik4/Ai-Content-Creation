@@ -5,7 +5,9 @@ import { Link } from 'react-router-dom'
 import { BRAND_VOICE_PRESETS, CAMPAIGN_GOAL_OPTIONS, PLATFORM_OPTIONS } from '../schema/campaignSchema'
 import { CAMPAIGN_FORM_STEPS, PLATFORM_ICONS } from '../model/generateConfig'
 import {
+  campaignCreditCost,
   campaignLimitDescription,
+  campaignPostCount,
   clampCampaignValues,
   getAvailableDurations,
   getCampaignPlanLimits,
@@ -38,6 +40,39 @@ function inputClass(hasError) {
   }`
 }
 
+/**
+ * The price of the campaign as currently shaped: one credit for the strategy
+ * plus one for every post. The three fields that decide it — duration, posts
+ * per week, and platforms — live on two different steps, so the total is shown
+ * beside each of them rather than only at the end.
+ */
+function CreditCostNote({ creditCost, postCount, remaining, overBudget }) {
+  if (creditCost === null) return null
+
+  const tone = overBudget
+    ? 'border-[#e7c4cf] bg-[#fdf2f5] text-[#8a3145]'
+    : 'border-[#dfd4e5] bg-[#f8f2fa] text-[#6f6277]'
+
+  return (
+    <div className={`mt-3 rounded-xl border px-3.5 py-3 text-[11px] leading-5 ${tone}`}>
+      <span className="font-bold text-[#4f378a]">
+        This campaign uses {creditCost} {creditCost === 1 ? 'credit' : 'credits'}
+      </span>{' '}
+      — 1 for the strategy and {postCount} for {postCount === 1 ? 'its post' : 'its posts'}.
+      {remaining === null ? null : (
+        <>
+          {' '}You have {remaining} left.{' '}
+          {overBudget ? (
+            <Link to="/billing" className="font-bold underline underline-offset-2">
+              Upgrade, or shorten the campaign
+            </Link>
+          ) : null}
+        </>
+      )}
+    </div>
+  )
+}
+
 function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, isGenerating, isLocked = false, initiallyOpen = false, onRequestClose, isModal = false, creditUsage }) {
   const [isOpen, setIsOpen] = useState(initiallyOpen)
   const [currentStep, setCurrentStep] = useState(0)
@@ -54,20 +89,40 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
     if (!campaignLimits.isResolved) return
     setValues((current) => {
       const next = clampCampaignValues(current, campaignLimits)
-      return next.duration === current.duration && next.postsPerWeek === current.postsPerWeek
-        ? current
-        : next
+      const unchanged =
+        next.duration === current.duration &&
+        next.postsPerWeek === current.postsPerWeek &&
+        next.generateImages === current.generateImages &&
+        next.platforms?.length === current.platforms?.length
+      return unchanged ? current : next
     })
   }, [campaignLimits, setValues])
 
+  const platformsAtLimit = values.platforms.length >= campaignLimits.maxPlatforms
+
   const togglePlatform = (id) => {
-    setValues((current) => ({
-      ...current,
-      platforms: current.platforms.includes(id)
-        ? current.platforms.filter((platform) => platform !== id)
-        : [...current.platforms, id],
-    }))
+    setValues((current) => {
+      const selected = current.platforms.includes(id)
+      if (!selected && current.platforms.length >= campaignLimits.maxPlatforms) {
+        return current
+      }
+      return {
+        ...current,
+        platforms: selected
+          ? current.platforms.filter((platform) => platform !== id)
+          : [...current.platforms, id],
+      }
+    })
   }
+
+  // One credit per post, plus one for the strategy. Shown before submitting
+  // because a campaign's shape decides its price, and the three inputs that
+  // drive it sit on two different steps of this form.
+  const postCount = campaignPostCount(values)
+  const creditCost = campaignCreditCost(values)
+  const creditsRemaining = creditUsage?.remaining ?? null
+  const overBudget =
+    creditCost !== null && creditsRemaining !== null && creditCost > creditsRemaining
 
   const onPresetClick = (preset) => {
     setValues((current) => ({
@@ -419,6 +474,14 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
           </div>
         ) : null}
 
+        <CreditCostNote
+          creditCost={creditCost}
+          postCount={postCount}
+          remaining={creditsRemaining}
+          overBudget={overBudget}
+        />
+
+        {campaignLimits.allowsImageGeneration ? (
         <div className="mt-5">
           <FieldLabel htmlFor="include-images">Post images</FieldLabel>
           <button
@@ -440,6 +503,17 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
             Turn this off if your image provider is rate-limited; copy, hashtags, QA, and scheduling will still run.
           </p>
         </div>
+        ) : (
+        <div className="mt-5 rounded-xl border border-[#dfd4e5] bg-[#f8f2fa] px-3.5 py-3 text-[11px] leading-5 text-[#6f6277]">
+          <span className="flex items-center gap-2 font-bold text-[#4f378a]">
+            <ImageIcon className="size-3.5" /> Posts are written without images on {campaignLimits.name}.
+          </span>
+          <span className="mt-1 block">
+            Copy, hashtags, QA, and scheduling all still run.{' '}
+            <Link to="/billing" className="font-bold underline underline-offset-2">Upgrade for AI images</Link>
+          </span>
+        </div>
+        )}
         </motion.div> : null}
 
         {currentStep === 3 ? <motion.div key="channels" initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.22 }}>
@@ -456,7 +530,8 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
                   aria-pressed={selected}
                   data-selected={selected}
                   onClick={() => togglePlatform(id)}
-                  className={`campaign-platform-option flex h-10 items-center gap-2 rounded-xl border px-3 text-[13px] font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] ${
+                  disabled={!selected && platformsAtLimit}
+                  className={`campaign-platform-option flex h-10 items-center gap-2 rounded-xl border px-3 text-[13px] font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] disabled:cursor-not-allowed disabled:opacity-40 ${
                     selected ? 'border-[#4f378a] text-[#381e72]' : 'border-[#dcd4df] bg-white text-[#665d6b] hover:border-[#a99db0]'
                   }`}
                 >
@@ -468,7 +543,21 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
             })}
           </div>
           <FieldError message={errors.platforms} />
+          {campaignLimits.isResolved ? (
+            <p className="mt-2 text-[11px] leading-5 text-[#6f6277]">
+              Every platform gets its own post, so each one you add multiplies the
+              campaign. <span className="font-bold text-[#4f378a]">{campaignLimits.name} allows {campaignLimits.maxPlatforms} {campaignLimits.maxPlatforms === 1 ? 'platform' : 'platforms'}.</span>{' '}
+              {platformsAtLimit ? <Link to="/billing" className="font-bold underline underline-offset-2">Upgrade for more</Link> : null}
+            </p>
+          ) : null}
         </fieldset>
+
+        <CreditCostNote
+          creditCost={creditCost}
+          postCount={postCount}
+          remaining={creditsRemaining}
+          overBudget={overBudget}
+        />
 
         <div className="mt-5">
           <FieldLabel htmlFor="key-messages" optional>
@@ -511,13 +600,13 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
             </button>
             <button
               type="submit"
-              disabled={!currentStepComplete || isGenerating || (isLastStep && creditUsage?.canGenerate === false)}
+              disabled={!currentStepComplete || isGenerating || (isLastStep && (creditUsage?.canGenerate === false || overBudget))}
               className="group relative flex h-12 min-w-0 flex-1 items-center justify-center gap-2 overflow-hidden rounded-xl bg-[#381e72] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(56,30,114,0.22)] transition-all hover:bg-[#4f378a] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a] focus-visible:ring-offset-2"
             >
               <span className="absolute inset-y-0 -left-10 w-8 -skew-x-12 bg-white/20 transition-transform duration-500 group-hover:translate-x-96" />
               {isLastStep ? (isGenerating ? <LoadingRing className="size-[17px] text-[#d8ff9d]" /> : <Wand2 className="size-[17px] text-[#d8ff9d]" />) : null}
               {isLastStep
-                ? (isGenerating ? 'Building…' : creditUsage?.canGenerate === false ? 'Credits required' : 'Build strategy')
+                ? (isGenerating ? 'Building…' : creditUsage?.canGenerate === false ? 'Credits required' : overBudget ? `Needs ${creditCost} credits` : 'Build strategy')
                 : <>Next <ChevronRight className="size-4" /></>}
             </button>
           </div>
@@ -529,7 +618,7 @@ function CampaignForm({ values, setValues, errors, onGenerate, onFillTestData, i
               <Link to="/billing" className="font-bold text-[#4f378a] underline underline-offset-2">Manage plan</Link>
             </p>
           ) : (
-            <p className="mt-2.5 text-center text-[11px] text-[#8b818f]">{isLastStep ? 'Uses 1 credit. Posts begin only after your approval.' : 'Your progress is saved as you move between steps.'}</p>
+            <p className="mt-2.5 text-center text-[11px] text-[#8b818f]">{isLastStep ? `Building the strategy uses 1 credit${postCount ? `; the ${postCount} ${postCount === 1 ? 'post costs' : 'posts cost'} ${postCount} more` : ''}. Posts begin only after your approval.` : 'Your progress is saved as you move between steps.'}</p>
           )}
         </div>
         </fieldset>

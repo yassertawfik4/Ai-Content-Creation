@@ -185,7 +185,7 @@ export function PricingSection() {
 
         <div className="mx-auto mt-7 flex max-w-xl items-center justify-center gap-2 rounded-2xl border border-[#dfd3e7] bg-white/70 px-4 py-3 text-center text-sm text-[#625b71]">
           <Coins className="size-4 shrink-0 text-[#4f378a]" />
-          One generation credit starts one strategy or one content workflow.
+          One credit buys one strategy, one generated post, or one regeneration.
         </div>
 
         {error || plansError ? (
@@ -257,7 +257,8 @@ export function PricingSection() {
                     </span>
                   </div>
                   <p className={`mt-1 text-[11px] leading-4 ${plan.highlight ? 'pricing-highlight-secondary' : 'text-[#776e7d]'}`}>
-                    Shared by strategy, post creation, and regenerations.
+                    One credit per strategy and one per post, so a 2-week campaign
+                    of 4 posts a week costs 9.
                   </p>
                 </div>
 

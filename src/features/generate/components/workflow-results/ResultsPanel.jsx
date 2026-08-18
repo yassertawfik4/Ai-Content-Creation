@@ -27,6 +27,7 @@ export function ResultsPanel({
   onStartCampaign,
   canStartCampaign,
   creditUsage,
+  contentRunCost,
 }) {
   const selectedPlatformIds = values?.platforms ?? []
   const selectedPlatforms = PLATFORM_OPTIONS.filter((platform) => selectedPlatformIds.includes(platform.id))
@@ -127,6 +128,7 @@ export function ResultsPanel({
               onStrategyChange={onStrategyChange}
               isSubmitting={false}
               creditUsage={creditUsage}
+              contentRunCost={contentRunCost}
             />
           ) : hasResults ? (
             <motion.div

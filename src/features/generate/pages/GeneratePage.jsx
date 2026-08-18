@@ -54,7 +54,7 @@ import { ProjectSidebar } from '../components/ProjectSidebar'
 import { ProjectHistoryDrawer } from '../components/workflow-results/ProjectHistoryDrawer'
 import { ResultsPanel } from '../components/workflow-results/ResultsPanel'
 import { EMPTY_PROJECT, EMPTY_VALUES, GENERATE_STORAGE_KEY, TEST_VALUES, buildContentWorkflowInput, buildStrategyBrief, hasBriefContent, mergeStoredValues, readGenerateState, valuesFromStrategy } from '../model/generateConfig'
-import { clampCampaignValues, durationInWeeks, getCampaignPlanLimits } from '../model/campaignPlanLimits'
+import { campaignCreditCost, clampCampaignValues, contentRunCreditCost, durationInWeeks, getCampaignPlanLimits } from '../model/campaignPlanLimits'
 
 function fieldErrorsFromZod(issue) {
   const paths = issue.path.filter(Boolean)
@@ -695,8 +695,19 @@ export function GeneratePage() {
     if (!Number.isInteger(values.postsPerWeek) || values.postsPerWeek < 1 || values.postsPerWeek > campaignLimits.maxPostsPerWeek) {
       requiredFormErrors.postsPerWeek = `Posts per week must be between 1 and ${campaignLimits.maxPostsPerWeek}`
     }
+    if (values.platforms.length > campaignLimits.maxPlatforms) {
+      requiredFormErrors.platforms = `${campaignLimits.name} supports up to ${campaignLimits.maxPlatforms} ${campaignLimits.maxPlatforms === 1 ? 'platform' : 'platforms'} per campaign`
+    }
     if (Object.keys(requiredFormErrors).length > 0) {
       setErrors(requiredFormErrors)
+      return
+    }
+
+    // The strategy is only the first credit; refusing here saves the user from
+    // paying for a plan they cannot afford to turn into posts.
+    const totalCost = campaignCreditCost(values)
+    if (totalCost !== null && creditUsage && totalCost > creditUsage.remaining) {
+      setError(`This campaign needs ${totalCost} credits and you have ${creditUsage.remaining} left. Shorten the duration, lower posts per week, select fewer platforms, or upgrade your plan.`)
       return
     }
 
@@ -783,6 +794,12 @@ export function GeneratePage() {
     const sourceValues = submittedValues ?? values
     if (!strategyRunId) {
       setError('The strategy did not include a campaign plan to send to the content workflow.')
+      return
+    }
+
+    const runCost = contentRunCreditCost(sourceValues)
+    if (runCost !== null && creditUsage && runCost > creditUsage.remaining) {
+      setError(`Creating these posts needs ${runCost} credits and you have ${creditUsage.remaining} left. Upgrade your plan or wait for the reset.`)
       return
     }
 
@@ -1015,6 +1032,7 @@ export function GeneratePage() {
           creditUsage={creditUsage}
         />
         <ResultsPanel
+          contentRunCost={contentRunCreditCost(submittedValues ?? values)}
           campaign={campaign}
           setCampaign={setCampaign}
           strategy={strategy}
