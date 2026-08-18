@@ -19,6 +19,23 @@ export function ProtectedRoute({ children }) {
   return children
 }
 
+export function AdminRoute({ children }) {
+  const { isAuthenticated, isLoading, user } = useAuth()
+  const location = useLocation()
+
+  if (isLoading) return <LoadingScreen />
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />
+  }
+
+  if (user?.role !== 'ADMIN') {
+    return <Navigate to="/" replace state={{ adminAccessDenied: true }} />
+  }
+
+  return children
+}
+
 export function GuestRoute({ children }) {
   const { isAuthenticated, isLoading } = useAuth()
   const location = useLocation()

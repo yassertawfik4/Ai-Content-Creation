@@ -1,4 +1,4 @@
-import { ChevronDown, CreditCard, Loader2, LogOut, Menu, Settings, X } from "lucide-react";
+import { ChevronDown, CreditCard, LayoutDashboard, Loader2, LogOut, Menu, Settings, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
@@ -144,6 +144,17 @@ export function Navbar() {
                       {user?.email ? <p className="mt-0.5 truncate text-xs text-[#7b7180]">{user.email}</p> : null}
                     </div>
                     <div className="my-1 h-px bg-[#e7dfe9]" />
+                    {user?.role === "ADMIN" ? (
+                      <Link
+                        to="/admin"
+                        role="menuitem"
+                        onClick={() => setAccountOpen(false)}
+                        className="account-menu-accent-item flex min-h-11 w-full items-center gap-2.5 rounded-xl px-3 text-left text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f378a]"
+                      >
+                        <LayoutDashboard className="size-[17px]" />
+                        Admin dashboard
+                      </Link>
+                    ) : null}
                     <Link
                       to="/billing"
                       role="menuitem"
@@ -244,6 +255,16 @@ export function Navbar() {
                       {user?.name ?? "Account"}
                     </span>
                   </div>
+                  {user?.role === "ADMIN" ? (
+                    <Link
+                      to="/admin"
+                      onClick={() => setMobileOpen(false)}
+                      className="account-menu-accent-item flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-base font-medium transition-colors"
+                    >
+                      <LayoutDashboard className="size-4" />
+                      Admin dashboard
+                    </Link>
+                  ) : null}
                   <Link
                     to="/settings"
                     onClick={() => setMobileOpen(false)}

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Copy, Hash, ImageOff, MousePointerClick, Sparkles } from 'lucide-react'
 import { PLATFORM_OPTIONS } from '../../schema/campaignSchema'
 import { ART_GRADIENTS, PLATFORM_ICONS } from '../../model/generateConfig'
@@ -135,19 +135,11 @@ function PostArtwork({ gradient, imageUrl, imageUrls, label, brandName, platform
 export function PostCard({ post, index, showImage, brandName, onCaptionChange }) {
   const [copied, setCopied] = useState(false)
   const [draftCaption, setDraftCaption] = useState(post.caption ?? '')
-  const captionRef = useRef(null)
   const platformLabel = PLATFORM_OPTIONS.find((option) => option.id === post.platform)?.label ?? post.platform
   const Icon = PLATFORM_ICONS[post.platform]
   const gradient = ART_GRADIENTS[index % ART_GRADIENTS.length]
   const hasRenderableImage = getRenderableImages(post.imageUrl, post.imageUrls).length > 0
   const renderArtwork = showImage && hasRenderableImage
-
-  useLayoutEffect(() => {
-    const textarea = captionRef.current
-    if (!textarea) return
-    textarea.style.height = 'auto'
-    textarea.style.height = `${textarea.scrollHeight}px`
-  }, [draftCaption])
 
   const copyPost = async () => {
     const value = [draftCaption, post.hashtags?.length ? post.hashtags.map((tag) => `#${tag.replace(/^#/, '')}`).join(' ') : '', post.cta]
@@ -223,14 +215,13 @@ export function PostCard({ post, index, showImage, brandName, onCaptionChange })
             <span id={`post-caption-count-${index}`} className="text-[11px] tabular-nums text-[#8a7f90]">{draftCaption.length} characters</span>
           </div>
           <textarea
-            ref={captionRef}
             id={`post-caption-${index}`}
             rows={3}
             value={draftCaption}
             onChange={(event) => setDraftCaption(event.target.value)}
             onBlur={() => onCaptionChange(index, draftCaption)}
             aria-describedby={`post-caption-count-${index} post-caption-help-${index}`}
-            className="min-h-28 w-full resize-none overflow-hidden rounded-2xl border border-[#ddd3e1] bg-[#fbf8fb] px-4 py-3.5 text-base leading-7 text-[#423a47] outline-none transition-colors [field-sizing:content] placeholder:text-[#aaa1ae] focus:border-[#6b4c9a] focus:bg-white focus:ring-3 focus:ring-[#4f378a]/10 sm:text-[15px]"
+            className="scrollbar-hidden min-h-28 max-h-[34rem] w-full resize-y overflow-y-auto rounded-2xl border border-[#ddd3e1] bg-[#fbf8fb] px-4 py-3.5 text-base leading-7 text-[#423a47] outline-none transition-colors placeholder:text-[#aaa1ae] focus:border-[#6b4c9a] focus:bg-white focus:ring-3 focus:ring-[#4f378a]/10 sm:text-[15px]"
           />
           <p id={`post-caption-help-${index}`} className="mt-1.5 text-[11px] text-[#8a7f90]">Your edit saves when you leave this field.</p>
 

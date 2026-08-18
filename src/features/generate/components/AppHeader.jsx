@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronDown, Loader2, LogOut, Settings } from 'lucide-react'
+import { ChevronDown, LayoutDashboard, Loader2, LogOut, Settings } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { AppLogo } from '@/components/AppLogo'
@@ -129,6 +129,17 @@ export function AppHeader() {
                   {user?.email ? <p className="mt-0.5 truncate text-xs text-[#7b7180]">{user.email}</p> : null}
                 </div>
                 <div className="my-1 h-px bg-[#e7dfe9]" />
+                {user?.role === 'ADMIN' ? (
+                  <Link
+                    to="/admin"
+                    role="menuitem"
+                    onClick={() => setProfileMenuOpen(false)}
+                    className="account-menu-accent-item flex min-h-11 w-full items-center gap-2.5 rounded-xl px-3 text-left text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#675094]"
+                  >
+                    <LayoutDashboard className="size-[17px]" />
+                    Admin dashboard
+                  </Link>
+                ) : null}
                 <Link
                   to="/settings"
                   role="menuitem"

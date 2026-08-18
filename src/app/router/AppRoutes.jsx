@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router-dom'
-import { GuestRoute, ProtectedRoute } from '@/components/ProtectedRoute'
+import { AdminRoute, GuestRoute, ProtectedRoute } from '@/components/ProtectedRoute'
 import { LoadingScreen } from '@/components/LoadingScreen'
 import { NotFoundPage } from '@/app/pages/NotFoundPage'
 
@@ -23,9 +23,11 @@ const KnowledgePage = lazyPage(() => import('@/features/knowledge/pages/Knowledg
 const SettingsPage = lazyPage(() => import('@/features/settings/pages/SettingsPage'), 'SettingsPage')
 const BillingPage = lazyPage(() => import('@/features/billing/pages/BillingPage'), 'BillingPage')
 const CheckoutPage = lazyPage(() => import('@/features/billing/pages/CheckoutPage'), 'CheckoutPage')
+const AdminDashboardPage = lazyPage(() => import('@/features/admin/pages/AdminDashboardPage'), 'AdminDashboardPage')
 
 const protect = (page) => <ProtectedRoute>{page}</ProtectedRoute>
 const forGuests = (page) => <GuestRoute>{page}</GuestRoute>
+const forAdmins = (page) => <AdminRoute>{page}</AdminRoute>
 
 export function AppRoutes() {
   return (
@@ -45,6 +47,10 @@ export function AppRoutes() {
         <Route path="/settings" element={protect(<SettingsPage />)} />
         <Route path="/billing" element={protect(<BillingPage />)} />
         <Route path="/checkout" element={protect(<CheckoutPage />)} />
+        <Route path="/admin" element={forAdmins(<AdminDashboardPage />)} />
+        <Route path="/admin/audience" element={forAdmins(<AdminDashboardPage />)} />
+        <Route path="/admin/operations" element={forAdmins(<AdminDashboardPage />)} />
+        <Route path="/admin/revenue" element={forAdmins(<AdminDashboardPage />)} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
